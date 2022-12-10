@@ -1,0 +1,119 @@
+name: Contracts CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      run_build:
+        description: 'Run build'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  RUST_VERSION: 1.63.0
+  RUSTC_TARGET: 'wasm32-unknown-unknown'
+
+jobs:
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Setup toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ env.RUST_VERSION }}
+          target: ${{ env.RUSTC_TARGET }}
+          override: true
+
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run unit tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --lib --locked
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Compile WASM contracts
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ env.RUSTC_TARGET }} --locked
+        env:
+          RUSTFLAGS: "-C strip=symbols"
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Setup toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ env.RUST_VERSION }}
+          override: true
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run rustfmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Run clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+
+      #- name: Install monorepo tools
+      #  uses: actions-rs/cargo@v1
+      #  with:
+      #    command: install
+      #    args: cargo-workspaces
+
+      #- name: Generate Schema
+      #  uses: actions-rs/cargo@v1
+      #  with:
+      #    command: cargo
+      #    args: workspaces exec --no-bail -- cargo schema --locked
+
+      #- name: Schema Changes
+      #  uses: actions-rs/cargo@v1
+      #  with:
+      #    command: cargo
+      #    # fails if any changes not committed
+      #    args: workspaces exec -- git diff --exit-code schema
