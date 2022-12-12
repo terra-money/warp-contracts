@@ -1,0 +1,28 @@
+{
+  "localterra": {
+    "warp-account": {
+      "codeId": "12"
+    },
+    "warp-controller": {
+      "codeId": "13"
+    }
+  },
+  "testnet": {
+    "warp-account": {
+      "codeId": "5822"
+    },
+    "warp-controller": {
+      "codeId": "5823",
+      "address": "terra16z50gpsl9fz0t8shpha3phy29jfwdjrgjvu88eu3leqpkwzvwhfst5zpl6"
+    }
+  },
+  "mainnet": {
+    "warp-account": {
+      "codeId": "733"
+    },
+    "warp-controller": {
+      "codeId": "742",
+      "address": "terra1cc03qtfkgh8qe9e5047h0x6m083z0hlahkm28tvhdk9tzljwqr0sh5pqqd"
+    }
+  }
+}
