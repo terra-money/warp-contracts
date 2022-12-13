@@ -9,6 +9,10 @@ use crate::controller::job::{
     CreateJobMsg, DeleteJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, QueryResolveJobConditionMsg, UpdateJobMsg,
 };
+use crate::controller::template::{
+    DeleteMsgTemplateMsg, EditMsgTemplateMsg, MsgTemplateResponse, MsgTemplatesResponse,
+    QueryMsgTemplateMsg, QueryMsgTemplatesMsg, SubmitMsgTemplateMsg,
+};
 
 //objects
 #[cw_serde]
@@ -23,6 +27,7 @@ pub struct Config {
 #[cw_serde]
 pub struct State {
     pub current_job_id: Uint64,
+    pub current_template_id: Uint64,
 }
 
 //instantiate
@@ -46,6 +51,10 @@ pub enum ExecuteMsg {
     CreateAccount(CreateAccountMsg),
 
     UpdateConfig(UpdateConfigMsg),
+
+    SubmitMsgTemplate(SubmitMsgTemplateMsg),
+    EditMsgTemplate(EditMsgTemplateMsg),
+    DeleteMsgTemplate(DeleteMsgTemplateMsg),
 }
 
 #[cw_serde]
@@ -79,6 +88,11 @@ pub enum QueryMsg {
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
+
+    #[returns(MsgTemplateResponse)]
+    QueryMsgTemplate(QueryMsgTemplateMsg),
+    #[returns(MsgTemplatesResponse)]
+    QueryMsgTemplates(QueryMsgTemplatesMsg),
 }
 
 #[cw_serde]

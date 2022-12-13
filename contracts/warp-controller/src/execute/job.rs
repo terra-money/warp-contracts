@@ -2,7 +2,7 @@ use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
 use crate::ContractError;
 use cosmwasm_std::{
-    to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Record, ReplyOn,
+    to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn,
     Response, SubMsg, Uint128, Uint64, WasmMsg,
 };
 use warp_protocol::controller::controller::State;
@@ -39,7 +39,7 @@ pub fn create_job(
     let account = match q {
         None => ACCOUNTS()
             .load(deps.storage, info.sender.clone())
-            .map_err(|e| ContractError::AccountDoesNotExist {})?,
+            .map_err(|_e| ContractError::AccountDoesNotExist {})?,
         Some(q) => q.1,
     };
 
@@ -66,6 +66,7 @@ pub fn create_job(
         deps.storage,
         &State {
             current_job_id: state.current_job_id.saturating_add(Uint64::new(1)),
+            current_template_id: state.current_template_id,
         },
     )?;
 

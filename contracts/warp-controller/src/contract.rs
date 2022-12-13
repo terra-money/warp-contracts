@@ -22,6 +22,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let state = State {
         current_job_id: Uint64::zero() + Uint64::one() * Uint64::pow(Uint64::new(1), 100),
+        current_template_id: Uint64::zero(),
     };
 
     let config = Config {
@@ -64,6 +65,10 @@ pub fn execute(
         ExecuteMsg::CreateAccount(_) => account::create_account(deps, env, info),
 
         ExecuteMsg::UpdateConfig(data) => controller::update_config(deps, env, info, data),
+
+        ExecuteMsg::SubmitMsgTemplate(_data) => unimplemented!(),
+        ExecuteMsg::EditMsgTemplate(_data) => unimplemented!(),
+        ExecuteMsg::DeleteMsgTemplate(_data) => unimplemented!(),
     }
 }
 
@@ -91,6 +96,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryConfig(data) => {
             to_binary(&query::controller::query_config(deps, env, data)?)
         }
+
+        QueryMsg::QueryMsgTemplate(_data) => unimplemented!(),
+        QueryMsg::QueryMsgTemplates(_data) => unimplemented!(),
     }
 }
 

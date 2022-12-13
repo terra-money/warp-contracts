@@ -1,9 +1,10 @@
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
 use warp_protocol::controller::account::Account;
 
 use warp_protocol::controller::controller::{Config, State};
 use warp_protocol::controller::job::Job;
+use warp_protocol::controller::template::MsgTemplate;
 
 pub struct JobIndexes<'a> {
     pub reward: UniqueIndex<'a, (u128, u64), Job>,
@@ -67,6 +68,8 @@ pub fn ACCOUNTS<'a>() -> IndexedMap<'a, Addr, Account, AccountIndexes<'a>> {
     };
     IndexedMap::new("accounts", indexes)
 }
+
+pub const MSG_TEMPLATES: Map<u64, MsgTemplate> = Map::new("msg_templates");
 
 pub const QUERY_PAGE_SIZE: u32 = 50;
 pub const CONFIG: Item<Config> = Item::new("config");

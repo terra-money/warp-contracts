@@ -125,7 +125,9 @@ pub fn query_jobs_by_reward(
                 )
             });
         let infos = match limit {
-            None => infos.collect::<StdResult<Vec<_>>>()?,
+            None => infos
+                .take(QUERY_PAGE_SIZE as usize)
+                .collect::<StdResult<Vec<_>>>()?,
             Some(limit) => infos.take(limit).collect::<StdResult<Vec<_>>>()?,
         };
 
