@@ -10,8 +10,8 @@ use crate::controller::job::{
     QueryJobsMsg, QueryResolveJobConditionMsg, UpdateJobMsg,
 };
 use crate::controller::template::{
-    DeleteMsgTemplateMsg, EditMsgTemplateMsg, MsgTemplateResponse, MsgTemplatesResponse,
-    QueryMsgTemplateMsg, QueryMsgTemplatesMsg, SubmitMsgTemplateMsg,
+    DeleteTemplateMsg, EditTemplateMsg, MsgTemplateResponse, MsgTemplatesResponse,
+    QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg,
 };
 
 //objects
@@ -52,9 +52,9 @@ pub enum ExecuteMsg {
 
     UpdateConfig(UpdateConfigMsg),
 
-    SubmitMsgTemplate(SubmitMsgTemplateMsg),
-    EditMsgTemplate(EditMsgTemplateMsg),
-    DeleteMsgTemplate(DeleteMsgTemplateMsg),
+    SubmitMsgTemplate(SubmitTemplateMsg),
+    EditMsgTemplate(EditTemplateMsg),
+    DeleteMsgTemplate(DeleteTemplateMsg),
 }
 
 #[cw_serde]
@@ -90,9 +90,9 @@ pub enum QueryMsg {
     QueryConfig(QueryConfigMsg),
 
     #[returns(MsgTemplateResponse)]
-    QueryMsgTemplate(QueryMsgTemplateMsg),
+    QueryMsgTemplate(QueryTemplateMsg),
     #[returns(MsgTemplatesResponse)]
-    QueryMsgTemplates(QueryMsgTemplatesMsg),
+    QueryMsgTemplates(QueryTemplatesMsg),
 }
 
 #[cw_serde]

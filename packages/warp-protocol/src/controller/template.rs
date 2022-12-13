@@ -3,24 +3,31 @@ use cosmwasm_std::{Addr, Uint64};
 
 //msg templates
 #[cw_serde]
-pub struct MsgTemplate {
+pub struct Template {
     pub id: Uint64,
     pub owner: Addr,
     pub name: String,
+    pub kind: TemplateKind,
     pub msg: String,
     pub formatted_str: String,
-    pub vars: Vec<MsgTemplateVar>,
+    pub vars: Vec<TemplateVar>,
 }
 
 #[cw_serde]
-pub struct MsgTemplateVar {
+pub enum TemplateKind {
+    Query,
+    Msg,
+}
+
+#[cw_serde]
+pub struct TemplateVar {
     pub name: String,
     pub path: String,
-    pub ty: MsgTemplateVarType,
+    pub kind: TemplateVarKind,
 }
 
 #[cw_serde]
-pub enum MsgTemplateVarType {
+pub enum TemplateVarKind {
     String,
     Uint,
     Int,
@@ -29,36 +36,34 @@ pub enum MsgTemplateVarType {
 }
 
 #[cw_serde]
-pub struct SubmitMsgTemplateMsg {
+pub struct SubmitTemplateMsg {
     pub name: String,
+    pub kind: TemplateKind,
     pub msg: String,
     pub formatted_str: String,
-    pub vars: Vec<MsgTemplateVar>,
+    pub vars: Vec<TemplateVar>,
 }
 
 #[cw_serde]
-pub struct EditMsgTemplateMsg {
+pub struct EditTemplateMsg {
     pub name: Option<String>,
     pub msg: Option<String>,
     pub formatted_str: Option<String>,
-    pub vars: Option<Vec<MsgTemplateVar>>,
+    pub vars: Option<Vec<TemplateVar>>,
 }
 
 #[cw_serde]
-pub struct DeleteMsgTemplateMsg {
-    pub name: Option<String>,
-    pub msg: Option<String>,
-    pub formatted_str: Option<String>,
-    pub vars: Option<Vec<MsgTemplateVar>>,
-}
-
-#[cw_serde]
-pub struct QueryMsgTemplateMsg {
+pub struct DeleteTemplateMsg {
     pub id: Uint64,
 }
 
 #[cw_serde]
-pub struct QueryMsgTemplatesMsg {
+pub struct QueryTemplateMsg {
+    pub id: Uint64,
+}
+
+#[cw_serde]
+pub struct QueryTemplatesMsg {
     pub ids: Option<Vec<Uint64>>,
     pub owner: Option<Addr>,
     pub name: Option<String>,
@@ -66,7 +71,7 @@ pub struct QueryMsgTemplatesMsg {
     pub limit: Option<u32>,
 }
 
-impl QueryMsgTemplatesMsg {
+impl QueryTemplatesMsg {
     pub fn valid_query(&self) -> bool {
         return (self.ids.is_some() as u8 + (self.owner.is_some() || self.name.is_some()) as u8)
             <= 1;
@@ -75,12 +80,12 @@ impl QueryMsgTemplatesMsg {
 
 #[cw_serde]
 pub struct MsgTemplateResponse {
-    pub template: MsgTemplate,
+    pub template: Template,
 }
 
 #[cw_serde]
 pub struct MsgTemplatesResponse {
-    pub templates: Vec<MsgTemplate>,
+    pub templates: Vec<Template>,
 }
 
 //query templates

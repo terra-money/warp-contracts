@@ -3,20 +3,21 @@ use crate::ContractError;
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint64};
 use warp_protocol::controller::controller::State;
 use warp_protocol::controller::template::{
-    DeleteMsgTemplateMsg, EditMsgTemplateMsg, MsgTemplate, SubmitMsgTemplateMsg,
+    DeleteTemplateMsg, EditTemplateMsg, Template, SubmitTemplateMsg,
 };
 
 pub fn submit_msg_template(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    data: SubmitMsgTemplateMsg,
+    data: SubmitTemplateMsg,
 ) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
-    let msg_template = MsgTemplate {
+    let msg_template = Template {
         id: state.current_template_id,
         owner: info.sender.clone(),
         name: data.name.clone(),
+        kind: data.kind.clone(),
         msg: data.msg.clone(),
         formatted_str: data.formatted_str.clone(),
         vars: data.vars.clone(),
@@ -34,6 +35,7 @@ pub fn submit_msg_template(
         .add_attribute("id", state.current_template_id)
         .add_attribute("owner", info.sender)
         .add_attribute("name", data.name)
+        .add_attribute("kind", serde_json_wasm::to_string(&data.kind)?)
         .add_attribute("msg", data.msg)
         .add_attribute("formatted_str", data.formatted_str)
         .add_attribute("vars", serde_json_wasm::to_string(&data.vars)?))
@@ -43,7 +45,7 @@ pub fn edit_msg_template(
     _deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _data: EditMsgTemplateMsg,
+    _data: EditTemplateMsg,
 ) -> Result<Response, ContractError> {
     Ok(Response::new())
 }
@@ -52,7 +54,7 @@ pub fn delete_msg_template(
     _deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _data: DeleteMsgTemplateMsg,
+    _data: DeleteTemplateMsg,
 ) -> Result<Response, ContractError> {
     Ok(Response::new())
 }

@@ -4,15 +4,15 @@ use cosmwasm_std::{Deps, Env, MessageInfo, Order, StdError, StdResult};
 use cw_storage_plus::Bound;
 
 use warp_protocol::controller::template::{
-    MsgTemplateResponse, MsgTemplatesResponse, QueryMsgTemplateMsg,
-    QueryMsgTemplatesMsg,
+    MsgTemplateResponse, MsgTemplatesResponse, QueryTemplateMsg,
+    QueryTemplatesMsg,
 };
 
 pub fn query_msg_template(
     deps: Deps,
     _env: Env,
     _info: MessageInfo,
-    data: QueryMsgTemplateMsg,
+    data: QueryTemplateMsg,
 ) -> StdResult<MsgTemplateResponse> {
     let msg_template = MSG_TEMPLATES.load(deps.storage, data.id.u64())?;
     Ok(MsgTemplateResponse {
@@ -25,7 +25,7 @@ pub fn query_msg_templates(
     deps: Deps,
     env: Env,
     info: MessageInfo,
-    data: QueryMsgTemplatesMsg,
+    data: QueryTemplatesMsg,
 ) -> StdResult<MsgTemplatesResponse> {
     if !data.valid_query() {
         return Err(StdError::generic_err(
@@ -36,7 +36,7 @@ pub fn query_msg_templates(
     let _page_size = data.limit.unwrap_or(QUERY_PAGE_SIZE);
 
     match data {
-        QueryMsgTemplatesMsg { ids: Some(ids), .. } => {
+        QueryTemplatesMsg { ids: Some(ids), .. } => {
             if ids.len() > QUERY_PAGE_SIZE as usize {
                 return Err(StdError::generic_err(
                     "Number of ids supplied exceeds query limit",
@@ -50,7 +50,7 @@ pub fn query_msg_templates(
                     deps,
                     env.clone(),
                     info.clone(),
-                    QueryMsgTemplateMsg { id },
+                    QueryTemplateMsg { id },
                 )?
                 .template;
                 msg_templates.push(msg_template);
@@ -59,7 +59,7 @@ pub fn query_msg_templates(
                 templates: msg_templates,
             });
         }
-        QueryMsgTemplatesMsg {
+        QueryTemplatesMsg {
             start_after,
             limit,
             name,
