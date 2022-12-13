@@ -69,7 +69,7 @@ pub fn ACCOUNTS<'a>() -> IndexedMap<'a, Addr, Account, AccountIndexes<'a>> {
     IndexedMap::new("accounts", indexes)
 }
 
-pub const MSG_TEMPLATES: Map<u64, Template> = Map::new("msg_templates");
+pub const TEMPLATES: Map<u64, Template> = Map::new("msg_templates");
 
 pub const QUERY_PAGE_SIZE: u32 = 50;
 pub const CONFIG: Item<Config> = Item::new("config");

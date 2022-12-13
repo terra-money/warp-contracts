@@ -170,6 +170,14 @@ pub fn update_job(
 
     let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
 
+    if data.name.is_some() && data.name.clone().unwrap().len() > 140 {
+        return Err(ContractError::NameTooLong {});
+    }
+
+    if data.name.is_some() && data.name.clone().unwrap().len() < 1 {
+        return Err(ContractError::NameTooShort {});
+    }
+
     let job = PENDING_JOBS().update(deps.storage, data.id.u64(), |h| match h {
         None => Err(ContractError::JobDoesNotExist {}),
         Some(job) => Ok(Job {
@@ -187,6 +195,8 @@ pub fn update_job(
             reward: job.reward + added_reward,
         }),
     })?;
+
+    //todo: sanitize updates
 
     //assume reward.amount == warp token allowance
     let fee = added_reward * config.creation_fee_percentage / Uint128::new(100);

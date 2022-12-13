@@ -46,6 +46,7 @@ pub struct SubmitTemplateMsg {
 
 #[cw_serde]
 pub struct EditTemplateMsg {
+    pub id: Uint64,
     pub name: Option<String>,
     pub msg: Option<String>,
     pub formatted_str: Option<String>,

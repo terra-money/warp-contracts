@@ -1,5 +1,5 @@
 
-use crate::state::{MSG_TEMPLATES, QUERY_PAGE_SIZE};
+use crate::state::{TEMPLATES, QUERY_PAGE_SIZE};
 use cosmwasm_std::{Deps, Env, MessageInfo, Order, StdError, StdResult};
 use cw_storage_plus::Bound;
 
@@ -14,7 +14,7 @@ pub fn query_msg_template(
     _info: MessageInfo,
     data: QueryTemplateMsg,
 ) -> StdResult<MsgTemplateResponse> {
-    let msg_template = MSG_TEMPLATES.load(deps.storage, data.id.u64())?;
+    let msg_template = TEMPLATES.load(deps.storage, data.id.u64())?;
     Ok(MsgTemplateResponse {
         template: msg_template,
     })
@@ -68,7 +68,7 @@ pub fn query_msg_templates(
         } => {
             let start = start_after.map(Bound::exclusive);
 
-            let infos = MSG_TEMPLATES
+            let infos = TEMPLATES
                 .range(deps.storage, start, None, Order::Ascending)
                 .filter(|m| {
                     (name.is_none() || name.clone().unwrap() == m.as_ref().unwrap().clone().1.name)
