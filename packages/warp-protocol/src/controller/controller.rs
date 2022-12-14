@@ -10,7 +10,7 @@ use crate::controller::job::{
     QueryJobsMsg, QueryResolveJobConditionMsg, UpdateJobMsg,
 };
 use crate::controller::template::{
-    DeleteTemplateMsg, EditTemplateMsg, MsgTemplateResponse, MsgTemplatesResponse,
+    DeleteTemplateMsg, EditTemplateMsg, TemplateResponse, TemplatesResponse,
     QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg,
 };
 

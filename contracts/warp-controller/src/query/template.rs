@@ -4,7 +4,7 @@ use cosmwasm_std::{Deps, Env, MessageInfo, Order, StdError, StdResult};
 use cw_storage_plus::Bound;
 
 use warp_protocol::controller::template::{
-    MsgTemplateResponse, MsgTemplatesResponse, QueryTemplateMsg,
+    TemplateResponse, TemplatesResponse, QueryTemplateMsg,
     QueryTemplatesMsg,
 };
 
@@ -12,9 +12,9 @@ pub fn query_template(
     deps: Deps,
     _env: Env,
     data: QueryTemplateMsg,
-) -> StdResult<MsgTemplateResponse> {
+) -> StdResult<TemplateResponse> {
     let msg_template = TEMPLATES.load(deps.storage, data.id.u64())?;
-    Ok(MsgTemplateResponse {
+    Ok(TemplateResponse {
         template: msg_template,
     })
 }
@@ -24,7 +24,7 @@ pub fn query_templates(
     deps: Deps,
     env: Env,
     data: QueryTemplatesMsg,
-) -> StdResult<MsgTemplatesResponse> {
+) -> StdResult<TemplatesResponse> {
     if !data.valid_query() {
         return Err(StdError::generic_err(
             "Invalid query input. Must supply at most one of ids, name, or owner params.",
@@ -52,7 +52,7 @@ pub fn query_templates(
                 .template;
                 msg_templates.push(msg_template);
             }
-            return Ok(MsgTemplatesResponse {
+            return Ok(TemplatesResponse {
                 templates: msg_templates,
             });
         }
@@ -82,7 +82,7 @@ pub fn query_templates(
             for info in infos {
                 msg_templates.push(info.1);
             }
-            return Ok(MsgTemplatesResponse {
+            return Ok(TemplatesResponse {
                 templates: msg_templates,
             });
         }
