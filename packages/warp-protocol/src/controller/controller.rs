@@ -89,9 +89,9 @@ pub enum QueryMsg {
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
 
-    #[returns(MsgTemplateResponse)]
+    #[returns(TemplateResponse)]
     QueryTemplate(QueryTemplateMsg),
-    #[returns(MsgTemplatesResponse)]
+    #[returns(TemplatesResponse)]
     QueryTemplates(QueryTemplatesMsg),
 }
 
