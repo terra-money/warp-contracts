@@ -1,11 +1,9 @@
-
-use crate::state::{TEMPLATES, QUERY_PAGE_SIZE};
-use cosmwasm_std::{Deps, Env, MessageInfo, Order, StdError, StdResult};
+use crate::state::{QUERY_PAGE_SIZE, TEMPLATES};
+use cosmwasm_std::{Deps, Env, Order, StdError, StdResult};
 use cw_storage_plus::Bound;
 
 use warp_protocol::controller::template::{
-    TemplateResponse, TemplatesResponse, QueryTemplateMsg,
-    QueryTemplatesMsg,
+    QueryTemplateMsg, QueryTemplatesMsg, TemplateResponse, TemplatesResponse,
 };
 
 pub fn query_template(
@@ -44,12 +42,8 @@ pub fn query_templates(
             let mut msg_templates = vec![];
 
             for id in ids {
-                let msg_template = query_template(
-                    deps,
-                    env.clone(),
-                    QueryTemplateMsg { id },
-                )?
-                .template;
+                let msg_template =
+                    query_template(deps, env.clone(), QueryTemplateMsg { id })?.template;
                 msg_templates.push(msg_template);
             }
             return Ok(TemplatesResponse {

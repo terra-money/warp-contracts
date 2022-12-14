@@ -1,9 +1,9 @@
-use crate::state::{TEMPLATES, STATE};
+use crate::state::{STATE, TEMPLATES};
 use crate::ContractError;
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint64};
 use warp_protocol::controller::controller::State;
 use warp_protocol::controller::template::{
-    DeleteTemplateMsg, EditTemplateMsg, Template, SubmitTemplateMsg,
+    DeleteTemplateMsg, EditTemplateMsg, SubmitTemplateMsg, Template,
 };
 
 pub fn submit_template(
@@ -82,7 +82,7 @@ pub fn edit_template(
             msg: data.msg.unwrap_or(t.msg),
             formatted_str: data.formatted_str.unwrap_or(t.formatted_str),
             vars: data.vars.unwrap_or(t.vars),
-        })
+        }),
     })?;
 
     Ok(Response::new()

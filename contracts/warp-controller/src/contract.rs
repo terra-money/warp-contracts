@@ -1,6 +1,8 @@
 use crate::execute::{account, controller, job};
 use crate::query::condition;
 
+use crate::execute::template::{delete_template, edit_template, submit_template};
+use crate::query::template::{query_template, query_templates};
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::{query, state::STATE, ContractError};
 use cosmwasm_std::{
@@ -12,8 +14,6 @@ use warp_protocol::controller::controller::{
     Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State,
 };
 use warp_protocol::controller::job::{Job, JobStatus};
-use crate::execute::template::{delete_template, edit_template, submit_template};
-use crate::query::template::{query_templates, query_template};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
