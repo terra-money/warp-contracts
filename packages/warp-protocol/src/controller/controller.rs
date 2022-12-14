@@ -52,9 +52,9 @@ pub enum ExecuteMsg {
 
     UpdateConfig(UpdateConfigMsg),
 
-    SubmitMsgTemplate(SubmitTemplateMsg),
-    EditMsgTemplate(EditTemplateMsg),
-    DeleteMsgTemplate(DeleteTemplateMsg),
+    SubmitTemplate(SubmitTemplateMsg),
+    EditTemplate(EditTemplateMsg),
+    DeleteTemplate(DeleteTemplateMsg),
 }
 
 #[cw_serde]
@@ -90,9 +90,9 @@ pub enum QueryMsg {
     QueryConfig(QueryConfigMsg),
 
     #[returns(MsgTemplateResponse)]
-    QueryMsgTemplate(QueryTemplateMsg),
+    QueryTemplate(QueryTemplateMsg),
     #[returns(MsgTemplatesResponse)]
-    QueryMsgTemplates(QueryTemplatesMsg),
+    QueryTemplates(QueryTemplatesMsg),
 }
 
 #[cw_serde]

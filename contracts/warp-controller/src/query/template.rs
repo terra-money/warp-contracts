@@ -8,10 +8,9 @@ use warp_protocol::controller::template::{
     QueryTemplatesMsg,
 };
 
-pub fn query_msg_template(
+pub fn query_template(
     deps: Deps,
     _env: Env,
-    _info: MessageInfo,
     data: QueryTemplateMsg,
 ) -> StdResult<MsgTemplateResponse> {
     let msg_template = TEMPLATES.load(deps.storage, data.id.u64())?;
@@ -20,11 +19,10 @@ pub fn query_msg_template(
     })
 }
 
-pub fn query_msg_templates(
+pub fn query_templates(
     //todo: separate code into fns
     deps: Deps,
     env: Env,
-    info: MessageInfo,
     data: QueryTemplatesMsg,
 ) -> StdResult<MsgTemplatesResponse> {
     if !data.valid_query() {
@@ -46,10 +44,9 @@ pub fn query_msg_templates(
             let mut msg_templates = vec![];
 
             for id in ids {
-                let msg_template = query_msg_template(
+                let msg_template = query_template(
                     deps,
                     env.clone(),
-                    info.clone(),
                     QueryTemplateMsg { id },
                 )?
                 .template;
