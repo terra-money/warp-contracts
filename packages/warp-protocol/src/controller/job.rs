@@ -17,6 +17,19 @@ pub struct Job {
     pub reward: Uint128,
 }
 
+#[cw_serde]
+pub struct JobVar {
+    pub query: String,
+    pub selector: String,
+    pub kind: JobVarKind,
+}
+
+#[cw_serde]
+pub enum JobVarKind {
+    Query,
+    External
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, Display)]
 pub enum JobStatus {
     Pending,
