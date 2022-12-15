@@ -2,8 +2,8 @@ use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
 use crate::ContractError;
 use cosmwasm_std::{
-    to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn,
-    Response, SubMsg, Uint128, Uint64, WasmMsg,
+    to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
+    SubMsg, Uint128, Uint64, WasmMsg,
 };
 use warp_protocol::controller::controller::State;
 use warp_protocol::controller::job::{

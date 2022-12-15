@@ -80,12 +80,12 @@ impl QueryTemplatesMsg {
 }
 
 #[cw_serde]
-pub struct MsgTemplateResponse {
+pub struct TemplateResponse {
     pub template: Template,
 }
 
 #[cw_serde]
-pub struct MsgTemplatesResponse {
+pub struct TemplatesResponse {
     pub templates: Vec<Template>,
 }
 

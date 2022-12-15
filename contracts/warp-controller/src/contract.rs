@@ -1,6 +1,8 @@
 use crate::execute::{account, controller, job};
 use crate::query::condition;
 
+use crate::execute::template::{delete_template, edit_template, submit_template};
+use crate::query::template::{query_template, query_templates};
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::{query, state::STATE, ContractError};
 use cosmwasm_std::{
@@ -66,9 +68,9 @@ pub fn execute(
 
         ExecuteMsg::UpdateConfig(data) => controller::update_config(deps, env, info, data),
 
-        ExecuteMsg::SubmitMsgTemplate(_data) => unimplemented!(),
-        ExecuteMsg::EditMsgTemplate(_data) => unimplemented!(),
-        ExecuteMsg::DeleteMsgTemplate(_data) => unimplemented!(),
+        ExecuteMsg::SubmitTemplate(data) => submit_template(deps, env, info, data),
+        ExecuteMsg::EditTemplate(data) => edit_template(deps, env, info, data),
+        ExecuteMsg::DeleteTemplate(data) => delete_template(deps, env, info, data),
     }
 }
 
@@ -97,8 +99,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query::controller::query_config(deps, env, data)?)
         }
 
-        QueryMsg::QueryMsgTemplate(_data) => unimplemented!(),
-        QueryMsg::QueryMsgTemplates(_data) => unimplemented!(),
+        QueryMsg::QueryTemplate(data) => to_binary(&query_template(deps, env, data)?),
+        QueryMsg::QueryTemplates(data) => to_binary(&query_templates(deps, env, data)?),
     }
 }
 

@@ -1,32 +1,28 @@
-
-use crate::state::{TEMPLATES, QUERY_PAGE_SIZE};
-use cosmwasm_std::{Deps, Env, MessageInfo, Order, StdError, StdResult};
+use crate::state::{QUERY_PAGE_SIZE, TEMPLATES};
+use cosmwasm_std::{Deps, Env, Order, StdError, StdResult};
 use cw_storage_plus::Bound;
 
 use warp_protocol::controller::template::{
-    MsgTemplateResponse, MsgTemplatesResponse, QueryTemplateMsg,
-    QueryTemplatesMsg,
+    QueryTemplateMsg, QueryTemplatesMsg, TemplateResponse, TemplatesResponse,
 };
 
-pub fn query_msg_template(
+pub fn query_template(
     deps: Deps,
     _env: Env,
-    _info: MessageInfo,
     data: QueryTemplateMsg,
-) -> StdResult<MsgTemplateResponse> {
+) -> StdResult<TemplateResponse> {
     let msg_template = TEMPLATES.load(deps.storage, data.id.u64())?;
-    Ok(MsgTemplateResponse {
+    Ok(TemplateResponse {
         template: msg_template,
     })
 }
 
-pub fn query_msg_templates(
+pub fn query_templates(
     //todo: separate code into fns
     deps: Deps,
     env: Env,
-    info: MessageInfo,
     data: QueryTemplatesMsg,
-) -> StdResult<MsgTemplatesResponse> {
+) -> StdResult<TemplatesResponse> {
     if !data.valid_query() {
         return Err(StdError::generic_err(
             "Invalid query input. Must supply at most one of ids, name, or owner params.",
@@ -46,16 +42,11 @@ pub fn query_msg_templates(
             let mut msg_templates = vec![];
 
             for id in ids {
-                let msg_template = query_msg_template(
-                    deps,
-                    env.clone(),
-                    info.clone(),
-                    QueryTemplateMsg { id },
-                )?
-                .template;
+                let msg_template =
+                    query_template(deps, env.clone(), QueryTemplateMsg { id })?.template;
                 msg_templates.push(msg_template);
             }
-            return Ok(MsgTemplatesResponse {
+            return Ok(TemplatesResponse {
                 templates: msg_templates,
             });
         }
@@ -85,7 +76,7 @@ pub fn query_msg_templates(
             for info in infos {
                 msg_templates.push(info.1);
             }
-            return Ok(MsgTemplatesResponse {
+            return Ok(TemplatesResponse {
                 templates: msg_templates,
             });
         }
