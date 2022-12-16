@@ -33,6 +33,9 @@ pub enum TemplateVarKind {
     Int,
     Decimal,
     Bool,
+    Amount,
+    Asset,
+    Timestamp,
 }
 
 #[cw_serde]
