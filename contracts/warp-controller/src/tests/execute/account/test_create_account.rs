@@ -2,8 +2,7 @@ use crate::contract::{instantiate, reply};
 use crate::execute::account::create_account;
 use crate::tests::helpers::{create_warp_account, instantiate_warp};
 use crate::ContractError;
-use common::cw::testing::{mock_env, mock_info};
-use cosmwasm_std::testing::mock_dependencies;
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     coin, to_binary, Attribute, CosmosMsg, Event, Reply, ReplyOn, Response, SubMsg, SubMsgResponse,
     SubMsgResult, Uint128, Uint64, WasmMsg,
