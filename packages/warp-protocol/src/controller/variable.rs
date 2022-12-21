@@ -24,6 +24,7 @@ pub enum VariableValue {
 #[cw_serde]
 pub struct ExternalExpr {
     pub url: String,
+    pub selector: String,
 }
 
 // Variable is specified as a reference value (string) in form of $warp.variable.{name}
