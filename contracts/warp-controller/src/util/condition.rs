@@ -20,7 +20,7 @@ pub fn resolve_cond(deps: Deps, env: Env, cond: Condition) -> Result<bool, Contr
                     return Ok(false);
                 }
             }
-            return Ok(true);
+            Ok(true)
         }
         Condition::Or(conds) => {
             for cond in conds {
@@ -28,10 +28,10 @@ pub fn resolve_cond(deps: Deps, env: Env, cond: Condition) -> Result<bool, Contr
                     return Ok(true);
                 }
             }
-            return Ok(false);
+            Ok(false)
         }
         Condition::Not(cond) => Ok(!resolve_cond(deps, env, *cond)?),
-        Condition::Expr(expr) => Ok(resolve_expr(deps, env, expr)?),
+        Condition::Expr(expr) => Ok(resolve_expr(deps, env, *expr)?),
     }
 }
 
@@ -90,7 +90,7 @@ pub fn resolve_num_expr_int(
     expr: NumExprValue<i128, NumExprOp, IntFnOp>,
 ) -> Result<i128, ContractError> {
     let left = resolve_num_value_int(deps, env.clone(), *expr.left)?;
-    let right = resolve_num_value_int(deps, env.clone(), *expr.right)?;
+    let right = resolve_num_value_int(deps, env, *expr.right)?;
 
     match expr.op {
         NumExprOp::Sub => Ok(left.saturating_sub(right)),
@@ -144,7 +144,7 @@ pub fn resolve_num_expr_uint(
     expr: NumExprValue<Uint256, NumExprOp, IntFnOp>,
 ) -> Result<Uint256, ContractError> {
     let left = resolve_num_value_uint(deps, env.clone(), *expr.left)?;
-    let right = resolve_num_value_uint(deps, env.clone(), *expr.right)?;
+    let right = resolve_num_value_uint(deps, env, *expr.right)?;
 
     match expr.op {
         NumExprOp::Sub => Ok(left.saturating_sub(right)),
@@ -203,7 +203,7 @@ pub fn resolve_num_expr_decimal(
     expr: NumExprValue<Decimal256, NumExprOp, DecimalFnOp>,
 ) -> Result<Decimal256, ContractError> {
     let left = resolve_num_value_decimal(deps, env.clone(), *expr.left)?;
-    let right = resolve_num_value_decimal(deps, env.clone(), *expr.right)?;
+    let right = resolve_num_value_decimal(deps, env, *expr.right)?;
 
     match expr.op {
         NumExprOp::Sub => Ok(left.saturating_sub(right)),

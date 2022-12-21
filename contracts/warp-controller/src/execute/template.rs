@@ -16,7 +16,7 @@ pub fn submit_template(
         return Err(ContractError::NameTooLong {});
     }
 
-    if data.name.len() < 1 {
+    if data.name.is_empty() {
         return Err(ContractError::NameTooShort {});
     }
 
@@ -68,7 +68,7 @@ pub fn edit_template(
         return Err(ContractError::NameTooLong {});
     }
 
-    if data.name.is_some() && data.name.clone().unwrap().len() < 1 {
+    if data.name.is_some() && data.name.clone().unwrap().is_empty() {
         return Err(ContractError::NameTooShort {});
     }
 

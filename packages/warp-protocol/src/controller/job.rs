@@ -76,12 +76,12 @@ pub struct JobIndex {
 
 impl QueryJobsMsg {
     pub fn valid_query(&self) -> bool {
-        return (self.ids.is_some() as u8
+        (self.ids.is_some() as u8
             + (self.owner.is_some()
                 || self.name.is_some()
                 || self.job_status.is_some()
                 || self.condition_status.is_some()) as u8)
-            <= 1;
+            <= 1
     }
 }
 

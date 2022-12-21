@@ -15,7 +15,7 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            owner: deps.api.addr_validate(&msg.owner.clone())?,
+            owner: deps.api.addr_validate(&msg.owner)?,
             warp_addr: info.sender.clone(),
         },
     )?;

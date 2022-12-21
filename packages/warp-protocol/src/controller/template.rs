@@ -78,8 +78,8 @@ pub struct QueryTemplatesMsg {
 
 impl QueryTemplatesMsg {
     pub fn valid_query(&self) -> bool {
-        return (self.ids.is_some() as u8 + (self.owner.is_some() || self.name.is_some()) as u8)
-            <= 1;
+        (self.ids.is_some() as u8 + (self.owner.is_some() || self.name.is_some()) as u8)
+            <= 1
     }
 }
 

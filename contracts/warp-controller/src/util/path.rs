@@ -14,11 +14,7 @@ pub fn resolve_path(r: Ref, path: String) -> Result<Ref, ContractError> {
     while idx < path.len() {
         let co = path.chars().nth(idx);
 
-        if co.is_none() {
-            return Err(ContractError::ResolveError {});
-        } else {
-            let c = co.unwrap();
-
+        if let Some(c) = co {
             match c {
                 '$' => {
                     idx += 1;
@@ -50,6 +46,8 @@ pub fn resolve_path(r: Ref, path: String) -> Result<Ref, ContractError> {
                     idx += 1;
                 }
             }
+        } else {
+            return Err(ContractError::ResolveError {});
         }
     }
 
@@ -67,10 +65,10 @@ fn read_array_index(path: String, from: usize) -> Result<(usize, usize), Contrac
         curr.push(
             path.chars()
                 .nth(idx)
-                .ok_or(StdError::generic_err("Array indexing error"))?,
+                .ok_or_else (|| StdError::generic_err("Array indexing error"))?,
         );
         idx += 1;
     }
 
-    return Ok((idx + 1, str::parse::<usize>(curr.as_str())?));
+    Ok((idx + 1, str::parse::<usize>(curr.as_str())?))
 }

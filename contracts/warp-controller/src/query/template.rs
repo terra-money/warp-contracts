@@ -46,9 +46,9 @@ pub fn query_templates(
                     query_template(deps, env.clone(), QueryTemplateMsg { id })?.template;
                 msg_templates.push(msg_template);
             }
-            return Ok(TemplatesResponse {
+            Ok(TemplatesResponse {
                 templates: msg_templates,
-            });
+            })
         }
         QueryTemplatesMsg {
             start_after,
@@ -79,9 +79,9 @@ pub fn query_templates(
             for info in infos {
                 msg_templates.push(info.1);
             }
-            return Ok(TemplatesResponse {
+            Ok(TemplatesResponse {
                 templates: msg_templates,
-            });
+            })
         }
     }
 }

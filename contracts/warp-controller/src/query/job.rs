@@ -7,12 +7,11 @@ use warp_protocol::controller::job::{
 };
 
 pub fn query_job(deps: Deps, _env: Env, data: QueryJobMsg) -> StdResult<JobResponse> {
-    let job;
-    if FINISHED_JOBS().has(deps.storage, data.id.u64()) {
-        job = FINISHED_JOBS().load(deps.storage, data.id.u64())?
+    let job = if FINISHED_JOBS().has(deps.storage, data.id.u64()) {
+        FINISHED_JOBS().load(deps.storage, data.id.u64())?
     } else {
-        job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
-    }
+        PENDING_JOBS().load(deps.storage, data.id.u64())?
+    };
     Ok(JobResponse { job })
 }
 
@@ -29,15 +28,13 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
         QueryJobsMsg {
             ids: Some(ids),
             job_status,
-            condition_status,
             ..
-        } => query_jobs_by_ids(deps, env, ids, job_status, condition_status),
+        } => query_jobs_by_ids(deps, env, ids, job_status),
         QueryJobsMsg {
             active: _,
             name,
             owner,
             job_status,
-            condition_status,
             start_after,
             limit: _,
             ..
@@ -47,11 +44,7 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
             name,
             owner,
             job_status,
-            condition_status,
-            match start_after {
-                None => None,
-                Some(i) => Some((i._0.u128(), i._1.u64())),
-            },
+            start_after.map(|i| (i._0.u128(), i._1.u64())),
             Some(page_size as usize),
         ),
     }
@@ -62,7 +55,6 @@ pub fn query_jobs_by_ids(
     env: Env,
     ids: Vec<Uint64>,
     job_status: Option<JobStatus>,
-    condition_status: Option<bool>,
 ) -> StdResult<JobsResponse> {
     if ids.len() > QUERY_PAGE_SIZE as usize {
         return Err(StdError::generic_err(
@@ -80,12 +72,11 @@ pub fn query_jobs_by_ids(
 
         let job = query_job(deps, env.clone(), query_msg)?.job;
         if resolve_filters(
-            deps.clone(),
+            deps,
             env.clone(),
             job.clone(),
             None,
             None,
-            condition_status.clone(),
             job_status.clone(),
         ) {
             jobs.push(job)
@@ -103,24 +94,22 @@ pub fn query_jobs_by_reward(
     name: Option<String>,
     owner: Option<Addr>,
     job_status: Option<JobStatus>,
-    condition_status: Option<bool>,
     start_after: Option<(u128, u64)>,
     limit: Option<usize>,
 ) -> StdResult<JobsResponse> {
     let start = start_after.map(Bound::exclusive);
-    if job_status.clone().is_some() && job_status.clone().unwrap() != JobStatus::Pending {
+    if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
         let infos = FINISHED_JOBS()
             .idx
             .reward
             .range(deps.storage, None, start, Order::Descending)
             .filter(|h| {
                 resolve_filters(
-                    deps.clone(),
+                    deps,
                     env.clone(),
                     h.as_ref().unwrap().clone().1,
                     name.clone(),
                     owner.clone(),
-                    condition_status,
                     job_status.clone(),
                 )
             });
@@ -146,12 +135,11 @@ pub fn query_jobs_by_reward(
             .range(deps.storage, None, start, Order::Descending)
             .filter(|h| {
                 resolve_filters(
-                    deps.clone(),
+                    deps,
                     env.clone(),
                     h.as_ref().unwrap().clone().1,
                     name.clone(),
                     owner.clone(),
-                    condition_status,
                     job_status.clone(),
                 )
             });

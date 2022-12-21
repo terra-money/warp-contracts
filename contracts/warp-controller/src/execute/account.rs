@@ -21,7 +21,7 @@ pub fn create_account(
     }
 
     if ACCOUNTS().has(deps.storage, info.sender.clone()) {
-        let account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
+        let account = ACCOUNTS().load(deps.storage, info.sender)?;
         return Ok(Response::new()
             .add_attribute("action", "create_account")
             .add_attribute("owner", account.owner)

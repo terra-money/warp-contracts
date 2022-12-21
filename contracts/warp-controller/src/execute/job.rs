@@ -23,7 +23,7 @@ pub fn create_job(
         return Err(ContractError::NameTooLong {});
     }
 
-    if data.name.len() < 1 {
+    if data.name.is_empty() {
         return Err(ContractError::NameTooShort {});
     }
 
@@ -38,7 +38,7 @@ pub fn create_job(
 
     let account = match q {
         None => ACCOUNTS()
-            .load(deps.storage, info.sender.clone())
+            .load(deps.storage, info.sender)
             .map_err(|_e| ContractError::AccountDoesNotExist {})?,
         Some(q) => q.1,
     };
@@ -57,7 +57,7 @@ pub fn create_job(
             status: JobStatus::Pending,
             condition: data.condition.clone(),
             msgs,
-            reward: data.reward.clone(),
+            reward: data.reward,
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
@@ -118,7 +118,7 @@ pub fn delete_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
+    let account = ACCOUNTS().load(deps.storage, info.sender)?;
 
     PENDING_JOBS().remove(deps.storage, data.id.u64())?;
     let _new_job = FINISHED_JOBS().update(deps.storage, data.id.u64(), |h| match h {
@@ -130,7 +130,7 @@ pub fn delete_job(
             status: JobStatus::Cancelled,
             condition: job.condition,
             msgs: job.msgs,
-            reward: job.reward.clone(),
+            reward: job.reward,
         }),
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
     })?;
@@ -166,7 +166,7 @@ pub fn update_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
+    let account = ACCOUNTS().load(deps.storage, info.sender)?;
 
     let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
 
@@ -174,7 +174,7 @@ pub fn update_job(
         return Err(ContractError::NameTooLong {});
     }
 
-    if data.name.is_some() && data.name.clone().unwrap().len() < 1 {
+    if data.name.is_some() && data.name.clone().unwrap().is_empty() {
         return Err(ContractError::NameTooShort {});
     }
 
@@ -252,7 +252,7 @@ pub fn execute_job(
         return Err(ContractError::JobNotActive {});
     }
 
-    let resolution = resolve_cond(deps.as_ref(), env.clone(), job.condition.clone());
+    let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone());
 
     let mut attrs = vec![];
 
