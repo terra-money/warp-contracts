@@ -1,8 +1,8 @@
-use std::io::Cursor;
+use crate::util::condition::resolve_cond;
+use crate::util::path::resolve_path;
 use json_codec_wasm::ast::Ref;
 use json_codec_wasm::{Decoder, Encoder, Json};
-use crate::util::condition::resolve_cond;
-use crate::util::path::{resolve_path};
+use std::io::Cursor;
 
 #[test]
 fn test_vars() {

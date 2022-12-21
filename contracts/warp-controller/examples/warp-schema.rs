@@ -5,7 +5,8 @@ use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use warp_protocol::controller::{
     account::{AccountResponse, AccountsResponse},
     controller::{Config, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, SimulateResponse},
-    job::{JobResponse, JobsResponse}, template::{TemplateResponse, TemplatesResponse, Template},
+    job::{JobResponse, JobsResponse},
+    template::{Template, TemplateResponse, TemplatesResponse},
 };
 
 fn main() {
