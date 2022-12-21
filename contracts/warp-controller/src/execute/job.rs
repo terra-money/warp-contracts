@@ -190,7 +190,7 @@ pub fn update_job(
             },
             name: data.name.unwrap_or(job.name),
             status: job.status,
-            condition: data.condition.unwrap_or(job.condition),
+            condition: job.condition,
             msgs: job.msgs,
             reward: job.reward + added_reward,
         }),

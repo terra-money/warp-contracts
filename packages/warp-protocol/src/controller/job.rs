@@ -5,6 +5,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 
+use super::variable::Variable;
+
 #[cw_serde]
 pub struct Job {
     pub id: Uint64,
@@ -43,6 +45,7 @@ pub struct CreateJobMsg {
     pub name: String,
     pub condition: Condition,
     pub msgs: Vec<String>,
+    pub vars: Vec<Variable>,
     pub reward: Uint128,
 }
 
@@ -55,7 +58,6 @@ pub struct DeleteJobMsg {
 pub struct UpdateJobMsg {
     pub id: Uint64,
     pub name: Option<String>,
-    pub condition: Option<Condition>,
     pub added_reward: Option<Uint128>,
 }
 

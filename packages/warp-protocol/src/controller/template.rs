@@ -1,16 +1,18 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint64};
 
+use super::variable::Variable;
+
 //msg templates
 #[cw_serde]
 pub struct Template {
     pub id: Uint64,
     pub owner: Addr,
     pub name: String,
+    pub vars: Vec<Variable>,
     pub kind: TemplateKind,
     pub msg: String,
     pub formatted_str: String,
-    pub vars: Vec<TemplateVar>,
 }
 
 #[cw_serde]
@@ -20,31 +22,12 @@ pub enum TemplateKind {
 }
 
 #[cw_serde]
-pub struct TemplateVar {
-    pub name: String,
-    pub path: String,
-    pub kind: TemplateVarKind,
-}
-
-#[cw_serde]
-pub enum TemplateVarKind {
-    String,
-    Uint,
-    Int,
-    Decimal,
-    Bool,
-    Amount,
-    Asset,
-    Timestamp,
-}
-
-#[cw_serde]
 pub struct SubmitTemplateMsg {
     pub name: String,
     pub kind: TemplateKind,
     pub msg: String,
     pub formatted_str: String,
-    pub vars: Vec<TemplateVar>,
+    pub vars: Vec<Variable>,
 }
 
 #[cw_serde]
@@ -53,7 +36,7 @@ pub struct EditTemplateMsg {
     pub name: Option<String>,
     pub msg: Option<String>,
     pub formatted_str: Option<String>,
-    pub vars: Option<Vec<TemplateVar>>,
+    pub vars: Option<Vec<Variable>>,
 }
 
 #[cw_serde]
