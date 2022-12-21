@@ -43,10 +43,10 @@ pub fn create_job(
         Some(q) => q.1,
     };
 
-    let mut msgs = vec![];
-    for msg in data.msgs {
-        msgs.push(serde_json_wasm::from_str::<CosmosMsg>(msg.as_str())?)
-    }
+    // let mut msgs = vec![];
+    // for msg in data.msgs {
+    //     msgs.push(serde_json_wasm::from_str::<CosmosMsg>(msg.as_str())?)
+    // }
 
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
         None => Ok(Job {
@@ -56,8 +56,12 @@ pub fn create_job(
             name: data.name,
             status: JobStatus::Pending,
             condition: data.condition.clone(),
+<<<<<<< Updated upstream
             msgs,
             vars: data.vars,
+=======
+            msgs: data.msgs,
+>>>>>>> Stashed changes
             reward: data.reward.clone(),
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
