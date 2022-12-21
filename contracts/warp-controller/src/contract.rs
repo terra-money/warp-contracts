@@ -1,6 +1,8 @@
 use crate::execute::{account, controller, job};
 use crate::query::condition;
 
+use crate::execute::template::{delete_template, edit_template, submit_template};
+use crate::query::template::{query_template, query_templates};
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::{query, state::STATE, ContractError};
 use cosmwasm_std::{
@@ -8,10 +10,8 @@ use cosmwasm_std::{
     StdError, StdResult, SubMsgResult, Uint64,
 };
 use warp_protocol::controller::account::Account;
-use warp_protocol::controller::controller::{
-    Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State,
-};
 use warp_protocol::controller::job::{Job, JobStatus};
+use warp_protocol::controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -22,12 +22,13 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let state = State {
         current_job_id: Uint64::zero() + Uint64::one() * Uint64::pow(Uint64::new(1), 100),
+        current_template_id: Uint64::zero(),
     };
 
     let config = Config {
         owner: deps
             .api
-            .addr_validate(&msg.owner.unwrap_or(info.sender.to_string()))?,
+            .addr_validate(&msg.owner.unwrap_or_else(|| info.sender.to_string()))?,
         warp_account_code_id: msg.warp_account_code_id,
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
@@ -64,6 +65,10 @@ pub fn execute(
         ExecuteMsg::CreateAccount(_) => account::create_account(deps, env, info),
 
         ExecuteMsg::UpdateConfig(data) => controller::update_config(deps, env, info, data),
+
+        ExecuteMsg::SubmitTemplate(data) => submit_template(deps, env, info, data),
+        ExecuteMsg::EditTemplate(data) => edit_template(deps, env, info, data),
+        ExecuteMsg::DeleteTemplate(data) => delete_template(deps, env, info, data),
     }
 }
 
@@ -91,6 +96,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryConfig(data) => {
             to_binary(&query::controller::query_config(deps, env, data)?)
         }
+
+        QueryMsg::QueryTemplate(data) => to_binary(&query_template(deps, env, data)?),
+        QueryMsg::QueryTemplates(data) => to_binary(&query_templates(deps, env, data)?),
     }
 }
 
@@ -144,13 +152,13 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                 .ok_or_else(|| StdError::generic_err("cannot find `contract_addr` attribute"))?
                 .value;
 
-            if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner.clone())?) {
+            if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
                 return Err(ContractError::AccountAlreadyExists {});
             }
 
             ACCOUNTS().save(
                 deps.storage,
-                deps.api.addr_validate(&owner.clone())?,
+                deps.api.addr_validate(&owner)?,
                 &Account {
                     owner: deps.api.addr_validate(&owner.clone())?,
                     account: deps.api.addr_validate(&address)?,

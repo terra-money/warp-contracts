@@ -2,13 +2,13 @@ use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
 use crate::ContractError;
 use cosmwasm_std::{
-    to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Record, ReplyOn,
-    Response, SubMsg, Uint128, Uint64, WasmMsg,
+    to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
+    SubMsg, Uint128, Uint64, WasmMsg,
 };
-use warp_protocol::controller::controller::State;
 use warp_protocol::controller::job::{
     CreateJobMsg, DeleteJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
+use warp_protocol::controller::State;
 
 pub fn create_job(
     deps: DepsMut,
@@ -23,7 +23,7 @@ pub fn create_job(
         return Err(ContractError::NameTooLong {});
     }
 
-    if data.name.len() < 1 {
+    if data.name.is_empty() {
         return Err(ContractError::NameTooShort {});
     }
 
@@ -38,8 +38,8 @@ pub fn create_job(
 
     let account = match q {
         None => ACCOUNTS()
-            .load(deps.storage, info.sender.clone())
-            .map_err(|e| ContractError::AccountDoesNotExist {})?,
+            .load(deps.storage, info.sender)
+            .map_err(|_e| ContractError::AccountDoesNotExist {})?,
         Some(q) => q.1,
     };
 
@@ -57,7 +57,7 @@ pub fn create_job(
             status: JobStatus::Pending,
             condition: data.condition.clone(),
             msgs,
-            reward: data.reward.clone(),
+            reward: data.reward,
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
@@ -66,6 +66,7 @@ pub fn create_job(
         deps.storage,
         &State {
             current_job_id: state.current_job_id.saturating_add(Uint64::new(1)),
+            current_template_id: state.current_template_id,
         },
     )?;
 
@@ -76,7 +77,7 @@ pub fn create_job(
         //send reward to controller
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&warp_protocol::account::account::ExecuteMsg {
+            msg: to_binary(&warp_protocol::account::ExecuteMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
                     amount: vec![Coin::new((data.reward + fee).u128(), "uluna")],
@@ -117,7 +118,7 @@ pub fn delete_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
+    let account = ACCOUNTS().load(deps.storage, info.sender)?;
 
     PENDING_JOBS().remove(deps.storage, data.id.u64())?;
     let _new_job = FINISHED_JOBS().update(deps.storage, data.id.u64(), |h| match h {
@@ -129,7 +130,7 @@ pub fn delete_job(
             status: JobStatus::Cancelled,
             condition: job.condition,
             msgs: job.msgs,
-            reward: job.reward.clone(),
+            reward: job.reward,
         }),
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
     })?;
@@ -165,9 +166,17 @@ pub fn update_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
+    let account = ACCOUNTS().load(deps.storage, info.sender)?;
 
     let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
+
+    if data.name.is_some() && data.name.clone().unwrap().len() > 140 {
+        return Err(ContractError::NameTooLong {});
+    }
+
+    if data.name.is_some() && data.name.clone().unwrap().is_empty() {
+        return Err(ContractError::NameTooShort {});
+    }
 
     let job = PENDING_JOBS().update(deps.storage, data.id.u64(), |h| match h {
         None => Err(ContractError::JobDoesNotExist {}),
@@ -187,6 +196,8 @@ pub fn update_job(
         }),
     })?;
 
+    //todo: sanitize updates
+
     //assume reward.amount == warp token allowance
     let fee = added_reward * config.creation_fee_percentage / Uint128::new(100);
 
@@ -198,7 +209,7 @@ pub fn update_job(
         //send reward to controller
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&warp_protocol::account::account::ExecuteMsg {
+            msg: to_binary(&warp_protocol::account::ExecuteMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
                     amount: vec![Coin::new((added_reward + fee).u128(), "uluna")],
@@ -241,7 +252,7 @@ pub fn execute_job(
         return Err(ContractError::JobNotActive {});
     }
 
-    let resolution = resolve_cond(deps.as_ref(), env.clone(), job.condition.clone());
+    let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone());
 
     let mut attrs = vec![];
 
@@ -274,7 +285,7 @@ pub fn execute_job(
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&warp_protocol::account::account::ExecuteMsg {
+                msg: to_binary(&warp_protocol::account::ExecuteMsg {
                     msgs: job.msgs.clone(),
                 })?,
                 funds: vec![],

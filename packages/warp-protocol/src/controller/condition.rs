@@ -6,7 +6,7 @@ pub enum Condition {
     And(Vec<Box<Condition>>),
     Or(Vec<Box<Condition>>),
     Not(Box<Condition>),
-    Expr(Expr),
+    Expr(Box<Expr>),
 }
 
 #[cw_serde]
