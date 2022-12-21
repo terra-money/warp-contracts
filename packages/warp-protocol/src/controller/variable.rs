@@ -32,6 +32,6 @@ pub struct ExternalExpr {
 pub struct Variable {
     pub kind: VariableKind,
     pub name: String,
-    pub value: String,
+    pub value: Option<String>,
     pub default_value: VariableValue,
 }
