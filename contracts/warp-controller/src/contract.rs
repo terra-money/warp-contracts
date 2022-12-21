@@ -10,10 +10,8 @@ use cosmwasm_std::{
     StdError, StdResult, SubMsgResult, Uint64,
 };
 use warp_protocol::controller::account::Account;
-use warp_protocol::controller::{
-    Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State,
-};
 use warp_protocol::controller::job::{Job, JobStatus};
+use warp_protocol::controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

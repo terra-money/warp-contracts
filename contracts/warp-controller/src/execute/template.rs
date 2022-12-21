@@ -1,10 +1,10 @@
 use crate::state::{STATE, TEMPLATES};
 use crate::ContractError;
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint64};
-use warp_protocol::controller::State;
 use warp_protocol::controller::template::{
     DeleteTemplateMsg, EditTemplateMsg, SubmitTemplateMsg, Template,
 };
+use warp_protocol::controller::State;
 
 pub fn submit_template(
     deps: DepsMut,

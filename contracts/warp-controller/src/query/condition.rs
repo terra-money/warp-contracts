@@ -9,8 +9,7 @@ pub fn query_resolve_condition(
     env: Env,
     data: QueryResolveConditionMsg,
 ) -> StdResult<bool> {
-        resolve_cond(deps, env, data.condition)
-            .map_err(|e| StdError::generic_err(e.to_string()))
+    resolve_cond(deps, env, data.condition).map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 pub fn query_condition_active(

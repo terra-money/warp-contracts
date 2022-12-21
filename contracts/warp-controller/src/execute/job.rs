@@ -5,10 +5,10 @@ use cosmwasm_std::{
     to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
     SubMsg, Uint128, Uint64, WasmMsg,
 };
-use warp_protocol::controller::State;
 use warp_protocol::controller::job::{
     CreateJobMsg, DeleteJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
+use warp_protocol::controller::State;
 
 pub fn create_job(
     deps: DepsMut,

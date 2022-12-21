@@ -65,7 +65,7 @@ fn read_array_index(path: String, from: usize) -> Result<(usize, usize), Contrac
         curr.push(
             path.chars()
                 .nth(idx)
-                .ok_or_else (|| StdError::generic_err("Array indexing error"))?,
+                .ok_or_else(|| StdError::generic_err("Array indexing error"))?,
         );
         idx += 1;
     }
