@@ -367,9 +367,14 @@ pub fn resolve_query_expr_uint(
     let r = Ref::new(&value);
     let resolved = resolve_path(r, expr.selector)?;
 
-    Ok(Uint256::from_str(
-        resolved.string().ok_or(ContractError::DecodeError {})?,
-    )?)
+    let str_result = Uint256::from_str(resolved.string().ok_or(ContractError::DecodeError {})?);
+
+    let val = match str_result {
+        Ok(result) => result,
+        Err(_) => Uint256::from(resolved.u128().ok_or(ContractError::DecodeError {})?),
+    };
+
+    Ok(val)
 }
 
 pub fn resolve_query_expr_int(
