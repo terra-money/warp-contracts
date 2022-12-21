@@ -70,6 +70,7 @@ pub struct QueryTemplateMsg {
 pub struct QueryTemplatesMsg {
     pub ids: Option<Vec<Uint64>>,
     pub owner: Option<Addr>,
+    pub kind: Option<TemplateKind>,
     pub name: Option<String>,
     pub start_after: Option<Uint64>,
     pub limit: Option<u32>,

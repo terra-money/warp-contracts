@@ -55,6 +55,7 @@ pub fn query_templates(
             limit,
             name,
             owner,
+            kind,
             ..
         } => {
             let start = start_after.map(Bound::exclusive);
@@ -65,6 +66,8 @@ pub fn query_templates(
                     (name.is_none() || name.clone().unwrap() == m.as_ref().unwrap().clone().1.name)
                         && (owner.is_none()
                             || owner.clone().unwrap() == m.as_ref().unwrap().clone().1.owner)
+                        && (kind.is_none()
+                            || kind.clone().unwrap() == m.as_ref().unwrap().clone().1.kind)
                 });
             let infos = match limit {
                 None => infos
