@@ -11,7 +11,7 @@ fn test_modify_config_success() {
     let env = mock_env();
     let info = mock_info("vlad", &vec![coin(100, "uluna")]);
 
-    let instantiate_res = instantiate_warp(
+    let _instantiate_res = instantiate_warp(
         deps.as_mut(),
         env.clone(),
         info.clone(),
@@ -50,7 +50,7 @@ fn test_modify_config_unauthorized() {
     let env = mock_env();
     let info = mock_info("vlad", &vec![coin(100, "uluna")]);
 
-    let instantiate_res = instantiate_warp(
+    let _instantiate_res = instantiate_warp(
         deps.as_mut(),
         env.clone(),
         info.clone(),
@@ -83,7 +83,7 @@ fn test_modify_config_bad_percentages() {
     let env = mock_env();
     let info = mock_info("vlad", &vec![coin(100, "uluna")]);
 
-    let instantiate_res = instantiate_warp(
+    let _instantiate_res = instantiate_warp(
         deps.as_mut(),
         env.clone(),
         info.clone(),
