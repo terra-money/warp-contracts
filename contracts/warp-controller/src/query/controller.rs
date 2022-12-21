@@ -23,7 +23,6 @@ pub fn query_simulate_query(
             QueryExpr {
                 selector: "".to_string(),
                 query: data.query,
-                name: "".to_string(),
             },
         )
         .map_err(|e| StdError::generic_err(e.to_string()))?,

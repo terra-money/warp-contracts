@@ -94,7 +94,6 @@ pub enum Expr {
 pub struct QueryExpr {
     pub selector: String,
     pub query: QueryRequest<String>,
-    pub name: String,
 }
 
 #[cw_serde]
