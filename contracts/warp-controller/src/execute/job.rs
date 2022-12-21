@@ -57,6 +57,7 @@ pub fn create_job(
             status: JobStatus::Pending,
             condition: data.condition.clone(),
             msgs,
+            vars: data.vars,
             reward: data.reward.clone(),
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
@@ -130,6 +131,7 @@ pub fn delete_job(
             status: JobStatus::Cancelled,
             condition: job.condition,
             msgs: job.msgs,
+            vars: job.vars,
             reward: job.reward.clone(),
         }),
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
@@ -192,6 +194,7 @@ pub fn update_job(
             status: job.status,
             condition: job.condition,
             msgs: job.msgs,
+            vars: job.vars,
             reward: job.reward + added_reward,
         }),
     })?;
@@ -272,6 +275,7 @@ pub fn execute_job(
                 status: JobStatus::Failed,
                 condition: job.condition,
                 msgs: job.msgs,
+                vars: job.vars,
                 reward: job.reward,
             },
         )?;

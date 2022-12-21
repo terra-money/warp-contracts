@@ -16,6 +16,7 @@ pub struct Job {
     pub status: JobStatus,
     pub condition: Condition,
     pub msgs: Vec<CosmosMsg>,
+    pub vars: Vec<Variable>,
     pub reward: Uint128,
 }
 

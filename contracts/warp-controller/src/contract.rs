@@ -190,6 +190,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                     status: new_status,
                     condition: job.condition,
                     msgs: job.msgs,
+                    vars: job.vars,
                     reward: job.reward,
                 }),
                 Some(_) => Err(ContractError::JobAlreadyFinished {}),
