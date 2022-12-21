@@ -1,6 +1,5 @@
 use cosmwasm_schema::cw_serde;
-
-use super::condition::QueryExpr;
+use cosmwasm_std::QueryRequest;
 
 #[cw_serde]
 pub enum VariableKind {
@@ -25,6 +24,12 @@ pub enum VariableValue {
 pub struct ExternalExpr {
     pub url: String,
     pub selector: String,
+}
+
+#[cw_serde]
+pub struct QueryExpr {
+    pub selector: String,
+    pub query: QueryRequest<String>,
 }
 
 // Variable is specified as a reference value (string) in form of $warp.variable.{name}

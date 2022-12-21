@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Decimal256, QueryRequest, Uint256, Uint64};
+use cosmwasm_std::{Decimal256, Uint256, Uint64};
 
 #[cw_serde]
 pub enum Condition {
@@ -31,14 +31,14 @@ pub struct BlockExpr {
 #[cw_serde]
 pub enum Value<T> {
     Simple(T),
-    Query(QueryExpr),
+    Ref(String),
 }
 
 #[cw_serde]
 pub enum NumValue<T, ExprOp, FnOp> {
     Simple(T),
     Expr(NumExprValue<T, ExprOp, FnOp>),
-    Query(QueryExpr),
+    Ref(String),
     Fn(NumFnValue<T, ExprOp, FnOp>),
 }
 
@@ -87,13 +87,12 @@ pub enum Expr {
     Decimal(GenExpr<NumValue<Decimal256, NumExprOp, DecimalFnOp>, NumOp>),
     Timestamp(TimeExpr),
     BlockHeight(BlockExpr),
-    Bool(QueryExpr),
+    Bool(BoolExpr),
 }
 
 #[cw_serde]
-pub struct QueryExpr {
-    pub selector: String,
-    pub query: QueryRequest<String>,
+pub enum BoolExpr {
+    Ref(String),
 }
 
 #[cw_serde]
