@@ -35,7 +35,7 @@ fn test_create_account_success() {
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     admin: None,
                     code_id: 0,
-                    msg: to_binary(&warp_protocol::account::account::InstantiateMsg {
+                    msg: to_binary(&warp_protocol::account::InstantiateMsg {
                         owner: info.sender.to_string(),
                     })
                     .unwrap(),
@@ -91,7 +91,7 @@ fn test_create_account_exists() {
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     admin: None,
                     code_id: 0,
-                    msg: to_binary(&warp_protocol::account::account::InstantiateMsg {
+                    msg: to_binary(&warp_protocol::account::InstantiateMsg {
                         owner: info.sender.to_string(),
                     })
                     .unwrap(),

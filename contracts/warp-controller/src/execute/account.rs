@@ -33,7 +33,7 @@ pub fn create_account(
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
             admin: None,
             code_id: config.warp_account_code_id.u64(),
-            msg: to_binary(&warp_protocol::account::account::InstantiateMsg {
+            msg: to_binary(&warp_protocol::account::InstantiateMsg {
                 owner: info.sender.to_string(),
             })?,
             funds: vec![],

@@ -3,7 +3,7 @@ use crate::tests::helpers::instantiate_warp;
 use crate::ContractError;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coin, Response, Uint128, Uint64};
-use warp_protocol::controller::controller::UpdateConfigMsg;
+use warp_protocol::controller::UpdateConfigMsg;
 
 #[test]
 fn test_modify_config_success() {

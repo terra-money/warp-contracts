@@ -3,7 +3,7 @@ use crate::ContractError;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
-use warp_protocol::account::account::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
+use warp_protocol::account::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

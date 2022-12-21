@@ -10,7 +10,7 @@ use cosmwasm_std::{
     StdError, StdResult, SubMsgResult, Uint64,
 };
 use warp_protocol::controller::account::Account;
-use warp_protocol::controller::controller::{
+use warp_protocol::controller::{
     Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State,
 };
 use warp_protocol::controller::job::{Job, JobStatus};
