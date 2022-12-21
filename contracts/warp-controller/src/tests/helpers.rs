@@ -7,7 +7,6 @@ use cosmwasm_std::{
     SubMsgResult, Uint128, Uint64,
 };
 
-
 use warp_protocol::controller::controller::InstantiateMsg;
 
 pub fn instantiate_warp(
