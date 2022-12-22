@@ -1,4 +1,4 @@
-use crate::state::{STATE, TEMPLATES};
+use crate::state::{ACCOUNTS, STATE, TEMPLATES};
 use crate::ContractError;
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint64};
 use warp_protocol::controller::template::{
@@ -12,6 +12,10 @@ pub fn submit_template(
     info: MessageInfo,
     data: SubmitTemplateMsg,
 ) -> Result<Response, ContractError> {
+    if !ACCOUNTS().has(deps.storage, info.sender.clone()) {
+        return Err(ContractError::AccountDoesNotExist {});
+    }
+
     if data.name.len() > 140 {
         return Err(ContractError::NameTooLong {});
     }
