@@ -34,11 +34,11 @@ pub struct ExternalExpr {
 
 #[cw_serde]
 pub enum Method {
-    GET,
-    POST,
-    PUT,
-    PATCH,
-    DELETE
+    Get,
+    Post,
+    Put,
+    Patch,
+    Delete
 }
 
 #[cw_serde]
