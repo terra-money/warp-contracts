@@ -24,8 +24,21 @@ pub enum VariableValue {
 
 #[cw_serde]
 pub struct ExternalExpr {
+    pub name: String,
     pub url: String,
+    pub method: Option<Method>,
+    pub headers: Option<Vec<String>>,
+    pub body: Option<String>,
     pub selector: String,
+}
+
+#[cw_serde]
+pub enum Method {
+    GET,
+    POST,
+    PUT,
+    PATCH,
+    DELETE
 }
 
 #[cw_serde]
@@ -70,7 +83,7 @@ pub struct UpdateFn {
 pub struct Variable {
     pub kind: VariableKind,
     pub name: String,
-    pub value: Option<String>,
+    pub value: VariableValue,
     pub update_fn: Option<UpdateFn>,
-    pub default_value: VariableValue,
+    pub default_value: Option<String>,
 }

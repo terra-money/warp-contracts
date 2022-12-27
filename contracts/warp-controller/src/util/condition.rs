@@ -80,9 +80,9 @@ fn resolve_ref_int(
     vars: &Vec<Variable>
 ) -> Result<i128, ContractError> {
     let var = get_var(r, vars)?;
-    let res = match var.value.clone() {
+    let res = match var.default_value.clone() {
         None => {
-            match var.default_value.clone() {
+            match var.value.clone() {
                 VariableValue::Static(s) => str::parse::<i128>(s.as_str())?,
                 VariableValue::Query(q) => resolve_query_expr_int(deps, env, q)?,
                 VariableValue::External(_) => return Err(ContractError::Unauthorized {})//todo: err
@@ -160,9 +160,9 @@ fn resolve_ref_uint(
     vars: &Vec<Variable>
 ) -> Result<Uint256, ContractError> {
     let var = get_var(r, vars)?;
-    let res = match var.value.clone() {
+    let res = match var.default_value.clone() {
         None => {
-            match var.default_value.clone() {
+            match var.value.clone() {
                 VariableValue::Static(s) => Uint256::from_str(s.as_str())?,
                 VariableValue::Query(q) => resolve_query_expr_uint(deps, env, q)?,
                 VariableValue::External(_) => return Err(ContractError::Unauthorized {})//todo: err
@@ -240,9 +240,9 @@ fn resolve_ref_decimal(
     vars: &Vec<Variable>
 ) -> Result<Decimal256, ContractError> {
     let var = get_var(r, vars)?;
-    let res = match var.value.clone() {
+    let res = match var.default_value.clone() {
         None => {
-            match var.default_value.clone() {
+            match var.value.clone() {
                 VariableValue::Static(s) => Decimal256::from_str(s.as_str())?,
                 VariableValue::Query(q) => resolve_query_expr_decimal(deps, env, q)?,
                 VariableValue::External(_) => return Err(ContractError::Unauthorized {})//todo: err
@@ -398,9 +398,9 @@ fn resolve_ref_string(
     vars: &Vec<Variable>
 ) -> Result<String, ContractError> {
     let var = get_var(r, vars)?;
-    let res = match var.value.clone() {
+    let res = match var.default_value.clone() {
         None => {
-            match var.default_value.clone() {
+            match var.value.clone() {
                 VariableValue::Static(s) => s,
                 VariableValue::Query(q) => resolve_query_expr_string(deps, env, q)?,
                 VariableValue::External(_) => return Err(ContractError::Unauthorized {})//todo: err
@@ -464,9 +464,9 @@ fn resolve_ref_bool(
 ) -> Result<bool, ContractError> {
 
     let var = get_var(r, vars)?;
-    let res = match var.value.clone() {
+    let res = match var.default_value.clone() {
         None => {
-            match var.default_value.clone() {
+            match var.value.clone() {
                 VariableValue::Static(s) => str::parse::<bool>(s.as_str())?,
                 VariableValue::Query(q) => resolve_query_expr_bool(deps, env, q)?,
                 VariableValue::External(_) => return Err(ContractError::Unauthorized {})//todo: err
