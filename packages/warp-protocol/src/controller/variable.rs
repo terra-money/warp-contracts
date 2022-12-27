@@ -80,10 +80,35 @@ pub struct UpdateFn {
 // Variable is specified as a reference value (string) in form of $warp.variable.{name}
 // - variables are supplied along with the input (msg, query, template)
 #[cw_serde]
-pub struct Variable {
+pub enum Variable {
+    Static(StaticVariable),
+    External(ExternalVariable),
+    Query(QueryVariable)
+}
+
+#[cw_serde]
+pub struct StaticVariable {
     pub kind: VariableKind,
     pub name: String,
-    pub value: VariableValue,
+    pub value: Option<String>,
     pub update_fn: Option<UpdateFn>,
-    pub default_value: Option<String>,
+    pub default_value: String,
+}
+
+#[cw_serde]
+pub struct ExternalVariable {
+    pub kind: VariableKind,
+    pub name: String,
+    pub value: Option<String>,
+    pub update_fn: Option<UpdateFn>,
+    pub default_value: ExternalExpr,
+}
+
+#[cw_serde]
+pub struct QueryVariable {
+    pub kind: VariableKind,
+    pub name: String,
+    pub value: Option<String>,
+    pub update_fn: Option<UpdateFn>,
+    pub default_value: QueryExpr,
 }
