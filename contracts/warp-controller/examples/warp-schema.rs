@@ -4,9 +4,9 @@ use std::fs::create_dir_all;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use warp_protocol::controller::{
     account::{AccountResponse, AccountsResponse},
-    controller::{Config, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, SimulateResponse},
     job::{JobResponse, JobsResponse},
     template::{Template, TemplateResponse, TemplatesResponse},
+    QueryMsg, {Config, ConfigResponse, ExecuteMsg, InstantiateMsg, SimulateResponse},
 };
 
 fn main() {

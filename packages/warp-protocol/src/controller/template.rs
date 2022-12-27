@@ -53,6 +53,7 @@ pub struct QueryTemplateMsg {
 pub struct QueryTemplatesMsg {
     pub ids: Option<Vec<Uint64>>,
     pub owner: Option<Addr>,
+    pub kind: Option<TemplateKind>,
     pub name: Option<String>,
     pub start_after: Option<Uint64>,
     pub limit: Option<u32>,
@@ -60,8 +61,7 @@ pub struct QueryTemplatesMsg {
 
 impl QueryTemplatesMsg {
     pub fn valid_query(&self) -> bool {
-        return (self.ids.is_some() as u8 + (self.owner.is_some() || self.name.is_some()) as u8)
-            <= 1;
+        (self.ids.is_some() as u8 + (self.owner.is_some() || self.name.is_some()) as u8) <= 1
     }
 }
 

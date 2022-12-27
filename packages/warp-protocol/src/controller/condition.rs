@@ -1,12 +1,13 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, Uint256, Uint64};
+use crate::controller::variable::Variable;
 
 #[cw_serde]
 pub enum Condition {
     And(Vec<Box<Condition>>),
     Or(Vec<Box<Condition>>),
     Not(Box<Condition>),
-    Expr(Expr),
+    Expr(Box<Expr>),
 }
 
 #[cw_serde]
@@ -87,13 +88,13 @@ pub enum Expr {
     Decimal(GenExpr<NumValue<Decimal256, NumExprOp, DecimalFnOp>, NumOp>),
     Timestamp(TimeExpr),
     BlockHeight(BlockExpr),
-    Bool(BoolExpr),
+    Bool(String), //ref
 }
 
-#[cw_serde]
-pub enum BoolExpr {
-    Ref(String),
-}
+// #[cw_serde]
+// pub enum BoolExpr {
+//     Ref(String),
+// }
 
 #[cw_serde]
 pub enum NumOp {
@@ -123,4 +124,5 @@ pub enum StringOp {
 #[cw_serde]
 pub struct QueryResolveConditionMsg {
     pub condition: Condition,
+    pub vars: Vec<Variable>
 }

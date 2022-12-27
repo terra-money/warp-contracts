@@ -6,9 +6,8 @@ use cosmwasm_std::{
     Attribute, DepsMut, Env, Event, MessageInfo, OwnedDeps, Reply, Response, SubMsgResponse,
     SubMsgResult, Uint128, Uint64,
 };
-use std::fmt::format;
-use std::ops::Add;
-use warp_protocol::controller::controller::InstantiateMsg;
+
+use warp_protocol::controller::InstantiateMsg;
 
 pub fn instantiate_warp(
     deps: DepsMut,
@@ -32,7 +31,7 @@ pub fn instantiate_warp(
 }
 
 pub fn create_warp_account(
-    mut deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier>,
+    deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier>,
     env: Env,
     info: MessageInfo,
     account_id: Uint64,

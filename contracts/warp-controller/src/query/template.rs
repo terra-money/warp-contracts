@@ -46,15 +46,16 @@ pub fn query_templates(
                     query_template(deps, env.clone(), QueryTemplateMsg { id })?.template;
                 msg_templates.push(msg_template);
             }
-            return Ok(TemplatesResponse {
+            Ok(TemplatesResponse {
                 templates: msg_templates,
-            });
+            })
         }
         QueryTemplatesMsg {
             start_after,
             limit,
             name,
             owner,
+            kind,
             ..
         } => {
             let start = start_after.map(Bound::exclusive);
@@ -65,6 +66,8 @@ pub fn query_templates(
                     (name.is_none() || name.clone().unwrap() == m.as_ref().unwrap().clone().1.name)
                         && (owner.is_none()
                             || owner.clone().unwrap() == m.as_ref().unwrap().clone().1.owner)
+                        && (kind.is_none()
+                            || kind.clone().unwrap() == m.as_ref().unwrap().clone().1.kind)
                 });
             let infos = match limit {
                 None => infos
@@ -76,9 +79,9 @@ pub fn query_templates(
             for info in infos {
                 msg_templates.push(info.1);
             }
-            return Ok(TemplatesResponse {
+            Ok(TemplatesResponse {
                 templates: msg_templates,
-            });
+            })
         }
     }
 }

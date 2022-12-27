@@ -10,10 +10,8 @@ use cosmwasm_std::{
     StdError, StdResult, SubMsgResult, Uint64,
 };
 use warp_protocol::controller::account::Account;
-use warp_protocol::controller::controller::{
-    Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State,
-};
 use warp_protocol::controller::job::{Job, JobStatus};
+use warp_protocol::controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -30,7 +28,7 @@ pub fn instantiate(
     let config = Config {
         owner: deps
             .api
-            .addr_validate(&msg.owner.unwrap_or(info.sender.to_string()))?,
+            .addr_validate(&msg.owner.unwrap_or_else(|| info.sender.to_string()))?,
         warp_account_code_id: msg.warp_account_code_id,
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
@@ -154,13 +152,13 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                 .ok_or_else(|| StdError::generic_err("cannot find `contract_addr` attribute"))?
                 .value;
 
-            if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner.clone())?) {
+            if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
                 return Err(ContractError::AccountAlreadyExists {});
             }
 
             ACCOUNTS().save(
                 deps.storage,
-                deps.api.addr_validate(&owner.clone())?,
+                deps.api.addr_validate(&owner)?,
                 &Account {
                     owner: deps.api.addr_validate(&owner.clone())?,
                     account: deps.api.addr_validate(&address)?,

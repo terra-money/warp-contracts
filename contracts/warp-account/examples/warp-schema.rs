@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use warp_protocol::{
-    account::account::{Config, ExecuteMsg, InstantiateMsg},
+    account::{Config, ExecuteMsg, InstantiateMsg},
     controller::{
         account::{AccountResponse, AccountsResponse},
         job::{JobResponse, JobsResponse},

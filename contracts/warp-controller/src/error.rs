@@ -1,6 +1,7 @@
 use crate::ContractError::{CustomError, DecodeError, DeserializationError, SerializationError};
 use cosmwasm_std::{DivideByZeroError, StdError};
 use std::num::ParseIntError;
+use std::str::ParseBoolError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -110,6 +111,14 @@ impl From<ParseIntError> for ContractError {
     fn from(_: ParseIntError) -> Self {
         CustomError {
             val: "Parse int error".to_string(),
+        }
+    }
+}
+
+impl From<ParseBoolError> for ContractError {
+    fn from(_: ParseBoolError) -> Self {
+        CustomError {
+            val: "Parse bool error".to_string(),
         }
     }
 }

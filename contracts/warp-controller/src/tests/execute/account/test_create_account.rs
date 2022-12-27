@@ -1,14 +1,9 @@
-use crate::contract::{instantiate, reply};
-use crate::execute::account::create_account;
 use crate::tests::helpers::{create_warp_account, instantiate_warp};
 use crate::ContractError;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    coin, to_binary, Attribute, CosmosMsg, Event, Reply, ReplyOn, Response, SubMsg, SubMsgResponse,
-    SubMsgResult, Uint128, Uint64, WasmMsg,
+    coin, to_binary, CosmosMsg, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
 };
-use std::borrow::BorrowMut;
-use warp_protocol::controller::controller::InstantiateMsg;
 
 #[test]
 fn test_create_account_success() {
@@ -16,7 +11,7 @@ fn test_create_account_success() {
     let env = mock_env();
     let info = mock_info("vlad", &vec![coin(100, "uluna")]);
 
-    let instantiate_res = instantiate_warp(
+    let _instantiate_res = instantiate_warp(
         deps.as_mut(),
         env.clone(),
         info.clone(),
@@ -40,7 +35,7 @@ fn test_create_account_success() {
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     admin: None,
                     code_id: 0,
-                    msg: to_binary(&warp_protocol::account::account::InstantiateMsg {
+                    msg: to_binary(&warp_protocol::account::InstantiateMsg {
                         owner: info.sender.to_string(),
                     })
                     .unwrap(),
@@ -96,7 +91,7 @@ fn test_create_account_exists() {
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     admin: None,
                     code_id: 0,
-                    msg: to_binary(&warp_protocol::account::account::InstantiateMsg {
+                    msg: to_binary(&warp_protocol::account::InstantiateMsg {
                         owner: info.sender.to_string(),
                     })
                     .unwrap(),

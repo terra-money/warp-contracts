@@ -15,29 +15,9 @@ pub struct Job {
     pub name: String,
     pub status: JobStatus,
     pub condition: Condition,
-<<<<<<< Updated upstream
-    pub msgs: Vec<CosmosMsg>,
+    pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
     pub reward: Uint128,
-}
-
-=======
-    pub msgs: Vec<JobMsg>,
-    pub reward: Uint128,
-}
-
-#[cw_serde]
-pub struct JobMsg {
-    pub msg: String,
-    pub vars: Option<Vec<JobVar>>
-}
-
-#[cw_serde]
-pub struct JobVar {
-    pub value: String,
-    pub selector: String,
-    pub kind: JobVarKind,
-    pub msg_string_index: Uint64,
 }
 
 #[cw_serde]
@@ -46,7 +26,6 @@ pub enum JobVarKind {
     External
 }
 
->>>>>>> Stashed changes
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, Display)]
 pub enum JobStatus {
     Pending,
@@ -59,12 +38,8 @@ pub enum JobStatus {
 pub struct CreateJobMsg {
     pub name: String,
     pub condition: Condition,
-<<<<<<< Updated upstream
     pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
-=======
-    pub msgs: Vec<JobMsg>,
->>>>>>> Stashed changes
     pub reward: Uint128,
 }
 
@@ -110,12 +85,12 @@ pub struct JobIndex {
 
 impl QueryJobsMsg {
     pub fn valid_query(&self) -> bool {
-        return (self.ids.is_some() as u8
+        (self.ids.is_some() as u8
             + (self.owner.is_some()
                 || self.name.is_some()
                 || self.job_status.is_some()
                 || self.condition_status.is_some()) as u8)
-            <= 1;
+            <= 1
     }
 }
 
