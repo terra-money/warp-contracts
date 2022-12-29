@@ -18,7 +18,12 @@ pub fn hydrate_msgs(msgs: Vec<String>) -> Result<Vec<CosmosMsg>, ContractError> 
 
 pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, ContractError> {
     for var in vars {
-        if var.name == name {
+        let n = match var {
+            Variable::Static(v) => v.name.clone(),
+            Variable::External(v) => v.name.clone(),
+            Variable::Query(v) => v.name.clone(),
+        };
+        if n == name {
             return Ok(var)
         }
     }
