@@ -58,6 +58,7 @@ pub struct UpdateJobMsg {
 #[cw_serde]
 pub struct ExecuteJobMsg {
     pub id: Uint64,
+    pub external_inputs: Option<Vec<String>>,
 }
 
 #[cw_serde]

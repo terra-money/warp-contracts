@@ -286,12 +286,13 @@ pub fn execute_job(
         if !resolution? {
             return Err(ContractError::JobNotActive {});
         }
+        
         submsgs.push(SubMsg {
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&warp_protocol::account::ExecuteMsg {
-                    msgs: hydrate_msgs(job.msgs.clone())?,
+                    msgs: hydrate_msgs(job.msgs.clone(), job.vars.clone())?,
                 })?,
                 funds: vec![],
             }),

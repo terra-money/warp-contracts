@@ -84,7 +84,10 @@ fn resolve_ref_int(
         Variable::Static(s) => {
             match s.value.clone() {
                 None => {
-                    str::parse::<i128>(s.default_value.as_str())?
+                    match s.default_value.clone() {
+                        None => return Err(ContractError::Unauthorized {}),
+                        Some(s) => str::parse::<i128>(s.as_str())?
+                    }
                 }
                 Some(v) => {
                     str::parse::<i128>(v.as_str())?
@@ -92,15 +95,7 @@ fn resolve_ref_int(
             }
         },
         Variable::Query(q) => {
-            match q.value.clone() {
-                None => {
-                    resolve_query_expr_int(deps, env, q.default_value.clone())?
-                }
-                Some(q) => {
-                    resolve_query_expr_int(deps, env, q.clone())?
-                }
-            }
-
+            resolve_query_expr_int(deps, env, q.call_fn.clone())?
         },
         Variable::External(_) => return Err(ContractError::Unauthorized {})//todo: err
     };
@@ -177,26 +172,22 @@ fn resolve_ref_uint(
         Variable::Static(s) => {
             match s.value.clone() {
                 None => {
-                    Uint256::from_str(s.default_value.as_str())?
+                    match s.default_value.clone() {
+                        None => return Err(ContractError::Unauthorized {}),
+                        Some(s) => Uint256::from_str(&s)?
+                    }
                 }
-                Some(v) => {
-                    Uint256::from_str(v.as_str())?
+                Some(s) => {
+                    Uint256::from_str(&s)?
                 }
             }
         },
         Variable::Query(q) => {
-            match q.value.clone() {
-                None => {
-                    resolve_query_expr_uint(deps, env, q.default_value.clone())?
-                }
-                Some(q) => {
-                    resolve_query_expr_uint(deps, env, q.clone())?
-                }
-            }
-
+            resolve_query_expr_uint(deps, env, q.call_fn.clone())?
         },
         Variable::External(_) => return Err(ContractError::Unauthorized {})//todo: err
     };
+
     Ok(res)
 }
 
@@ -269,26 +260,22 @@ fn resolve_ref_decimal(
         Variable::Static(s) => {
             match s.value.clone() {
                 None => {
-                    Decimal256::from_str(s.default_value.as_str())?
+                    match s.default_value.clone() {
+                        None => return Err(ContractError::Unauthorized {}),
+                        Some(s) => Decimal256::from_str(&s)?
+                    }
                 }
-                Some(v) => {
-                    Decimal256::from_str(v.as_str())?
+                Some(s) => {
+                    Decimal256::from_str(&s)?
                 }
             }
         },
         Variable::Query(q) => {
-            match q.value.clone() {
-                None => {
-                    resolve_query_expr_decimal(deps, env, q.default_value.clone())?
-                }
-                Some(q) => {
-                    resolve_query_expr_decimal(deps, env, q.clone())?
-                }
-            }
-
+            resolve_query_expr_decimal(deps, env, q.call_fn.clone())?
         },
         Variable::External(_) => return Err(ContractError::Unauthorized {})//todo: err
     };
+
     Ok(res)
 }
 
@@ -439,26 +426,22 @@ fn resolve_ref_string(
         Variable::Static(s) => {
             match s.value.clone() {
                 None => {
-                    s.default_value.clone()
+                    match s.default_value.clone() {
+                        None => return Err(ContractError::Unauthorized {}),
+                        Some(s) => s
+                    }
                 }
-                Some(v) => {
-                    v
+                Some(s) => {
+                    s
                 }
             }
         },
         Variable::Query(q) => {
-            match q.value.clone() {
-                None => {
-                    resolve_query_expr_string(deps, env, q.default_value.clone())?
-                }
-                Some(q) => {
-                    resolve_query_expr_string(deps, env, q.clone())?
-                }
-            }
-
+            resolve_query_expr_string(deps, env, q.call_fn.clone())?
         },
         Variable::External(_) => return Err(ContractError::Unauthorized {})//todo: err
     };
+
     Ok(res)
 }
 
@@ -517,15 +500,7 @@ fn resolve_ref_bool(
     let res = match var {
         Variable::Static(s) => return Err(ContractError::Unauthorized {}),
         Variable::Query(q) => {
-            match q.value.clone() {
-                None => {
-                    resolve_query_expr_bool(deps, env, q.default_value.clone())?
-                }
-                Some(q) => {
-                    resolve_query_expr_bool(deps, env, q.clone())?
-                }
-            }
-
+            resolve_query_expr_bool(deps, env, q.call_fn.clone())?
         },
         Variable::External(_) => return Err(ContractError::Unauthorized {})//todo: err
     };

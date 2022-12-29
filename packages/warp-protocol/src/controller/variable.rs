@@ -92,23 +92,25 @@ pub struct StaticVariable {
     pub name: String,
     pub value: Option<String>,
     pub update_fn: Option<UpdateFn>,
-    pub default_value: String,
+    pub default_value: Option<String>,
 }
 
 #[cw_serde]
 pub struct ExternalVariable {
     pub kind: VariableKind,
     pub name: String,
-    pub value: Option<ExternalExpr>,
+    pub call_fn: ExternalExpr,
+    pub value: Option<String>,
     pub update_fn: Option<UpdateFn>,
-    pub default_value: ExternalExpr,
+    pub default_value: Option<String>,
 }
 
 #[cw_serde]
 pub struct QueryVariable {
     pub kind: VariableKind,
     pub name: String,
-    pub value: Option<QueryExpr>,
+    pub call_fn: QueryExpr,
+    pub value: Option<String>,
     pub update_fn: Option<UpdateFn>,
-    pub default_value: QueryExpr,
+    pub default_value: Option<String>,
 }
