@@ -132,12 +132,6 @@ fn test_create_account_by_account() {
 
     // Get address of warp account just created and assign it as the sender of next create_account call
     let reply_res_first_clone = reply_res_first.unwrap().clone();
-    let _attr_action = reply_res_first_clone
-        .attributes
-        .iter()
-        .find(|attr| attr.key == "action" && attr.value == "save_account")
-        .ok_or_else(|| StdError::generic_err("cannot find `save_account` event"))
-        .unwrap();
     let attr_warp_account_address = reply_res_first_clone
         .attributes
         .iter()
