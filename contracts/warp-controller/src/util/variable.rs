@@ -1,37 +1,45 @@
-use std::fmt::format;
+use crate::util::condition::{
+    resolve_query_expr_bool, resolve_query_expr_decimal,
+    resolve_query_expr_int, resolve_query_expr_string, resolve_query_expr_uint,
+};
+use crate::ContractError;
 use cosmwasm_std::{CosmosMsg, Deps, Env};
+
 use warp_protocol::controller::job::ExternalInput;
 use warp_protocol::controller::variable::{Variable, VariableKind};
-use crate::ContractError;
-use crate::util::condition::{resolve_query_expr, resolve_query_expr_bool, resolve_query_expr_decimal, resolve_query_expr_int, resolve_query_expr_string, resolve_query_expr_uint};
 
-pub fn hydrate_vars(deps: Deps, env: Env, vars: Vec<Variable>, external_inputs: Option<Vec<ExternalInput>>) -> Result<Vec<Variable>, ContractError> {
+pub fn hydrate_vars(
+    deps: Deps,
+    env: Env,
+    vars: Vec<Variable>,
+    external_inputs: Option<Vec<ExternalInput>>,
+) -> Result<Vec<Variable>, ContractError> {
     let mut hydrated_vars = vec![];
 
-    for mut var in vars {
+    for var in vars {
         let hydrated_var = match var {
             Variable::Static(v) => {
                 if v.value.is_none() && v.default_value.is_none() {
-                    return Err(ContractError::Unauthorized {})
+                    return Err(ContractError::Unauthorized {});
                 }
                 Variable::Static(v)
-            },
+            }
             Variable::External(mut v) => {
                 match external_inputs {
                     None => {
                         if v.value.is_none() && v.default_value.is_none() {
-                            return Err(ContractError::Unauthorized {})
+                            return Err(ContractError::Unauthorized {});
                         }
                         Variable::External(v)
-                    },
+                    }
                     Some(ref input) => {
                         let idx = input.iter().position(|i| i.name == v.name);
                         v.value = match idx {
                             None => return Err(ContractError::Unauthorized {}), //todo: err
-                            Some(i) => Some(input[i].input.clone())
+                            Some(i) => Some(input[i].input.clone()),
                         };
                         if v.value.is_none() && v.default_value.is_none() {
-                            return Err(ContractError::Unauthorized {})
+                            return Err(ContractError::Unauthorized {});
                         }
                         Variable::External(v)
                     }
@@ -40,32 +48,56 @@ pub fn hydrate_vars(deps: Deps, env: Env, vars: Vec<Variable>, external_inputs: 
             Variable::Query(mut v) => {
                 match v.kind {
                     VariableKind::String => {
-                        v.value = Some(format!("\"{}\"", resolve_query_expr_string(deps, env.clone(), v.call_fn.clone())?))
+                        v.value = Some(format!(
+                            "\"{}\"",
+                            resolve_query_expr_string(deps, env.clone(), v.call_fn.clone())?
+                        ))
                     }
                     VariableKind::Uint => {
-                        v.value = Some(format!("\"{}\"", resolve_query_expr_uint(deps, env.clone(), v.call_fn.clone())?))
+                        v.value = Some(format!(
+                            "\"{}\"",
+                            resolve_query_expr_uint(deps, env.clone(), v.call_fn.clone())?
+                        ))
                     }
                     VariableKind::Int => {
-                        v.value = Some(format!("{}", resolve_query_expr_int(deps, env.clone(), v.call_fn.clone())?))
+                        v.value = Some(format!(
+                            "{}",
+                            resolve_query_expr_int(deps, env.clone(), v.call_fn.clone())?
+                        ))
                     }
                     VariableKind::Decimal => {
-                        v.value = Some(format!("\"{}\"", resolve_query_expr_decimal(deps, env.clone(), v.call_fn.clone())?))
+                        v.value = Some(format!(
+                            "\"{}\"",
+                            resolve_query_expr_decimal(deps, env.clone(), v.call_fn.clone())?
+                        ))
                     }
                     VariableKind::Timestamp => {
-                        v.value = Some(format!("{}", resolve_query_expr_int(deps, env.clone(), v.call_fn.clone())?)) //todo: make sure this is right
+                        v.value = Some(format!(
+                            "{}",
+                            resolve_query_expr_int(deps, env.clone(), v.call_fn.clone())?
+                        )) //todo: make sure this is right
                     }
                     VariableKind::Bool => {
-                        v.value = Some(format!("{}", resolve_query_expr_bool(deps, env.clone(), v.call_fn.clone())?))
+                        v.value = Some(format!(
+                            "{}",
+                            resolve_query_expr_bool(deps, env.clone(), v.call_fn.clone())?
+                        ))
                     }
                     VariableKind::Amount => {
-                        v.value = Some(format!("\"{}\"", resolve_query_expr_uint(deps, env.clone(), v.call_fn.clone())?))
+                        v.value = Some(format!(
+                            "\"{}\"",
+                            resolve_query_expr_uint(deps, env.clone(), v.call_fn.clone())?
+                        ))
                     }
                     VariableKind::Asset => {
-                        v.value = Some(format!("\"{}\"", resolve_query_expr_string(deps, env.clone(), v.call_fn.clone())?))
+                        v.value = Some(format!(
+                            "\"{}\"",
+                            resolve_query_expr_string(deps, env.clone(), v.call_fn.clone())?
+                        ))
                     }
                 }
                 if v.value.is_none() && v.default_value.is_none() {
-                    return Err(ContractError::Unauthorized {})
+                    return Err(ContractError::Unauthorized {});
                 }
                 Variable::Query(v)
             }
@@ -75,7 +107,11 @@ pub fn hydrate_vars(deps: Deps, env: Env, vars: Vec<Variable>, external_inputs: 
     Ok(hydrated_vars)
 }
 
-pub fn hydrate_msgs(msgs: Vec<String>, vars: Vec<Variable>) -> Result<Vec<CosmosMsg>, ContractError> { //todo:
+pub fn hydrate_msgs(
+    msgs: Vec<String>,
+    vars: Vec<Variable>,
+) -> Result<Vec<CosmosMsg>, ContractError> {
+    //todo:
     let mut parsed_msgs: Vec<CosmosMsg> = vec![];
     for mut msg in msgs {
         for var in &vars {
@@ -85,32 +121,32 @@ pub fn hydrate_msgs(msgs: Vec<String>, vars: Vec<Variable>) -> Result<Vec<Cosmos
                         None => {
                             match v.default_value.clone() {
                                 None => return Err(ContractError::Unauthorized {}), //todo: err
-                                Some(val) => (v.name.clone(), val)
+                                Some(val) => (v.name.clone(), val),
                             }
                         }
-                        Some(val) => (v.name.clone(), val)
+                        Some(val) => (v.name.clone(), val),
                     }
-                },
+                }
                 Variable::External(v) => {
                     match v.value.clone() {
                         None => {
                             match v.default_value.clone() {
                                 None => return Err(ContractError::Unauthorized {}), //todo: err
-                                Some(val) => (v.name.clone(), val)
+                                Some(val) => (v.name.clone(), val),
                             }
                         }
-                        Some(val) => (v.name.clone(), val)
+                        Some(val) => (v.name.clone(), val),
                     }
-                },
+                }
                 Variable::Query(v) => {
                     match v.value.clone() {
                         None => {
                             match v.default_value.clone() {
                                 None => return Err(ContractError::Unauthorized {}), //todo: err
-                                Some(val) => (v.name.clone(), val)
+                                Some(val) => (v.name.clone(), val),
                             }
                         }
-                        Some(val) => (v.name.clone(), val)
+                        Some(val) => (v.name.clone(), val),
                     }
                 }
             };
@@ -130,8 +166,8 @@ pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, Contract
             Variable::Query(v) => v.name.clone(),
         };
         if n == name {
-            return Ok(var)
+            return Ok(var);
         }
     }
-    Err(ContractError::Unauthorized {})//todo: err
+    Err(ContractError::Unauthorized {}) //todo: err
 }

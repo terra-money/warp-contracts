@@ -38,7 +38,7 @@ pub enum Method {
     Post,
     Put,
     Patch,
-    Delete
+    Delete,
 }
 
 #[cw_serde]
@@ -83,7 +83,7 @@ pub struct UpdateFn {
 pub enum Variable {
     Static(StaticVariable),
     External(ExternalVariable),
-    Query(QueryVariable)
+    Query(QueryVariable),
 }
 
 #[cw_serde]

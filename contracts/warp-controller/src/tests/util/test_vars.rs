@@ -1,20 +1,16 @@
-use crate::util::condition::resolve_cond;
-use crate::util::path::resolve_path;
-use json_codec_wasm::ast::Ref;
-use json_codec_wasm::{Decoder, Encoder, Json};
-use std::io::Cursor;
+
+
+
+
+
 
 #[test]
 fn test_vars() {
-    let mut test_msg = "{\"execute\":{\"test\":\"$WARPVAR.name\"\"$WARPVAR.name\"}}".to_string();
+    let test_msg = "{\"execute\":{\"test\":\"$WARPVAR.name\"\"$WARPVAR.name\"}}".to_string();
 
-    let idx = test_msg.find("\"$WARPVAR\"");
+    let _idx = test_msg.find("\"$WARPVAR\"");
 
-
-
-    let new_str = test_msg.replace("\"$WARPVAR.name\"", "\"input\"");
-
-
+    let _new_str = test_msg.replace("\"$WARPVAR.name\"", "\"input\"");
 
     // test_msg.repl
 

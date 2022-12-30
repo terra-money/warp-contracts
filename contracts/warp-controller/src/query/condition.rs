@@ -9,7 +9,8 @@ pub fn query_resolve_condition(
     env: Env,
     data: QueryResolveConditionMsg,
 ) -> StdResult<bool> {
-    resolve_cond(deps, env, data.condition, &data.vars).map_err(|e| StdError::generic_err(e.to_string()))
+    resolve_cond(deps, env, data.condition, &data.vars)
+        .map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 pub fn query_condition_active(
@@ -18,7 +19,7 @@ pub fn query_condition_active(
     data: QueryResolveJobConditionMsg,
 ) -> StdResult<bool> {
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
-    let resp =
-        resolve_cond(deps, env, job.condition, &job.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
+    let resp = resolve_cond(deps, env, job.condition, &job.vars)
+        .map_err(|e| StdError::generic_err(e.to_string()))?;
     Ok(resp)
 }

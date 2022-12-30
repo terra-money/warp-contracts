@@ -1,6 +1,6 @@
 use crate::controller::condition::Condition;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, CosmosMsg, Uint128, Uint64};
+use cosmwasm_std::{Addr, Uint128, Uint64};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
@@ -23,7 +23,7 @@ pub struct Job {
 #[cw_serde]
 pub enum JobVarKind {
     Query,
-    External
+    External,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, Display)]

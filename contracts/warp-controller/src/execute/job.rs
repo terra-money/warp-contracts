@@ -1,5 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
+use crate::util::variable::{hydrate_msgs, hydrate_vars};
 use crate::ContractError;
 use cosmwasm_std::{
     to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
@@ -9,7 +10,6 @@ use warp_protocol::controller::job::{
     CreateJobMsg, DeleteJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use warp_protocol::controller::State;
-use crate::util::variable::{hydrate_msgs, hydrate_vars};
 
 pub fn create_job(
     deps: DepsMut,
@@ -59,7 +59,7 @@ pub fn create_job(
             condition: data.condition.clone(),
             vars: data.vars,
             msgs: data.msgs,
-            reward: data.reward.clone(),
+            reward: data.reward,
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
@@ -133,7 +133,7 @@ pub fn delete_job(
             condition: job.condition,
             msgs: job.msgs,
             vars: job.vars,
-            reward: job.reward.clone(),
+            reward: job.reward,
         }),
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
     })?;
@@ -287,7 +287,12 @@ pub fn execute_job(
             return Err(ContractError::JobNotActive {});
         }
 
-        let vars = hydrate_vars(deps.as_ref(), env.clone(), job.vars.clone(), data.external_inputs)?;
+        let vars = hydrate_vars(
+            deps.as_ref(),
+            env,
+            job.vars.clone(),
+            data.external_inputs,
+        )?;
 
         submsgs.push(SubMsg {
             id: job.id.u64(),

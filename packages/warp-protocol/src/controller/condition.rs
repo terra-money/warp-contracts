@@ -1,6 +1,6 @@
+use crate::controller::variable::Variable;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, Uint256, Uint64};
-use crate::controller::variable::Variable;
 
 #[cw_serde]
 pub enum Condition {
@@ -124,5 +124,5 @@ pub enum StringOp {
 #[cw_serde]
 pub struct QueryResolveConditionMsg {
     pub condition: Condition,
-    pub vars: Vec<Variable>
+    pub vars: Vec<Variable>,
 }
