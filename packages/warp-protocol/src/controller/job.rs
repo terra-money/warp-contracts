@@ -58,7 +58,13 @@ pub struct UpdateJobMsg {
 #[cw_serde]
 pub struct ExecuteJobMsg {
     pub id: Uint64,
-    pub external_inputs: Option<Vec<String>>,
+    pub external_inputs: Option<Vec<ExternalInput>>,
+}
+
+#[cw_serde]
+pub struct ExternalInput {
+    pub name: String,
+    pub input: String,
 }
 
 #[cw_serde]

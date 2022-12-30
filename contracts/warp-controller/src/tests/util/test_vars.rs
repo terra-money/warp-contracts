@@ -6,7 +6,7 @@ use std::io::Cursor;
 
 #[test]
 fn test_vars() {
-    let mut test_msg = "{\"execute\":{\"test\":\"$WARPVAR.name\"}}".to_string();
+    let mut test_msg = "{\"execute\":{\"test\":\"$WARPVAR.name\"\"$WARPVAR.name\"}}".to_string();
 
     let idx = test_msg.find("\"$WARPVAR\"");
 

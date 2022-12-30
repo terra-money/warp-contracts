@@ -9,7 +9,7 @@ use warp_protocol::controller::job::{
     CreateJobMsg, DeleteJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use warp_protocol::controller::State;
-use crate::util::variable::hydrate_msgs;
+use crate::util::variable::{hydrate_msgs, hydrate_vars};
 
 pub fn create_job(
     deps: DepsMut,
@@ -256,7 +256,7 @@ pub fn execute_job(
         return Err(ContractError::JobNotActive {});
     }
 
-    let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &job.vars);
+    let resolution = resolve_cond(deps.as_ref(), env.clone(), job.condition.clone(), &job.vars);
 
     let mut attrs = vec![];
 
@@ -286,13 +286,15 @@ pub fn execute_job(
         if !resolution? {
             return Err(ContractError::JobNotActive {});
         }
-        
+
+        let vars = hydrate_vars(deps.as_ref(), env.clone(), job.vars.clone(), data.external_inputs)?;
+
         submsgs.push(SubMsg {
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&warp_protocol::account::ExecuteMsg {
-                    msgs: hydrate_msgs(job.msgs.clone(), job.vars.clone())?,
+                    msgs: hydrate_msgs(job.msgs.clone(), vars)?,
                 })?,
                 funds: vec![],
             }),
