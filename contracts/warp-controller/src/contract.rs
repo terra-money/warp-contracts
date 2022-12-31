@@ -173,7 +173,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         }
         //job execution
         _ => {
-            //todo: create a new job if necessary
             let new_status = match msg.result {
                 SubMsgResult::Ok(_) => JobStatus::Executed,
                 SubMsgResult::Err(_) => JobStatus::Failed,

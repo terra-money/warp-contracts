@@ -76,7 +76,7 @@ pub fn hydrate_vars(
                         v.value = Some(format!(
                             "{}",
                             resolve_query_expr_int(deps, env.clone(), v.call_fn.clone())?
-                        )) //todo: make sure this is right
+                        ))
                     }
                     VariableKind::Bool => {
                         v.value = Some(format!(
