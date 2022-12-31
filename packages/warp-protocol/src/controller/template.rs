@@ -74,5 +74,3 @@ pub struct TemplateResponse {
 pub struct TemplatesResponse {
     pub templates: Vec<Template>,
 }
-
-//query templates
