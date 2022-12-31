@@ -1,16 +1,13 @@
 use crate::util::condition::{
-    resolve_num_value_decimal, resolve_num_value_int,
-    resolve_num_value_uint, resolve_query_expr_bool, resolve_query_expr_decimal,
-    resolve_query_expr_int, resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
+    resolve_num_value_decimal, resolve_num_value_int, resolve_num_value_uint,
+    resolve_query_expr_bool, resolve_query_expr_decimal, resolve_query_expr_int,
+    resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
 };
 use crate::ContractError;
 use cosmwasm_std::{CosmosMsg, Deps, Env};
 
-
 use warp_protocol::controller::job::{ExternalInput, JobStatus};
-use warp_protocol::controller::variable::{
-    UpdateFnValue, Variable, VariableKind,
-};
+use warp_protocol::controller::variable::{UpdateFnValue, Variable, VariableKind};
 
 pub fn hydrate_vars(
     deps: Deps,
@@ -162,7 +159,7 @@ pub fn hydrate_msgs(
     Ok(parsed_msgs)
 }
 
-pub fn _apply_var_fn(
+pub fn apply_var_fn(
     deps: Deps,
     env: Env,
     vars: Vec<Variable>,
@@ -292,7 +289,7 @@ pub fn _apply_var_fn(
                                                         nv,
                                                         &vars,
                                                     )?
-                                                        .to_string(),
+                                                    .to_string(),
                                                 )
                                             }
                                             UpdateFnValue::Int(nv) => {
@@ -307,7 +304,7 @@ pub fn _apply_var_fn(
                                                         nv,
                                                         &vars,
                                                     )?
-                                                        .to_string(),
+                                                    .to_string(),
                                                 )
                                             }
                                             UpdateFnValue::Decimal(nv) => {
@@ -322,7 +319,7 @@ pub fn _apply_var_fn(
                                                         nv,
                                                         &vars,
                                                     )?
-                                                        .to_string(),
+                                                    .to_string(),
                                                 )
                                             }
                                             UpdateFnValue::Timestamp(nv) => {
@@ -337,7 +334,7 @@ pub fn _apply_var_fn(
                                                         nv,
                                                         &vars,
                                                     )?
-                                                        .to_string(),
+                                                    .to_string(),
                                                 )
                                             }
                                             UpdateFnValue::BlockHeight(nv) => {
@@ -352,7 +349,7 @@ pub fn _apply_var_fn(
                                                         nv,
                                                         &vars,
                                                     )?
-                                                        .to_string(),
+                                                    .to_string(),
                                                 )
                                             }
                                             UpdateFnValue::Bool(val) => {
@@ -367,7 +364,7 @@ pub fn _apply_var_fn(
                                                         val,
                                                         &vars,
                                                     )?
-                                                        .to_string(),
+                                                    .to_string(),
                                                 )
                                             }
                                         }
@@ -398,4 +395,36 @@ pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, Contract
         }
     }
     Err(ContractError::Unauthorized {}) //todo: err
+}
+
+pub fn is_recurring(vars: &Vec<Variable>) -> bool {
+    for var in vars {
+        match var {
+            Variable::Static(v) => {
+                if v.update_fn.is_some()
+                    && (v.update_fn.as_ref().unwrap().on_success.is_some()
+                        || v.update_fn.as_ref().unwrap().on_error.is_some())
+                {
+                    return true;
+                }
+            }
+            Variable::External(v) => {
+                if v.update_fn.is_some()
+                    && (v.update_fn.as_ref().unwrap().on_success.is_some()
+                        || v.update_fn.as_ref().unwrap().on_error.is_some())
+                {
+                    return true;
+                }
+            }
+            Variable::Query(v) => {
+                if v.update_fn.is_some()
+                    && (v.update_fn.as_ref().unwrap().on_success.is_some()
+                        || v.update_fn.as_ref().unwrap().on_error.is_some())
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    false
 }

@@ -1,4 +1,3 @@
-
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, QueryRequest, Uint256};
 
