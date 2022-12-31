@@ -1,7 +1,8 @@
-use cosmwasm_schema::cw_serde;
-use cosmwasm_std::QueryRequest;
 
-use super::condition::{NumExprValue, NumFnValue};
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{Decimal256, QueryRequest, Uint256};
+
+use super::condition::{DecimalFnOp, IntFnOp, NumExprOp, NumValue};
 
 #[cw_serde]
 pub enum VariableKind {
@@ -67,13 +68,17 @@ pub enum FnOp {
 
 #[cw_serde]
 pub enum UpdateFnValue {
-    Expr(NumExprValue<String, ExprOp, FnOp>),
-    Fn(NumFnValue<String, ExprOp, FnOp>),
+    Uint(NumValue<Uint256, NumExprOp, IntFnOp>),
+    Int(NumValue<i128, NumExprOp, IntFnOp>),
+    Decimal(NumValue<Decimal256, NumExprOp, DecimalFnOp>),
+    Timestamp(NumValue<i128, NumExprOp, IntFnOp>),
+    BlockHeight(NumValue<i128, NumExprOp, IntFnOp>),
+    Bool(String), //ref
 }
 
 #[cw_serde]
 pub struct UpdateFn {
-    pub on_success: UpdateFnValue,
+    pub on_success: Option<UpdateFnValue>,
     pub on_error: Option<UpdateFnValue>,
 }
 

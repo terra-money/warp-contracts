@@ -1,9 +1,3 @@
-
-
-
-
-
-
 #[test]
 fn test_vars() {
     let test_msg = "{\"execute\":{\"test\":\"$WARPVAR.name\"\"$WARPVAR.name\"}}".to_string();

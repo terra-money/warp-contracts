@@ -170,9 +170,9 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                 .add_attribute("account_address", address))
         }
         //job execution
-        _ => {
+        _ => { //todo: create a new job if necessary
             let new_status = match msg.result {
-                SubMsgResult::Ok(_) => JobStatus::Executed,
+                SubMsgResult::Ok(_) => { JobStatus::Executed },
                 SubMsgResult::Err(_) => JobStatus::Failed,
             };
 

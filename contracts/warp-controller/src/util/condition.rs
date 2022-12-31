@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::KeyDeserialize;
 use json_codec_wasm::ast::Ref;
-use json_codec_wasm::{Decoder};
+use json_codec_wasm::Decoder;
 use std::str::FromStr;
 use warp_protocol::controller::condition::{
     BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumExprOp, NumExprValue, NumFnValue,
@@ -473,7 +473,7 @@ pub fn resolve_query_expr_bool(
     resolved.bool().ok_or(ContractError::DecodeError {})
 }
 
-fn resolve_ref_bool(
+pub fn resolve_ref_bool(
     deps: Deps,
     env: Env,
     r: String,

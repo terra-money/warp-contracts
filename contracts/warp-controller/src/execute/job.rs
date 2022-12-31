@@ -287,12 +287,7 @@ pub fn execute_job(
             return Err(ContractError::JobNotActive {});
         }
 
-        let vars = hydrate_vars(
-            deps.as_ref(),
-            env,
-            job.vars.clone(),
-            data.external_inputs,
-        )?;
+        let vars = hydrate_vars(deps.as_ref(), env, job.vars.clone(), data.external_inputs)?;
 
         submsgs.push(SubMsg {
             id: job.id.u64(),
