@@ -20,7 +20,7 @@ pub fn hydrate_vars(
     for var in vars {
         let hydrated_var = match var {
             Variable::Static(v) => {
-                if v.value.is_none() && v.default_value.is_none() {
+                if v.value.is_none() {
                     return Err(ContractError::Unauthorized {});
                 }
                 Variable::Static(v)
@@ -28,7 +28,7 @@ pub fn hydrate_vars(
             Variable::External(mut v) => {
                 match external_inputs {
                     None => {
-                        if v.value.is_none() && v.default_value.is_none() {
+                        if v.value.is_none() {
                             return Err(ContractError::Unauthorized {});
                         }
                         Variable::External(v)
@@ -39,7 +39,7 @@ pub fn hydrate_vars(
                             None => return Err(ContractError::Unauthorized {}), //todo: err
                             Some(i) => Some(input[i].input.clone()),
                         };
-                        if v.value.is_none() && v.default_value.is_none() {
+                        if v.value.is_none() {
                             return Err(ContractError::Unauthorized {});
                         }
                         Variable::External(v)
@@ -97,7 +97,7 @@ pub fn hydrate_vars(
                         ))
                     }
                 }
-                if v.value.is_none() && v.default_value.is_none() {
+                if v.value.is_none() {
                     return Err(ContractError::Unauthorized {});
                 }
                 Variable::Query(v)
@@ -120,10 +120,7 @@ pub fn hydrate_msgs(
                 Variable::Static(v) => {
                     match v.value.clone() {
                         None => {
-                            match v.default_value.clone() {
-                                None => return Err(ContractError::Unauthorized {}), //todo: err
-                                Some(val) => (v.name.clone(), val),
-                            }
+                            return Err(ContractError::Unauthorized {}); //todo: err
                         }
                         Some(val) => (v.name.clone(), val),
                     }
@@ -131,10 +128,7 @@ pub fn hydrate_msgs(
                 Variable::External(v) => {
                     match v.value.clone() {
                         None => {
-                            match v.default_value.clone() {
-                                None => return Err(ContractError::Unauthorized {}), //todo: err
-                                Some(val) => (v.name.clone(), val),
-                            }
+                            return Err(ContractError::Unauthorized {}); //todo: err
                         }
                         Some(val) => (v.name.clone(), val),
                     }
@@ -142,10 +136,7 @@ pub fn hydrate_msgs(
                 Variable::Query(v) => {
                     match v.value.clone() {
                         None => {
-                            match v.default_value.clone() {
-                                None => return Err(ContractError::Unauthorized {}), //todo: err
-                                Some(val) => (v.name.clone(), val),
-                            }
+                            return Err(ContractError::Unauthorized {}); //todo: err
                         }
                         Some(val) => (v.name.clone(), val),
                     }

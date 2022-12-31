@@ -94,11 +94,8 @@ fn resolve_ref_int(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => match s.value.clone() {
-            None => match s.default_value.clone() {
-                None => return Err(ContractError::Unauthorized {}),
-                Some(s) => str::parse::<i128>(s.as_str())?,
-            },
-            Some(v) => str::parse::<i128>(v.as_str())?,
+            None => return Err(ContractError::Unauthorized {}),
+            Some(s) => str::parse::<i128>(s.as_str())?,
         },
         Variable::Query(q) => resolve_query_expr_int(deps, env, q.call_fn.clone())?,
         Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
@@ -174,10 +171,7 @@ fn resolve_ref_uint(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => match s.value.clone() {
-            None => match s.default_value.clone() {
-                None => return Err(ContractError::Unauthorized {}),
-                Some(s) => Uint256::from_str(&s)?,
-            },
+            None => return Err(ContractError::Unauthorized {}),
             Some(s) => Uint256::from_str(&s)?,
         },
         Variable::Query(q) => resolve_query_expr_uint(deps, env, q.call_fn.clone())?,
@@ -254,10 +248,7 @@ fn resolve_ref_decimal(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => match s.value.clone() {
-            None => match s.default_value.clone() {
-                None => return Err(ContractError::Unauthorized {}),
-                Some(s) => Decimal256::from_str(&s)?,
-            },
+            None => return Err(ContractError::Unauthorized {}),
             Some(s) => Decimal256::from_str(&s)?,
         },
         Variable::Query(q) => resolve_query_expr_decimal(deps, env, q.call_fn.clone())?,
@@ -415,10 +406,7 @@ fn resolve_ref_string(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => match s.value.clone() {
-            None => match s.default_value.clone() {
-                None => return Err(ContractError::Unauthorized {}),
-                Some(s) => s,
-            },
+            None => return Err(ContractError::Unauthorized {}),
             Some(s) => s,
         },
         Variable::Query(q) => resolve_query_expr_string(deps, env, q.call_fn.clone())?,
