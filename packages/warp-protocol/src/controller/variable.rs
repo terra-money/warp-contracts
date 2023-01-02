@@ -24,7 +24,6 @@ pub enum VariableValue {
 
 #[cw_serde]
 pub struct ExternalExpr {
-    pub name: String,
     pub url: String,
     pub method: Option<Method>,
     pub headers: Option<Vec<String>>,
