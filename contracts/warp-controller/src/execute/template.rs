@@ -35,6 +35,7 @@ pub fn submit_template(
         msg: data.msg.clone(),
         formatted_str: data.formatted_str.clone(),
         vars: data.vars.clone(),
+        condition: data.condition.clone(),
     };
 
     TEMPLATES.save(deps.storage, state.current_template_id.u64(), &msg_template)?;
@@ -86,6 +87,7 @@ pub fn edit_template(
             msg: data.msg.unwrap_or(t.msg),
             formatted_str: data.formatted_str.unwrap_or(t.formatted_str),
             vars: data.vars.unwrap_or(t.vars),
+            condition: data.condition,
         }),
     })?;
 

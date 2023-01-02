@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint64};
 
-use super::variable::Variable;
+use super::{condition::Condition, variable::Variable};
 
 //msg templates
 #[cw_serde]
@@ -12,6 +12,7 @@ pub struct Template {
     pub vars: Vec<Variable>,
     pub kind: TemplateKind,
     pub msg: String,
+    pub condition: Option<Condition>,
     pub formatted_str: String,
 }
 
@@ -26,6 +27,7 @@ pub struct SubmitTemplateMsg {
     pub name: String,
     pub kind: TemplateKind,
     pub msg: String,
+    pub condition: Option<Condition>,
     pub formatted_str: String,
     pub vars: Vec<Variable>,
 }
@@ -36,6 +38,7 @@ pub struct EditTemplateMsg {
     pub name: Option<String>,
     pub msg: Option<String>,
     pub formatted_str: Option<String>,
+    pub condition: Option<Condition>,
     pub vars: Option<Vec<Variable>>,
 }
 
