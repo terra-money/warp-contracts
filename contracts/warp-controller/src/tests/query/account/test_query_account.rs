@@ -6,8 +6,9 @@ use cosmwasm_std::{
 use warp_protocol::controller::account::{Account, AccountResponse, QueryAccountMsg};
 
 use crate::{
+    execute::account::create_account,
     query::account::query_account,
-    tests::helpers::{create_warp_account, instantiate_warp},
+    tests::helpers::{instantiate_warp, mock_account_creation_reply},
 };
 
 #[test]
@@ -28,8 +29,8 @@ fn test_query_account_successful() {
     )
     .unwrap();
 
-    let (_create_account_res, reply_res) =
-        create_warp_account(&mut deps, env.clone(), info.clone(), Uint64::new(0));
+    let _create_account_res = create_account(deps.as_mut(), env.clone(), info.clone());
+    let reply_res = mock_account_creation_reply(&mut deps, env.clone(), Uint64::new(0));
 
     // Get address of warp account just created and query it in query_account
     let reply_res_first_clone = reply_res.unwrap().clone();

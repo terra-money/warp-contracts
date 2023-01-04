@@ -11,15 +11,17 @@ pub fn create_account(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    let item = ACCOUNTS()
+    // sender is a warp account, warp account cannot be the owner of another warp account
+    if ACCOUNTS()
         .idx
         .account
-        .item(deps.storage, info.sender.clone());
-
-    if item?.is_some() {
+        .item(deps.storage, info.sender.clone())?
+        .is_some()
+    {
         return Err(ContractError::AccountCannotCreateAccount {});
     }
 
+    // sender already owns a warp account, return the existing warp account and skip creating another one
     if ACCOUNTS().has(deps.storage, info.sender.clone()) {
         let account = ACCOUNTS().load(deps.storage, info.sender)?;
         return Ok(Response::new()

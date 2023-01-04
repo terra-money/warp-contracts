@@ -32,9 +32,6 @@ pub enum ContractError {
     #[error("Account does not exist")]
     AccountDoesNotExist {},
 
-    #[error("Account already exists")]
-    AccountAlreadyExists {},
-
     #[error("Account cannot create an account")]
     AccountCannotCreateAccount {},
 
