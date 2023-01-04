@@ -1,9 +1,9 @@
 use crate::contract::{instantiate, reply};
 use crate::execute::account::create_account;
 use crate::ContractError;
-use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage};
+use cosmwasm_std::testing::{mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
-    Attribute, DepsMut, Env, Event, MessageInfo, OwnedDeps, Reply, Response, SubMsgResponse,
+    coin, Attribute, DepsMut, Env, Event, MessageInfo, OwnedDeps, Reply, Response, SubMsgResponse,
     SubMsgResult, Uint128, Uint64,
 };
 
@@ -68,4 +68,29 @@ pub fn create_warp_account(
     let reply_res = reply(deps.as_mut(), env, reply_msg);
 
     return (create_account_res, reply_res);
+}
+
+// create count number of warp accounts, with id from [0, count)
+pub fn create_multiple_warp_accounts(
+    deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier>,
+    env: Env,
+    count: u32,
+) -> Vec<(
+    Result<Response, ContractError>,
+    Result<Response, ContractError>,
+)> {
+    let mut responses = vec![];
+    for account_id in 0..count {
+        let info = mock_info(
+            format!("terra{}", account_id).as_str(),
+            &vec![coin(100, "uluna")],
+        );
+        responses.push(create_warp_account(
+            deps,
+            env.clone(),
+            info,
+            Uint64::new(u64::from(account_id)),
+        ))
+    }
+    return responses;
 }
