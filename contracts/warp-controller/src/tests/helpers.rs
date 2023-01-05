@@ -1,5 +1,4 @@
 use crate::contract::{instantiate, reply};
-use crate::execute::account::create_account;
 use crate::ContractError;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
@@ -30,34 +29,24 @@ pub fn instantiate_warp(
     return instantiate(deps, env.clone(), info.clone(), instantiate_msg.clone());
 }
 
-pub fn create_warp_account(
+pub fn mock_account_creation_reply(
     deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier>,
     env: Env,
     info: MessageInfo,
     account_id: Uint64,
-) -> (
-    Result<Response, ContractError>,
-    Result<Response, ContractError>,
-) {
-    let create_account_res = create_account(deps.as_mut(), env.clone(), info.clone());
-
+) -> Result<Response, ContractError> {
     let reply_msg = Reply {
         id: 0,
         result: SubMsgResult::Ok(SubMsgResponse {
             events: vec![Event::new("wasm").add_attributes(vec![
                 Attribute::new("action", "instantiate"),
-                Attribute::new(
-                    "owner",
-                    format!(
-                        "terra1vladvladvladvladvladvladvladvladvl{}",
-                        account_id + Uint64::new(1000)
-                    ),
-                ),
+                Attribute::new("owner", info.sender),
+                // contract_addr needs to be mocked since it's generated in warp-account contract's instantiate fn
                 Attribute::new(
                     "contract_addr",
                     format!(
                         "terra1vladvladvladvladvladvladvladvladvl{}",
-                        account_id + Uint64::new(2000)
+                        account_id + Uint64::new(1000)
                     ),
                 ),
             ])],
@@ -65,7 +54,5 @@ pub fn create_warp_account(
         }),
     };
 
-    let reply_res = reply(deps.as_mut(), env, reply_msg);
-
-    return (create_account_res, reply_res);
+    return reply(deps.as_mut(), env, reply_msg);
 }

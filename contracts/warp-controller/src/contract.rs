@@ -152,10 +152,6 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                 .ok_or_else(|| StdError::generic_err("cannot find `contract_addr` attribute"))?
                 .value;
 
-            if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
-                return Err(ContractError::AccountAlreadyExists {});
-            }
-
             ACCOUNTS().save(
                 deps.storage,
                 deps.api.addr_validate(&owner)?,
