@@ -30,7 +30,8 @@ fn test_query_account_successful() {
     .unwrap();
 
     let _create_account_res = create_account(deps.as_mut(), env.clone(), info.clone());
-    let reply_res = mock_account_creation_reply(&mut deps, env.clone(), Uint64::new(0));
+    let reply_res =
+        mock_account_creation_reply(&mut deps, env.clone(), info.clone(), Uint64::new(0));
 
     // Get address of warp account just created and query it in query_account
     let reply_res_first_clone = reply_res.unwrap().clone();
@@ -51,7 +52,7 @@ fn test_query_account_successful() {
         deps.as_ref(),
         env,
         QueryAccountMsg {
-            owner: attr_owner.value.clone(),
+            owner: info.sender.into_string(),
         },
     );
 

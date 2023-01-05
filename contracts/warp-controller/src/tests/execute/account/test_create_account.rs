@@ -25,7 +25,8 @@ fn test_create_account_success() {
     .unwrap();
 
     let create_account_res = create_account(deps.as_mut(), env.clone(), info.clone());
-    let reply_res = mock_account_creation_reply(&mut deps, env.clone(), Uint64::new(0));
+    let reply_res =
+        mock_account_creation_reply(&mut deps, env.clone(), info.clone(), Uint64::new(0));
 
     assert_eq!(
         create_account_res.unwrap(),
@@ -52,10 +53,10 @@ fn test_create_account_success() {
         reply_res.unwrap(),
         Response::new()
             .add_attribute("action", "save_account")
-            .add_attribute("owner", "terra1vladvladvladvladvladvladvladvladvl1000")
+            .add_attribute("owner", "vlad")
             .add_attribute(
                 "account_address",
-                "terra1vladvladvladvladvladvladvladvladvl2000"
+                "terra1vladvladvladvladvladvladvladvladvl1000"
             )
     )
 }
@@ -79,7 +80,8 @@ fn test_create_account_exists() {
     .unwrap();
 
     let _create_account_res_first = create_account(deps.as_mut(), env.clone(), info.clone());
-    let reply_res_first = mock_account_creation_reply(&mut deps, env.clone(), Uint64::new(0));
+    let reply_res_first =
+        mock_account_creation_reply(&mut deps, env.clone(), info.clone(), Uint64::new(0));
 
     let reply_res_first_clone = reply_res_first.unwrap().clone();
     let attr_owner = reply_res_first_clone
@@ -94,7 +96,7 @@ fn test_create_account_exists() {
         .find(|attr| attr.key == "account_address")
         .ok_or_else(|| StdError::generic_err("cannot find `account_address` attribute"))
         .unwrap();
-    let info = mock_info(attr_owner.value.as_str(), &vec![coin(100, "uluna")]);
+
     let create_account_res = create_account(deps.as_mut(), env.clone(), info.clone());
 
     assert_eq!(
@@ -125,7 +127,8 @@ fn test_create_account_by_account() {
     .unwrap();
 
     let _create_account_res_first = create_account(deps.as_mut(), env.clone(), info.clone());
-    let reply_res_first = mock_account_creation_reply(&mut deps, env.clone(), Uint64::new(0));
+    let reply_res_first =
+        mock_account_creation_reply(&mut deps, env.clone(), info.clone(), Uint64::new(0));
 
     // Get address of warp account just created and assign it as the sender of next create_account call
     let reply_res_first_clone = reply_res_first.unwrap().clone();
@@ -139,6 +142,7 @@ fn test_create_account_by_account() {
         attr_warp_account_address.value.as_str(),
         &vec![coin(100, "uluna")],
     );
+
     let create_account_res = create_account(deps.as_mut(), env.clone(), info.clone());
 
     assert_eq!(

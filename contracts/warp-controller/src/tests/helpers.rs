@@ -32,6 +32,7 @@ pub fn instantiate_warp(
 pub fn mock_account_creation_reply(
     deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier>,
     env: Env,
+    info: MessageInfo,
     account_id: Uint64,
 ) -> Result<Response, ContractError> {
     let reply_msg = Reply {
@@ -39,18 +40,13 @@ pub fn mock_account_creation_reply(
         result: SubMsgResult::Ok(SubMsgResponse {
             events: vec![Event::new("wasm").add_attributes(vec![
                 Attribute::new("action", "instantiate"),
-                Attribute::new(
-                    "owner",
-                    format!(
-                        "terra1vladvladvladvladvladvladvladvladvl{}",
-                        account_id + Uint64::new(1000)
-                    ),
-                ),
+                Attribute::new("owner", info.sender),
+                // contract_addr needs to be mocked since it's generated in warp-account contract's instantiate fn
                 Attribute::new(
                     "contract_addr",
                     format!(
                         "terra1vladvladvladvladvladvladvladvladvl{}",
-                        account_id + Uint64::new(2000)
+                        account_id + Uint64::new(1000)
                     ),
                 ),
             ])],
