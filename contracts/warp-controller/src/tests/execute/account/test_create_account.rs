@@ -6,11 +6,13 @@ use cosmwasm_std::{
     coin, to_binary, CosmosMsg, ReplyOn, Response, StdError, SubMsg, Uint128, Uint64, WasmMsg,
 };
 
+const MOCK_SENDER_ADDRESS: &str = "vlad";
+
 #[test]
 fn test_create_account_success() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad", &vec![coin(100, "uluna")]);
+    let info = mock_info(MOCK_SENDER_ADDRESS, &vec![coin(100, "uluna")]);
 
     let _instantiate_res = instantiate_warp(
         deps.as_mut(),
@@ -53,7 +55,7 @@ fn test_create_account_success() {
         reply_res.unwrap(),
         Response::new()
             .add_attribute("action", "save_account")
-            .add_attribute("owner", "vlad")
+            .add_attribute("owner", info.sender)
             .add_attribute(
                 "account_address",
                 "terra1vladvladvladvladvladvladvladvladvl1000"
@@ -65,7 +67,7 @@ fn test_create_account_success() {
 fn test_create_account_exists() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad", &vec![coin(100, "uluna")]);
+    let info = mock_info(MOCK_SENDER_ADDRESS, &vec![coin(100, "uluna")]);
 
     let _instantiate_res = instantiate_warp(
         deps.as_mut(),
@@ -84,12 +86,6 @@ fn test_create_account_exists() {
         mock_account_creation_reply(&mut deps, env.clone(), info.clone(), Uint64::new(0));
 
     let reply_res_first_clone = reply_res_first.unwrap().clone();
-    let attr_owner = reply_res_first_clone
-        .attributes
-        .iter()
-        .find(|attr| attr.key == "owner")
-        .ok_or_else(|| StdError::generic_err("cannot find `owner` attribute"))
-        .unwrap();
     let attr_warp_account_address = reply_res_first_clone
         .attributes
         .iter()
@@ -103,7 +99,7 @@ fn test_create_account_exists() {
         create_account_res.unwrap(),
         Response::new()
             .add_attribute("action", "create_account")
-            .add_attribute("owner", attr_owner.value.as_str())
+            .add_attribute("owner", info.sender)
             .add_attribute("account_address", attr_warp_account_address.value.as_str())
     );
 }
@@ -112,7 +108,7 @@ fn test_create_account_exists() {
 fn test_create_account_by_account() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad", &vec![coin(100, "uluna")]);
+    let info = mock_info(MOCK_SENDER_ADDRESS, &vec![coin(100, "uluna")]);
 
     let _instantiate_res = instantiate_warp(
         deps.as_mut(),
