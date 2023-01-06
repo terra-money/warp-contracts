@@ -20,9 +20,6 @@ pub fn hydrate_vars(
     for var in vars {
         let hydrated_var = match var {
             Variable::Static(v) => {
-                if v.value.is_none() {
-                    return Err(ContractError::Unauthorized {}); //todo: err
-                }
                 Variable::Static(v)
             }
             Variable::External(mut v) => {
@@ -126,12 +123,7 @@ pub fn hydrate_msgs(
         for var in &vars {
             let (name, replacement) = match var {
                 Variable::Static(v) => {
-                    match v.value.clone() {
-                        None => {
-                            return Err(ContractError::Unauthorized {}); //todo: err
-                        }
-                        Some(val) => (v.name.clone(), val),
-                    }
+                    (v.name.clone(), v.value.clone())
                 }
                 Variable::External(v) => {
                     match v.value.clone() {
