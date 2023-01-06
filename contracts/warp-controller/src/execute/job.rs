@@ -1,6 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
-use crate::util::variable::{hydrate_msgs, hydrate_vars, is_recurring};
+use crate::util::variable::{hydrate_msgs, hydrate_vars};
 use crate::ContractError;
 use cosmwasm_std::{
     to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
@@ -49,7 +49,6 @@ pub fn create_job(
     //     msgs.push(serde_json_wasm::from_str::<CosmosMsg>(msg.as_str())?)
     // }
 
-    let recurring = is_recurring(&data.vars);
 
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
         None => Ok(Job {
@@ -59,7 +58,7 @@ pub fn create_job(
             name: data.name,
             status: JobStatus::Pending,
             condition: data.condition.clone(),
-            recurring,
+            recurring: data.recurring,
             vars: data.vars,
             msgs: data.msgs,
             reward: data.reward,

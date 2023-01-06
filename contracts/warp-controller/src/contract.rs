@@ -202,6 +202,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let mut new_job_attrs = vec![];
 
             let account = ACCOUNTS().load(deps.storage, new_job.owner.clone())?;
+            let config = CONFIG.load(deps.storage)?;
 
             //assume reward.amount == warp token allowance
             let fee = new_job.reward * config.creation_fee_percentage / Uint128::new(100);

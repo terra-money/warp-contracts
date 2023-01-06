@@ -41,6 +41,7 @@ pub struct CreateJobMsg {
     pub condition: Condition,
     pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
+    pub recurring: bool,
     pub reward: Uint128,
 }
 

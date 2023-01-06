@@ -72,6 +72,7 @@ pub enum UpdateFnValue {
     Timestamp(NumValue<i128, NumExprOp, IntFnOp>),
     BlockHeight(NumValue<i128, NumExprOp, IntFnOp>),
     Bool(String), //ref
+    Reinitialize,
 }
 
 #[cw_serde]

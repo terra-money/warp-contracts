@@ -21,7 +21,7 @@ pub fn hydrate_vars(
         let hydrated_var = match var {
             Variable::Static(v) => {
                 if v.value.is_none() {
-                    return Err(ContractError::Unauthorized {});
+                    return Err(ContractError::Unauthorized {}); //todo: err
                 }
                 Variable::Static(v)
             }
@@ -29,7 +29,7 @@ pub fn hydrate_vars(
                 match external_inputs {
                     None => {
                         if v.value.is_none() {
-                            return Err(ContractError::Unauthorized {});
+                            return Err(ContractError::Unauthorized {}); //todo: err
                         }
                         Variable::External(v)
                     }
@@ -258,6 +258,7 @@ pub fn apply_var_fn(
                                                     .to_string(),
                                                 )
                                             }
+                                            UpdateFnValue::Reinitialize => {}
                                         }
                                     }
                                 }
@@ -357,6 +358,7 @@ pub fn apply_var_fn(
                                                     .to_string(),
                                                 )
                                             }
+                                            UpdateFnValue::Reinitialize => {}
                                         }
                                     }
                                 }
@@ -385,36 +387,4 @@ pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, Contract
         }
     }
     Err(ContractError::Unauthorized {}) //todo: err
-}
-
-pub fn is_recurring(vars: &Vec<Variable>) -> bool {
-    for var in vars {
-        match var {
-            Variable::Static(v) => {
-                if v.update_fn.is_some()
-                    && (v.update_fn.as_ref().unwrap().on_success.is_some()
-                        || v.update_fn.as_ref().unwrap().on_error.is_some())
-                {
-                    return true;
-                }
-            }
-            Variable::External(v) => {
-                if v.update_fn.is_some()
-                    && (v.update_fn.as_ref().unwrap().on_success.is_some()
-                        || v.update_fn.as_ref().unwrap().on_error.is_some())
-                {
-                    return true;
-                }
-            }
-            Variable::Query(v) => {
-                if v.update_fn.is_some()
-                    && (v.update_fn.as_ref().unwrap().on_success.is_some()
-                        || v.update_fn.as_ref().unwrap().on_error.is_some())
-                {
-                    return true;
-                }
-            }
-        }
-    }
-    false
 }
