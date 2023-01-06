@@ -51,49 +51,49 @@ pub fn hydrate_vars(
                     VariableKind::String => {
                         v.value = Some(format!(
                             "\"{}\"",
-                            resolve_query_expr_string(deps, env.clone(), v.call_fn.clone())?
+                            resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
                         ))
                     }
                     VariableKind::Uint => {
                         v.value = Some(format!(
                             "\"{}\"",
-                            resolve_query_expr_uint(deps, env.clone(), v.call_fn.clone())?
+                            resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
                         ))
                     }
                     VariableKind::Int => {
                         v.value = Some(format!(
                             "{}",
-                            resolve_query_expr_int(deps, env.clone(), v.call_fn.clone())?
+                            resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
                         ))
                     }
                     VariableKind::Decimal => {
                         v.value = Some(format!(
                             "\"{}\"",
-                            resolve_query_expr_decimal(deps, env.clone(), v.call_fn.clone())?
+                            resolve_query_expr_decimal(deps, env.clone(), v.init_fn.clone())?
                         ))
                     }
                     VariableKind::Timestamp => {
                         v.value = Some(format!(
                             "{}",
-                            resolve_query_expr_int(deps, env.clone(), v.call_fn.clone())?
+                            resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
                         ))
                     }
                     VariableKind::Bool => {
                         v.value = Some(format!(
                             "{}",
-                            resolve_query_expr_bool(deps, env.clone(), v.call_fn.clone())?
+                            resolve_query_expr_bool(deps, env.clone(), v.init_fn.clone())?
                         ))
                     }
                     VariableKind::Amount => {
                         v.value = Some(format!(
                             "\"{}\"",
-                            resolve_query_expr_uint(deps, env.clone(), v.call_fn.clone())?
+                            resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
                         ))
                     }
                     VariableKind::Asset => {
                         v.value = Some(format!(
                             "\"{}\"",
-                            resolve_query_expr_string(deps, env.clone(), v.call_fn.clone())?
+                            resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
                         ))
                     }
                 }
@@ -112,7 +112,6 @@ pub fn hydrate_msgs(
     msgs: Vec<String>,
     vars: Vec<Variable>,
 ) -> Result<Vec<CosmosMsg>, ContractError> {
-    //todo:
     let mut parsed_msgs: Vec<CosmosMsg> = vec![];
     for mut msg in msgs {
         for var in &vars {
@@ -142,7 +141,7 @@ pub fn hydrate_msgs(
                     }
                 }
             };
-            msg = msg.replace(&format!("\"$WARPVAR.{}\"", name), &replacement);
+            msg = msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
         }
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&msg)?)
     }

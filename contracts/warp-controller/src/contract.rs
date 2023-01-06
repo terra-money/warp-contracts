@@ -257,6 +257,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         funds: vec![],
                     },
                 );
+
                 new_job_attrs.push(Attribute::new("action", "recur_job"));
                 new_job_attrs.push(Attribute::new("job_id", job.id));
             }

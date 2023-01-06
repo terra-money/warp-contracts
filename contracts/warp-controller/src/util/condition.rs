@@ -97,7 +97,7 @@ fn resolve_ref_int(
             None => return Err(ContractError::Unauthorized {}),
             Some(s) => str::parse::<i128>(s.as_str())?,
         },
-        Variable::Query(q) => resolve_query_expr_int(deps, env, q.call_fn.clone())?,
+        Variable::Query(q) => resolve_query_expr_int(deps, env, q.init_fn.clone())?,
         Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
     };
 
@@ -174,7 +174,7 @@ fn resolve_ref_uint(
             None => return Err(ContractError::Unauthorized {}),
             Some(s) => Uint256::from_str(&s)?,
         },
-        Variable::Query(q) => resolve_query_expr_uint(deps, env, q.call_fn.clone())?,
+        Variable::Query(q) => resolve_query_expr_uint(deps, env, q.init_fn.clone())?,
         Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
     };
 
@@ -251,7 +251,7 @@ fn resolve_ref_decimal(
             None => return Err(ContractError::Unauthorized {}),
             Some(s) => Decimal256::from_str(&s)?,
         },
-        Variable::Query(q) => resolve_query_expr_decimal(deps, env, q.call_fn.clone())?,
+        Variable::Query(q) => resolve_query_expr_decimal(deps, env, q.init_fn.clone())?,
         Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
     };
 
@@ -409,7 +409,7 @@ fn resolve_ref_string(
             None => return Err(ContractError::Unauthorized {}),
             Some(s) => s,
         },
-        Variable::Query(q) => resolve_query_expr_string(deps, env, q.call_fn.clone())?,
+        Variable::Query(q) => resolve_query_expr_string(deps, env, q.init_fn.clone())?,
         Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
     };
 
@@ -470,7 +470,7 @@ pub fn resolve_ref_bool(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(_s) => return Err(ContractError::Unauthorized {}),
-        Variable::Query(q) => resolve_query_expr_bool(deps, env, q.call_fn.clone())?,
+        Variable::Query(q) => resolve_query_expr_bool(deps, env, q.init_fn.clone())?,
         Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
     };
     Ok(res)

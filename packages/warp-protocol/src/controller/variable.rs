@@ -101,7 +101,7 @@ pub struct StaticVariable {
 pub struct ExternalVariable {
     pub kind: VariableKind,
     pub name: String,
-    pub call_fn: ExternalExpr,
+    pub init_fn: ExternalExpr,
     pub value: Option<String>,
     pub update_fn: Option<UpdateFn>,
 }
@@ -110,7 +110,7 @@ pub struct ExternalVariable {
 pub struct QueryVariable {
     pub kind: VariableKind,
     pub name: String,
-    pub call_fn: QueryExpr,
+    pub init_fn: QueryExpr,
     pub value: Option<String>,
     pub update_fn: Option<UpdateFn>,
 }

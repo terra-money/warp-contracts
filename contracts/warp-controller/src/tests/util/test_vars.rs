@@ -1,10 +1,10 @@
 #[test]
 fn test_vars() {
-    let test_msg = "{\"execute\":{\"test\":\"$WARPVAR.name\"\"$WARPVAR.name\"}}".to_string();
+    let test_msg = "{\"execute\":{\"test\":\"$WARPVAR.test\"}}".to_string();
 
     let _idx = test_msg.find("\"$WARPVAR\"");
 
-    let _new_str = test_msg.replace("\"$WARPVAR.name\"", "\"input\"");
+    let _new_str = test_msg.replace("\"$WARPVAR.test\"", "\"input\"");
 
     // test_msg.repl
 
