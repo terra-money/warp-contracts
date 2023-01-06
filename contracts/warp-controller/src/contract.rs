@@ -6,10 +6,7 @@ use crate::query::template::{query_template, query_templates};
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::util::variable::apply_var_fn;
 use crate::{query, state::STATE, ContractError};
-use cosmwasm_std::{
-    entry_point, to_binary, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg,
-};
+use cosmwasm_std::{entry_point, to_binary, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg, QueryRequest, BankQuery, BalanceResponse};
 use warp_protocol::controller::account::Account;
 use warp_protocol::controller::job::{Job, JobStatus};
 use warp_protocol::controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
@@ -204,63 +201,76 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let mut msgs = vec![];
             let mut new_job_attrs = vec![];
 
-            if (new_job.status == JobStatus::Executed || new_job.status == JobStatus::Failed)
-                && new_job.recurring
-            {
-                let state = STATE.load(deps.storage)?;
-                let config = CONFIG.load(deps.storage)?;
-                let account = ACCOUNTS().load(deps.storage, new_job.owner.clone())?;
-                let new_vars =
-                    apply_var_fn(deps.as_ref(), env.clone(), new_job.vars, new_job.status)?;
-                let job =
-                    PENDING_JOBS().update(
+            let account = ACCOUNTS().load(deps.storage, new_job.owner.clone())?;
+
+            //assume reward.amount == warp token allowance
+            let fee = new_job.reward * config.creation_fee_percentage / Uint128::new(100);
+
+            let account_amount = deps.querier.query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
+                address: account.account.to_string(),
+                denom: "uluna".to_string()
+            }))?.amount.amount;
+
+            if new_job.recurring {
+                if !(account_amount >= fee + new_job.reward) {
+                    new_job_attrs.push(Attribute::new("action", "recur_job"));
+                    new_job_attrs.push(Attribute::new("creation_status", "failed_insufficient_fee"));
+                } else if !(new_job.status == JobStatus::Executed || new_job.status == JobStatus::Failed) {
+                    new_job_attrs.push(Attribute::new("action", "recur_job"));
+                    new_job_attrs.push(Attribute::new("creation_status", "failed_invalid_job_status"));
+                } else {
+                    let state = STATE.load(deps.storage)?;
+                    let new_vars =
+                        apply_var_fn(deps.as_ref(), env.clone(), new_job.vars, new_job.status)?;
+                    let job =
+                        PENDING_JOBS().update(
+                            deps.storage,
+                            state.current_job_id.u64(),
+                            |s| match s {
+                                None => Ok(Job {
+                                    id: state.current_job_id,
+                                    owner: new_job.owner,
+                                    last_update_time: Uint64::from(env.block.time.seconds()),
+                                    name: new_job.name,
+                                    status: JobStatus::Pending,
+                                    condition: new_job.condition.clone(),
+                                    vars: new_vars,
+                                    recurring: new_job.recurring,
+                                    msgs: new_job.msgs,
+                                    reward: new_job.reward,
+                                }),
+                                Some(_) => Err(ContractError::JobAlreadyExists {}),
+                            },
+                        )?;
+
+                    STATE.save(
                         deps.storage,
-                        state.current_job_id.u64(),
-                        |s| match s {
-                            None => Ok(Job {
-                                id: state.current_job_id,
-                                owner: new_job.owner,
-                                last_update_time: Uint64::from(env.block.time.seconds()),
-                                name: new_job.name,
-                                status: JobStatus::Pending,
-                                condition: new_job.condition.clone(),
-                                vars: new_vars,
-                                recurring: new_job.recurring,
-                                msgs: new_job.msgs,
-                                reward: new_job.reward,
-                            }),
-                            Some(_) => Err(ContractError::JobAlreadyExists {}),
+                        &State {
+                            current_job_id: state.current_job_id.saturating_add(Uint64::new(1)),
+                            current_template_id: state.current_template_id,
                         },
                     )?;
 
-                STATE.save(
-                    deps.storage,
-                    &State {
-                        current_job_id: state.current_job_id.saturating_add(Uint64::new(1)),
-                        current_template_id: state.current_template_id,
-                    },
-                )?;
+                    msgs.push(
+                        //send reward to controller
+                        WasmMsg::Execute {
+                            contract_addr: account.account.to_string(),
+                            msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                                    to_address: env.contract.address.to_string(),
+                                    amount: vec![Coin::new((new_job.reward + fee).u128(), "uluna")],
+                                })],
+                            })?,
+                            funds: vec![],
+                        },
+                    );
 
-                //assume reward.amount == warp token allowance
-                let fee = new_job.reward * config.creation_fee_percentage / Uint128::new(100);
-
-                msgs.push(
-                    //send reward to controller
-                    WasmMsg::Execute {
-                        contract_addr: account.account.to_string(),
-                        msg: to_binary(&warp_protocol::account::ExecuteMsg {
-                            msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                                to_address: env.contract.address.to_string(),
-                                amount: vec![Coin::new((new_job.reward + fee).u128(), "uluna")],
-                            })],
-                        })?,
-                        funds: vec![],
-                    },
-                );
-
-                new_job_attrs.push(Attribute::new("action", "recur_job"));
-                new_job_attrs.push(Attribute::new("job_id", job.id));
+                    new_job_attrs.push(Attribute::new("action", "recur_job"));
+                    new_job_attrs.push(Attribute::new("creation_status", "created"));
+                    new_job_attrs.push(Attribute::new("job_id", job.id));
+                }
             }
+
 
             Ok(Response::new()
                 .add_attribute("action", "execute_reply")
