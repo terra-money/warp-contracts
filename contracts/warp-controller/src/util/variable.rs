@@ -26,75 +26,84 @@ pub fn hydrate_vars(
                 Variable::Static(v)
             }
             Variable::External(mut v) => {
-                match external_inputs {
-                    None => {
-                        if v.value.is_none() {
-                            return Err(ContractError::Unauthorized {}); //todo: err
+                if v.reinitialize || !v.reinitialize && v.value.is_none() {
+                    match external_inputs {
+                        None => {
+                            if v.value.is_none() {
+                                return Err(ContractError::Unauthorized {}); //todo: err
+                            }
+                            Variable::External(v)
                         }
-                        Variable::External(v)
-                    }
-                    Some(ref input) => {
-                        let idx = input.iter().position(|i| i.name == v.name);
-                        v.value = match idx {
-                            None => return Err(ContractError::Unauthorized {}), //todo: err
-                            Some(i) => Some(input[i].input.clone()),
-                        };
-                        if v.value.is_none() {
-                            return Err(ContractError::Unauthorized {});
+                        Some(ref input) => {
+                            let idx = input.iter().position(|i| i.name == v.name);
+                            v.value = match idx {
+                                None => return Err(ContractError::Unauthorized {}), //todo: err
+                                Some(i) => Some(input[i].input.clone()),
+                            };
+                            if v.value.is_none() {
+                                return Err(ContractError::Unauthorized {});
+                            }
+                            Variable::External(v)
                         }
-                        Variable::External(v)
                     }
+                } else {
+                    if v.value.is_none() {
+                        return Err(ContractError::Unauthorized {}); //todo: err
+                    }
+                    Variable::External(v)
                 }
             }
             Variable::Query(mut v) => {
-                match v.kind {
-                    VariableKind::String => {
-                        v.value = Some(format!(
-                            "\"{}\"",
-                            resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
-                        ))
-                    }
-                    VariableKind::Uint => {
-                        v.value = Some(format!(
-                            "\"{}\"",
-                            resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
-                        ))
-                    }
-                    VariableKind::Int => {
-                        v.value = Some(format!(
-                            "{}",
-                            resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
-                        ))
-                    }
-                    VariableKind::Decimal => {
-                        v.value = Some(format!(
-                            "\"{}\"",
-                            resolve_query_expr_decimal(deps, env.clone(), v.init_fn.clone())?
-                        ))
-                    }
-                    VariableKind::Timestamp => {
-                        v.value = Some(format!(
-                            "{}",
-                            resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
-                        ))
-                    }
-                    VariableKind::Bool => {
-                        v.value = Some(format!(
-                            "{}",
-                            resolve_query_expr_bool(deps, env.clone(), v.init_fn.clone())?
-                        ))
-                    }
-                    VariableKind::Amount => {
-                        v.value = Some(format!(
-                            "\"{}\"",
-                            resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
-                        ))
-                    }
-                    VariableKind::Asset => {
-                        v.value = Some(format!(
-                            "\"{}\"",
-                            resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
-                        ))
+                if v.reinitialize || !v.reinitialize && v.value.is_none() {
+                    match v.kind {
+                        VariableKind::String => {
+                            v.value = Some(format!(
+                                "\"{}\"",
+                                resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
+                            ))
+                        }
+                        VariableKind::Uint => {
+                            v.value = Some(format!(
+                                "\"{}\"",
+                                resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
+                            ))
+                        }
+                        VariableKind::Int => {
+                            v.value = Some(format!(
+                                "{}",
+                                resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
+                            ))
+                        }
+                        VariableKind::Decimal => {
+                            v.value = Some(format!(
+                                "\"{}\"",
+                                resolve_query_expr_decimal(deps, env.clone(), v.init_fn.clone())?
+                            ))
+                        }
+                        VariableKind::Timestamp => {
+                            v.value = Some(format!(
+                                "{}",
+                                resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
+                            ))
+                        }
+                        VariableKind::Bool => {
+                            v.value = Some(format!(
+                                "{}",
+                                resolve_query_expr_bool(deps, env.clone(), v.init_fn.clone())?
+                            ))
+                        }
+                        VariableKind::Amount => {
+                            v.value = Some(format!(
+                                "\"{}\"",
+                                resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
+                            ))
+                        }
+                        VariableKind::Asset => {
+                            v.value = Some(format!(
+                                "\"{}\"",
+                                resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
+                            ))
+                        }
                     }
                 }
                 if v.value.is_none() {
@@ -173,92 +182,79 @@ pub fn apply_var_fn(
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_uint(
+                                                v.value = resolve_num_value_uint(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::Int(nv) => {
                                                 if v.kind != VariableKind::Int {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
+                                                v.value = resolve_num_value_int(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::Decimal(nv) => {
                                                 if v.kind != VariableKind::Uint {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_decimal(
+                                                v.value = resolve_num_value_decimal(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::Timestamp(nv) => {
                                                 if v.kind != VariableKind::Int {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
+                                                v.value = resolve_num_value_int(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::BlockHeight(nv) => {
                                                 if v.kind != VariableKind::Int {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
+                                                v.value = resolve_num_value_int(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::Bool(val) => {
                                                 if v.kind != VariableKind::Bool {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_ref_bool(
+                                                v.value = resolve_ref_bool(
                                                         deps,
                                                         env.clone(),
                                                         val,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
-                                            UpdateFnValue::Reinitialize => {}
                                         }
                                     }
                                 }
@@ -273,92 +269,79 @@ pub fn apply_var_fn(
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_uint(
+                                                v.value = resolve_num_value_uint(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::Int(nv) => {
                                                 if v.kind != VariableKind::Int {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
+                                                v.value = resolve_num_value_int(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::Decimal(nv) => {
                                                 if v.kind != VariableKind::Uint {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_decimal(
+                                                v.value = resolve_num_value_decimal(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::Timestamp(nv) => {
                                                 if v.kind != VariableKind::Int {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
+                                                v.value = resolve_num_value_int(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::BlockHeight(nv) => {
                                                 if v.kind != VariableKind::Int {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
+                                                v.value = resolve_num_value_int(
                                                         deps,
                                                         env.clone(),
                                                         nv,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
                                             UpdateFnValue::Bool(val) => {
                                                 if v.kind != VariableKind::Bool {
                                                     return Err(ContractError::Unauthorized {});
                                                     //todo: err
                                                 }
-                                                v.value = Some(
-                                                    resolve_ref_bool(
+                                                v.value = resolve_ref_bool(
                                                         deps,
                                                         env.clone(),
                                                         val,
                                                         &vars,
                                                     )?
-                                                    .to_string(),
-                                                )
+                                                    .to_string();
                                             }
-                                            UpdateFnValue::Reinitialize => {}
                                         }
                                     }
                                 }

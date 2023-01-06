@@ -72,7 +72,6 @@ pub enum UpdateFnValue {
     Timestamp(NumValue<i128, NumExprOp, IntFnOp>),
     BlockHeight(NumValue<i128, NumExprOp, IntFnOp>),
     Bool(String), //ref
-    Reinitialize,
 }
 
 #[cw_serde]
@@ -94,7 +93,7 @@ pub enum Variable {
 pub struct StaticVariable {
     pub kind: VariableKind,
     pub name: String,
-    pub value: Option<String>,
+    pub value: String,
     pub update_fn: Option<UpdateFn>,
 }
 
@@ -103,7 +102,8 @@ pub struct ExternalVariable {
     pub kind: VariableKind,
     pub name: String,
     pub init_fn: ExternalExpr,
-    pub value: Option<String>,
+    pub reinitialize: bool,
+    pub value: Option<String>, //none if uninitialized
     pub update_fn: Option<UpdateFn>,
 }
 
@@ -112,6 +112,7 @@ pub struct QueryVariable {
     pub kind: VariableKind,
     pub name: String,
     pub init_fn: QueryExpr,
-    pub value: Option<String>,
+    pub reinitialize: bool,
+    pub value: Option<String>, //none if uninitialized
     pub update_fn: Option<UpdateFn>,
 }
