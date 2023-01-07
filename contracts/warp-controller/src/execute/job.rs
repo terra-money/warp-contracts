@@ -1,6 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
-use crate::util::variable::{hydrate_msgs, hydrate_vars};
+use crate::util::variable::{hydrate_msgs, hydrate_vars, vars_valid};
 use crate::ContractError;
 use cosmwasm_std::{
     to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
@@ -30,6 +30,10 @@ pub fn create_job(
 
     if data.reward < config.minimum_reward || data.reward.is_zero() {
         return Err(ContractError::RewardTooSmall {});
+    }
+
+    if !vars_valid(&data.vars) {
+        return Err(ContractError::Unauthorized {}) //todo: err
     }
 
     let q = ACCOUNTS()

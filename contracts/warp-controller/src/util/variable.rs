@@ -363,3 +363,22 @@ pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, Contract
     }
     Err(ContractError::Unauthorized {}) //todo: err
 }
+
+pub fn vars_valid(vars: &Vec<Variable>) -> bool {
+    for var in vars {
+        match var {
+            Variable::Static(v) => {}
+            Variable::External(v) => {
+                if v.reinitialize && v.update_fn.is_some() {
+                    return false;
+                }
+            }
+            Variable::Query(v) => {
+                if v.reinitialize && v.update_fn.is_some() {
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}
