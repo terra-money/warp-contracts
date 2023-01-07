@@ -23,7 +23,7 @@ pub fn hydrate_vars(
                 Variable::Static(v)
             }
             Variable::External(mut v) => {
-                if v.reinitialize || !v.reinitialize && v.value.is_none() {
+                if v.reinitialize || v.value.is_none() {
                     match external_inputs {
                         None => {
                             if v.value.is_none() {
@@ -51,7 +51,7 @@ pub fn hydrate_vars(
                 }
             }
             Variable::Query(mut v) => {
-                if v.reinitialize || !v.reinitialize && v.value.is_none() {
+                if v.reinitialize || v.value.is_none() {
                     match v.kind {
                         VariableKind::String => {
                             v.value = Some(format!(
@@ -343,8 +343,376 @@ pub fn apply_var_fn(
                     }
                 }
             }
-            Variable::External(_) => {}
-            Variable::Query(_) => {}
+            Variable::External(mut v) => {
+                match v.update_fn.clone() {
+                    None => (),
+                    Some(update_fn) => {
+                        match status {
+                            JobStatus::Pending => return Err(ContractError::Unauthorized {}), //todo: err
+                            JobStatus::Executed => {
+                                match update_fn.on_success {
+                                    None => (),
+                                    Some(on_success) => {
+                                        match on_success {
+                                            UpdateFnValue::Uint(nv) => {
+                                                if v.kind != VariableKind::Uint {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_uint(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Int(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Decimal(nv) => {
+                                                if v.kind != VariableKind::Uint {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_decimal(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Timestamp(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::BlockHeight(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Bool(val) => {
+                                                if v.kind != VariableKind::Bool {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_ref_bool(
+                                                    deps,
+                                                    env.clone(),
+                                                    val,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            JobStatus::Failed => {
+                                match update_fn.on_error {
+                                    None => (),
+                                    Some(on_success) => {
+                                        match on_success {
+                                            UpdateFnValue::Uint(nv) => {
+                                                if v.kind != VariableKind::Uint {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_uint(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Int(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Decimal(nv) => {
+                                                if v.kind != VariableKind::Uint {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_decimal(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Timestamp(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::BlockHeight(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Bool(val) => {
+                                                if v.kind != VariableKind::Bool {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_ref_bool(
+                                                    deps,
+                                                    env.clone(),
+                                                    val,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            JobStatus::Cancelled => return Err(ContractError::Unauthorized {}),
+                        }
+                    }
+                }
+            }
+            Variable::Query(mut v) => {
+                match v.update_fn.clone() {
+                    None => (),
+                    Some(update_fn) => {
+                        match status {
+                            JobStatus::Pending => return Err(ContractError::Unauthorized {}), //todo: err
+                            JobStatus::Executed => {
+                                match update_fn.on_success {
+                                    None => (),
+                                    Some(on_success) => {
+                                        match on_success {
+                                            UpdateFnValue::Uint(nv) => {
+                                                if v.kind != VariableKind::Uint {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_uint(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Int(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Decimal(nv) => {
+                                                if v.kind != VariableKind::Uint {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_decimal(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Timestamp(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::BlockHeight(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Bool(val) => {
+                                                if v.kind != VariableKind::Bool {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_ref_bool(
+                                                    deps,
+                                                    env.clone(),
+                                                    val,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            JobStatus::Failed => {
+                                match update_fn.on_error {
+                                    None => (),
+                                    Some(on_success) => {
+                                        match on_success {
+                                            UpdateFnValue::Uint(nv) => {
+                                                if v.kind != VariableKind::Uint {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_uint(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Int(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Decimal(nv) => {
+                                                if v.kind != VariableKind::Uint {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_decimal(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Timestamp(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::BlockHeight(nv) => {
+                                                if v.kind != VariableKind::Int {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_num_value_int(
+                                                    deps,
+                                                    env.clone(),
+                                                    nv,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                            UpdateFnValue::Bool(val) => {
+                                                if v.kind != VariableKind::Bool {
+                                                    return Err(ContractError::Unauthorized {});
+                                                    //todo: err
+                                                }
+                                                v.value = Some(resolve_ref_bool(
+                                                    deps,
+                                                    env.clone(),
+                                                    val,
+                                                    &vars,
+                                                )?
+                                                    .to_string())
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            JobStatus::Cancelled => return Err(ContractError::Unauthorized {}),
+                        }
+                    }
+                }
+            }
         }
     }
     Ok(vars)
@@ -367,7 +735,7 @@ pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, Contract
 pub fn vars_valid(vars: &Vec<Variable>) -> bool {
     for var in vars {
         match var {
-            Variable::Static(v) => {}
+            Variable::Static(_) => {}
             Variable::External(v) => {
                 if v.reinitialize && v.update_fn.is_some() {
                     return false;

@@ -213,7 +213,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             }))?.amount.amount;
 
             if new_job.recurring {
-                if !(account_amount >= fee + new_job.reward) {
+                if account_amount < fee + new_job.reward {
                     new_job_attrs.push(Attribute::new("action", "recur_job"));
                     new_job_attrs.push(Attribute::new("creation_status", "failed_insufficient_fee"));
                 } else if !(new_job.status == JobStatus::Executed || new_job.status == JobStatus::Failed) {
