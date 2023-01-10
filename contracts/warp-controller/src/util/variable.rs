@@ -39,9 +39,6 @@ pub fn hydrate_vars(
                             None => return Err(ContractError::Unauthorized {}), //todo: err
                             Some(i) => Some(input[i].input.clone()),
                         };
-                        if v.value.is_none() {
-                            return Err(ContractError::Unauthorized {});
-                        }
                         Variable::External(v)
                     }
                 }
