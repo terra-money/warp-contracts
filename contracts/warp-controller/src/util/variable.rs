@@ -139,6 +139,9 @@ pub fn hydrate_msgs(
                     }
                 }
             };
+            if replacement.contains("$WARPVAR") { //todo: change to new version after merge
+                return Err(ContractError::Unauthorized {}) //todo: err
+            }
             msg = msg.replace(&format!("\"$WARPVAR.{}\"", name), &replacement);
         }
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&msg)?)
