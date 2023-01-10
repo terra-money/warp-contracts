@@ -158,7 +158,7 @@ pub fn resolve_num_value_uint(
         NumValue::Simple(value) => Ok(value),
         NumValue::Expr(expr) => resolve_num_expr_uint(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_uint(deps, env, expr, vars), //todo: resolve ref
-        NumValue::Fn(expr) => resolve_num_fn_uint(deps, env, expr, vars),
+        NumValue::Fn(_) => return Err(ContractError::Unauthorized {}), //todo: err
     }
 }
 
@@ -179,20 +179,6 @@ fn resolve_ref_uint(
     };
 
     Ok(res)
-}
-
-fn resolve_num_fn_uint(
-    deps: Deps,
-    env: Env,
-    expr: NumFnValue<Uint256, NumExprOp, IntFnOp>,
-    vars: &Vec<Variable>,
-) -> Result<Uint256, ContractError> {
-    let right = resolve_num_value_uint(deps, env, *expr.right, vars)?;
-
-    match expr.op {
-        IntFnOp::Abs => Ok(right.abs_diff(Uint256::zero())),
-        IntFnOp::Neg => Ok(right.saturating_mul(Uint256::zero().saturating_sub(Uint256::one()))),
-    }
 }
 
 pub fn resolve_num_expr_uint(
