@@ -26,11 +26,11 @@ pub fn update_config(
         .cancellation_fee_percentage
         .unwrap_or(config.cancellation_fee_percentage);
 
-    if config.creation_fee_percentage.u128() > 100 {
+    if config.creation_fee_percentage.u64() > 100 {
         return Err(ContractError::CreationFeeTooHigh {});
     }
 
-    if config.cancellation_fee_percentage.u128() > 100 {
+    if config.cancellation_fee_percentage.u64() > 100 {
         return Err(ContractError::CancellationFeeTooHigh {});
     }
 

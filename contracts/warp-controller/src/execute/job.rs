@@ -76,7 +76,7 @@ pub fn create_job(
     )?;
 
     //assume reward.amount == warp token allowance
-    let fee = data.reward * config.creation_fee_percentage / Uint128::new(100);
+    let fee = data.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
     let reward_send_msgs = vec![
         //send reward to controller
@@ -142,7 +142,7 @@ pub fn delete_job(
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
     })?;
 
-    let fee = job.reward * config.cancellation_fee_percentage / Uint128::new(100);
+    let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
 
     let cw20_send_msgs = vec![
         //send reward minus fee back to account
@@ -208,7 +208,7 @@ pub fn update_job(
     //todo: sanitize updates
 
     //assume reward.amount == warp token allowance
-    let fee = added_reward * config.creation_fee_percentage / Uint128::new(100);
+    let fee = added_reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
     if !added_reward.is_zero() && fee.is_zero() {
         return Err(ContractError::RewardTooSmall {});

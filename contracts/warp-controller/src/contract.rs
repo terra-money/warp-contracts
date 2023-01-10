@@ -22,7 +22,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let state = State {
-        current_job_id: Uint64::zero() + Uint64::one() * Uint64::pow(Uint64::new(1), 100),
+        current_job_id: Uint64::one(),
         current_template_id: Uint64::zero(),
     };
 
@@ -36,11 +36,11 @@ pub fn instantiate(
         cancellation_fee_percentage: msg.cancellation_fee,
     };
 
-    if config.creation_fee_percentage.u128() > 100 {
+    if config.creation_fee_percentage.u64() > 100 {
         return Err(ContractError::CreationFeeTooHigh {});
     }
 
-    if config.cancellation_fee_percentage.u128() > 100 {
+    if config.cancellation_fee_percentage.u64() > 100 {
         return Err(ContractError::CancellationFeeTooHigh {});
     }
 
@@ -242,7 +242,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 )?;
 
                 //assume reward.amount == warp token allowance
-                let fee = new_job.reward * config.creation_fee_percentage / Uint128::new(100);
+                let fee = new_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
                 msgs.push(
                     //send reward to controller
