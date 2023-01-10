@@ -24,6 +24,14 @@ pub fn submit_template(
         return Err(ContractError::NameTooShort {});
     }
 
+    if data.formatted_str.len() > 280 {
+        return Err(ContractError::NameTooLong {});
+    }
+
+    if data.formatted_str.is_empty() {
+        return Err(ContractError::NameTooShort {});
+    }
+
     //todo: checks for vars based on string and msg
 
     let state = STATE.load(deps.storage)?;
@@ -84,10 +92,10 @@ pub fn edit_template(
             owner: t.owner,
             name: data.name.unwrap_or(t.name),
             kind: t.kind,
-            msg: data.msg.unwrap_or(t.msg),
-            formatted_str: data.formatted_str.unwrap_or(t.formatted_str),
-            vars: data.vars.unwrap_or(t.vars),
-            condition: data.condition,
+            msg: t.msg,
+            formatted_str: t.formatted_str,
+            vars: t.vars,
+            condition: t.condition,
         }),
     })?;
 
