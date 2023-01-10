@@ -141,7 +141,7 @@ pub fn hydrate_msgs(
                 }
             };
             msg = msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
-            if replacement.contains("$WARPVAR") { //todo: change to new version after merge
+            if replacement.contains("$warp.variable") { //todo: change to new version after merge
                 return Err(ContractError::Unauthorized {}) //todo: err
             }
         }
