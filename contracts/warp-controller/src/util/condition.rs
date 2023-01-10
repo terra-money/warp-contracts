@@ -114,7 +114,7 @@ fn resolve_num_fn_int(
 
     match expr.op {
         IntFnOp::Abs => Ok(right.abs()),
-        IntFnOp::Neg => Ok(right.saturating_mul(i128::from(-1i64))),
+        IntFnOp::Neg => Ok(right.checked_mul(i128::from(-1i64)).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -128,11 +128,11 @@ pub fn resolve_num_expr_int(
     let right = resolve_num_value_int(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left.saturating_sub(right)),
-        NumExprOp::Add => Ok(left.saturating_add(right)),
-        NumExprOp::Div => Ok(left.checked_div(right).unwrap()),
-        NumExprOp::Mul => Ok(left.saturating_mul(right)),
-        NumExprOp::Mod => Ok(left.checked_rem(right).unwrap()),
+        NumExprOp::Sub => Ok(left.checked_sub(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Add => Ok(left.checked_add(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Div => Ok(left.checked_div(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mul => Ok(left.checked_mul(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mod => Ok(left.checked_rem(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -191,11 +191,11 @@ pub fn resolve_num_expr_uint(
     let right = resolve_num_value_uint(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left.saturating_sub(right)),
-        NumExprOp::Add => Ok(left.saturating_add(right)),
-        NumExprOp::Div => Ok(left.checked_div(right).unwrap()),
-        NumExprOp::Mul => Ok(left.saturating_mul(right)),
-        NumExprOp::Mod => Ok(left.checked_rem(right).unwrap()),
+        NumExprOp::Sub => Ok(left.checked_sub(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Add => Ok(left.checked_add(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Div => Ok(left.checked_div(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mul => Ok(left.checked_mul(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mod => Ok(left.checked_rem(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -255,7 +255,7 @@ fn resolve_num_fn_decimal(
     match expr.op {
         DecimalFnOp::Abs => Ok(right.abs_diff(Decimal256::zero())),
         DecimalFnOp::Neg => {
-            Ok(right.saturating_mul(Decimal256::zero().saturating_sub(Decimal256::one())))
+            Ok(right.checked_mul(Decimal256::zero().checked_sub(Decimal256::one())?)?)
         }
         DecimalFnOp::Floor => Ok(right.floor()),
         DecimalFnOp::Sqrt => Ok(right.sqrt()),
@@ -273,11 +273,11 @@ pub fn resolve_num_expr_decimal(
     let right = resolve_num_value_decimal(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left.saturating_sub(right)),
-        NumExprOp::Add => Ok(left.saturating_add(right)),
-        NumExprOp::Div => Ok(left.checked_div(right).unwrap()),
-        NumExprOp::Mul => Ok(left.saturating_mul(right)),
-        NumExprOp::Mod => Ok(left.checked_rem(right).unwrap()),
+        NumExprOp::Sub => Ok(left.checked_sub(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Add => Ok(left.checked_add(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Div => Ok(left.checked_div(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mul => Ok(left.checked_mul(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mod => Ok(left.checked_rem(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
     }
 }
 
