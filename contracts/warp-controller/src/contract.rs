@@ -205,7 +205,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let config = CONFIG.load(deps.storage)?;
 
             //assume reward.amount == warp token allowance
-            let fee = new_job.reward * config.creation_fee_percentage / Uint128::new(100);
+            let fee = new_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
             let account_amount = deps.querier.query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
                 address: account.account.to_string(),
