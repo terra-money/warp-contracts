@@ -79,7 +79,7 @@ pub fn create_job(
     )?;
 
     //assume reward.amount == warp token allowance
-    let fee = data.reward * config.creation_fee_percentage / Uint128::new(100);
+    let fee = data.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
     let reward_send_msgs = vec![
         //send reward to controller
@@ -145,7 +145,7 @@ pub fn delete_job(
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
     })?;
 
-    let fee = job.reward * config.cancellation_fee_percentage / Uint128::new(100);
+    let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
 
     let cw20_send_msgs = vec![
         //send reward minus fee back to account
@@ -210,26 +210,29 @@ pub fn update_job(
 
     //todo: sanitize updates
 
-    //assume reward.amount == warp token allowance
-    let fee = added_reward * config.creation_fee_percentage / Uint128::new(100);
+    let fee = added_reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
     if !added_reward.is_zero() && fee.is_zero() {
         return Err(ContractError::RewardTooSmall {});
     }
 
-    let cw20_send_msgs = vec![
-        //send reward to controller
-        WasmMsg::Execute {
-            contract_addr: account.account.to_string(),
-            msg: to_binary(&warp_protocol::account::ExecuteMsg {
-                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                    to_address: env.contract.address.to_string(),
-                    amount: vec![Coin::new((added_reward + fee).u128(), "uluna")],
-                })],
-            })?,
-            funds: vec![],
-        },
-    ];
+    let mut cw20_send_msgs = vec![];
+
+    if added_reward.u128() > 0 {
+        cw20_send_msgs.push(
+            //send reward to controller
+            WasmMsg::Execute {
+                contract_addr: account.account.to_string(),
+                msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                    msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                        to_address: env.contract.address.to_string(),
+                        amount: vec![Coin::new((added_reward + fee).u128(), "uluna")],
+                    })],
+                })?,
+                funds: vec![],
+            });
+    }
+
 
     Ok(Response::new()
         .add_messages(cw20_send_msgs)

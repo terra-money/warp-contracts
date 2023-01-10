@@ -19,7 +19,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let state = State {
-        current_job_id: Uint64::zero() + Uint64::one() * Uint64::pow(Uint64::new(1), 100),
+        current_job_id: Uint64::one(),
         current_template_id: Uint64::zero(),
     };
 
@@ -33,11 +33,11 @@ pub fn instantiate(
         cancellation_fee_percentage: msg.cancellation_fee,
     };
 
-    if config.creation_fee_percentage.u128() > 100 {
+    if config.creation_fee_percentage.u64() > 100 {
         return Err(ContractError::CreationFeeTooHigh {});
     }
 
-    if config.cancellation_fee_percentage.u128() > 100 {
+    if config.cancellation_fee_percentage.u64() > 100 {
         return Err(ContractError::CancellationFeeTooHigh {});
     }
 
@@ -266,10 +266,25 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         },
                     );
 
+                //assume reward.amount == warp token allowance
+                let fee = new_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+
+                msgs.push(
+                    //send reward to controller
+                    WasmMsg::Execute {
+                        contract_addr: account.account.to_string(),
+                        msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                            msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                                to_address: env.contract.address.to_string(),
+                                amount: vec![Coin::new((new_job.reward + fee).u128(), "uluna")],
+                            })],
+                        })?,
+                        funds: vec![],
+                    },
+                );
                     new_job_attrs.push(Attribute::new("action", "recur_job"));
                     new_job_attrs.push(Attribute::new("creation_status", "created"));
                     new_job_attrs.push(Attribute::new("job_id", job.id));
-                }
             }
 
 

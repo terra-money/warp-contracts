@@ -1,5 +1,5 @@
 use crate::ContractError::{CustomError, DecodeError, DeserializationError, SerializationError};
-use cosmwasm_std::{DivideByZeroError, StdError};
+use cosmwasm_std::{DivideByZeroError, OverflowError, StdError};
 use std::num::ParseIntError;
 use std::str::ParseBoolError;
 use thiserror::Error;
@@ -127,6 +127,14 @@ impl From<DivideByZeroError> for ContractError {
     fn from(_: DivideByZeroError) -> Self {
         CustomError {
             val: "ERROR: Division by zero".to_string(),
+        }
+    }
+}
+
+impl From<OverflowError> for ContractError {
+    fn from(_: OverflowError) -> Self {
+        CustomError {
+            val: "ERROR: Overflow error".to_string()
         }
     }
 }

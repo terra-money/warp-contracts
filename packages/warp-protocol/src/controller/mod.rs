@@ -25,8 +25,8 @@ pub struct Config {
     pub owner: Addr,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
-    pub creation_fee_percentage: Uint128,
-    pub cancellation_fee_percentage: Uint128,
+    pub creation_fee_percentage: Uint64,
+    pub cancellation_fee_percentage: Uint64,
 }
 
 #[cw_serde]
@@ -41,8 +41,8 @@ pub struct InstantiateMsg {
     pub owner: Option<String>,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
-    pub creation_fee: Uint128,
-    pub cancellation_fee: Uint128,
+    pub creation_fee: Uint64,
+    pub cancellation_fee: Uint64,
 }
 
 //execute
@@ -66,8 +66,8 @@ pub enum ExecuteMsg {
 pub struct UpdateConfigMsg {
     pub owner: Option<String>,
     pub minimum_reward: Option<Uint128>,
-    pub creation_fee_percentage: Option<Uint128>,
-    pub cancellation_fee_percentage: Option<Uint128>,
+    pub creation_fee_percentage: Option<Uint64>,
+    pub cancellation_fee_percentage: Option<Uint64>,
 }
 
 //query

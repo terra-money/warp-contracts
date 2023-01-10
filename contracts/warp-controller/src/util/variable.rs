@@ -31,17 +31,15 @@ pub fn hydrate_vars(
                             }
                             Variable::External(v)
                         }
-                        Some(ref input) => {
-                            let idx = input.iter().position(|i| i.name == v.name);
-                            v.value = match idx {
-                                None => return Err(ContractError::Unauthorized {}), //todo: err
-                                Some(i) => Some(input[i].input.clone()),
-                            };
-                            if v.value.is_none() {
-                                return Err(ContractError::Unauthorized {});
-                            }
-                            Variable::External(v)
-                        }
+                        Variable::External(v)
+                    }
+                    Some(ref input) => {
+                        let idx = input.iter().position(|i| i.name == v.name);
+                        v.value = match idx {
+                            None => return Err(ContractError::Unauthorized {}), //todo: err
+                            Some(i) => Some(input[i].input.clone()),
+                        };
+                        Variable::External(v)
                     }
                 } else {
                     if v.value.is_none() {
@@ -143,6 +141,9 @@ pub fn hydrate_msgs(
                 }
             };
             msg = msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
+            if replacement.contains("$WARPVAR") { //todo: change to new version after merge
+                return Err(ContractError::Unauthorized {}) //todo: err
+            }
         }
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&msg)?)
     }
