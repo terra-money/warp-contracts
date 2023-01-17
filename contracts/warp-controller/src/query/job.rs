@@ -62,13 +62,9 @@ pub fn query_jobs_by_ids(
         ));
     }
 
-    let _config = CONFIG.load(deps.storage)?;
     let mut jobs = vec![];
     for id in ids {
-        let query_msg = match job_status.clone() {
-            None => QueryJobMsg { id },
-            Some(_j) => QueryJobMsg { id },
-        };
+        let query_msg = QueryJobMsg { id };
 
         let job = query_job(deps, env.clone(), query_msg)?.job;
         if resolve_filters(
