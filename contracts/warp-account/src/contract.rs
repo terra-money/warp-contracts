@@ -22,8 +22,7 @@ pub fn instantiate(
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_attribute("contract_addr", env.contract.address)
-        .add_attribute("owner", msg.owner)
-        .add_attribute("warp_addr", info.sender))
+        .add_attribute("owner", msg.owner))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
