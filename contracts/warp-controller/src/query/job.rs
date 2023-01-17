@@ -98,55 +98,33 @@ pub fn query_jobs_by_reward(
     limit: usize,
 ) -> StdResult<JobsResponse> {
     let start = start_after.map(Bound::exclusive);
+    let map;
     if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
-        let infos = FINISHED_JOBS()
-            .idx
-            .reward
-            .range(deps.storage, None, start, Order::Descending)
-            .filter(|h| {
-                resolve_filters(
-                    deps,
-                    env.clone(),
-                    h.as_ref().unwrap().clone().1,
-                    name.clone(),
-                    owner.clone(),
-                    job_status.clone(),
-                )
-            });
-        let infos = infos.take(limit).collect::<StdResult<Vec<_>>>()?;
-
-        let mut jobs = vec![];
-        for info in infos.clone() {
-            jobs.push(info.1);
-        }
-        Ok(JobsResponse {
-            jobs,
-            total_count: infos.len(),
-        })
+        map = FINISHED_JOBS();
     } else {
-        let infos = PENDING_JOBS()
-            .idx
-            .reward
-            .range(deps.storage, None, start, Order::Descending)
-            .filter(|h| {
-                resolve_filters(
-                    deps,
-                    env.clone(),
-                    h.as_ref().unwrap().clone().1,
-                    name.clone(),
-                    owner.clone(),
-                    job_status.clone(),
-                )
-            });
-        let infos = infos.take(limit).collect::<StdResult<Vec<_>>>()?;
-
-        let mut jobs = vec![];
-        for info in infos.clone() {
-            jobs.push(info.1);
-        }
-        Ok(JobsResponse {
-            jobs,
-            total_count: infos.len(),
-        })
+        map = PENDING_JOBS();
     }
+    let infos = map.idx
+        .reward
+        .range(deps.storage, None, start, Order::Descending)
+        .filter(|h| {
+            resolve_filters(
+                deps,
+                env.clone(),
+                h.as_ref().unwrap().clone().1,
+                name.clone(),
+                owner.clone(),
+                job_status.clone(),
+            )
+        })
+        .take(limit).collect::<StdResult<Vec<_>>>()?;
+
+    let mut jobs = vec![];
+    for info in infos.clone() {
+        jobs.push(info.1);
+    }
+    Ok(JobsResponse {
+        jobs,
+        total_count: infos.len(),
+    })
 }
