@@ -16,7 +16,7 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: deps.api.addr_validate(&msg.owner)?,
-            warp_addr: info.sender.clone(),
+            warp_addr: info.sender,
         },
     )?;
     Ok(Response::new()

@@ -134,7 +134,7 @@ impl From<DivideByZeroError> for ContractError {
 impl From<OverflowError> for ContractError {
     fn from(_: OverflowError) -> Self {
         CustomError {
-            val: "ERROR: Overflow error".to_string()
+            val: "ERROR: Overflow error".to_string(),
         }
     }
 }

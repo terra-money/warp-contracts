@@ -231,9 +231,9 @@ pub fn update_job(
                     })],
                 })?,
                 funds: vec![],
-            });
+            },
+        );
     }
-
 
     Ok(Response::new()
         .add_messages(cw20_send_msgs)

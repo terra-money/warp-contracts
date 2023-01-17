@@ -114,7 +114,9 @@ fn resolve_num_fn_int(
 
     match expr.op {
         IntFnOp::Abs => Ok(right.abs()),
-        IntFnOp::Neg => Ok(right.checked_mul(i128::from(-1i64)).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
+        IntFnOp::Neg => Ok(right
+            .checked_mul(i128::from(-1i64))
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -128,11 +130,21 @@ pub fn resolve_num_expr_int(
     let right = resolve_num_value_int(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left.checked_sub(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Add => Ok(left.checked_add(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Div => Ok(left.checked_div(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Mul => Ok(left.checked_mul(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Mod => Ok(left.checked_rem(right).ok_or_else(|| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Sub => Ok(left
+            .checked_sub(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Add => Ok(left
+            .checked_add(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Div => Ok(left
+            .checked_div(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mul => Ok(left
+            .checked_mul(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mod => Ok(left
+            .checked_rem(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -158,7 +170,7 @@ pub fn resolve_num_value_uint(
         NumValue::Simple(value) => Ok(value),
         NumValue::Expr(expr) => resolve_num_expr_uint(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_uint(deps, env, expr, vars), //todo: resolve ref
-        NumValue::Fn(_) => return Err(ContractError::Unauthorized {}), //todo: err
+        NumValue::Fn(_) => Err(ContractError::Unauthorized {}),  //todo: err
     }
 }
 
@@ -191,11 +203,21 @@ pub fn resolve_num_expr_uint(
     let right = resolve_num_value_uint(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left.checked_sub(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Add => Ok(left.checked_add(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Div => Ok(left.checked_div(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Mul => Ok(left.checked_mul(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Mod => Ok(left.checked_rem(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Sub => Ok(left
+            .checked_sub(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Add => Ok(left
+            .checked_add(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Div => Ok(left
+            .checked_div(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mul => Ok(left
+            .checked_mul(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mod => Ok(left
+            .checked_rem(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -273,11 +295,21 @@ pub fn resolve_num_expr_decimal(
     let right = resolve_num_value_decimal(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left.checked_sub(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Add => Ok(left.checked_add(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Div => Ok(left.checked_div(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Mul => Ok(left.checked_mul(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
-        NumExprOp::Mod => Ok(left.checked_rem(right).map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Sub => Ok(left
+            .checked_sub(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Add => Ok(left
+            .checked_add(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Div => Ok(left
+            .checked_div(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mul => Ok(left
+            .checked_mul(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mod => Ok(left
+            .checked_rem(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
     }
 }
 

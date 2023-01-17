@@ -139,8 +139,9 @@ pub fn hydrate_msgs(
                     }
                 }
             };
-            if replacement.contains("$WARPVAR") { //todo: change to new version after merge
-                return Err(ContractError::Unauthorized {}) //todo: err
+            if replacement.contains("$WARPVAR") {
+                //todo: change to new version after merge
+                return Err(ContractError::Unauthorized {}); //todo: err
             }
             msg = msg.replace(&format!("\"$WARPVAR.{}\"", name), &replacement);
         }
@@ -393,65 +394,58 @@ pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
         for j in i..vars.len() {
             if i != j {
                 match vars[i].clone() {
-                    Variable::Static(vari) => {
-                        match vars[j].clone() {
-                            Variable::Static(varj) => {
-                                if vari.name == varj.name {
-                                    return true;
-                                }
-                            }
-                            Variable::External(varj) => {
-                                if vari.name == varj.name {
-                                    return true;
-                                }
-                            }
-                            Variable::Query(varj) => {
-                                if vari.name == varj.name {
-                                    return true;
-                                }
+                    Variable::Static(vari) => match vars[j].clone() {
+                        Variable::Static(varj) => {
+                            if vari.name == varj.name {
+                                return true;
                             }
                         }
-                    }
-                    Variable::External(vari) => {
-                        match vars[j].clone() {
-                            Variable::Static(varj) => {
-                                if vari.name == varj.name {
-                                    return true;
-                                }
-                            }
-                            Variable::External(varj) => {
-                                if vari.name == varj.name {
-                                    return true;
-                                }
-                            }
-                            Variable::Query(varj) => {
-                                if vari.name == varj.name {
-                                    return true;
-                                }
+                        Variable::External(varj) => {
+                            if vari.name == varj.name {
+                                return true;
                             }
                         }
-                    }
-                    Variable::Query(vari) => {
-                        match vars[j].clone() {
-                            Variable::Static(varj) => {
-                                if vari.name == varj.name {
-                                    return true;
-                                }
-                            }
-                            Variable::External(varj) => {
-                                if vari.name == varj.name {
-                                    return true;
-                                }
-                            }
-                            Variable::Query(varj) => {
-                                if vari.name == varj.name {
-                                    return true;
-                                }
+                        Variable::Query(varj) => {
+                            if vari.name == varj.name {
+                                return true;
                             }
                         }
-                    }
+                    },
+                    Variable::External(vari) => match vars[j].clone() {
+                        Variable::Static(varj) => {
+                            if vari.name == varj.name {
+                                return true;
+                            }
+                        }
+                        Variable::External(varj) => {
+                            if vari.name == varj.name {
+                                return true;
+                            }
+                        }
+                        Variable::Query(varj) => {
+                            if vari.name == varj.name {
+                                return true;
+                            }
+                        }
+                    },
+                    Variable::Query(vari) => match vars[j].clone() {
+                        Variable::Static(varj) => {
+                            if vari.name == varj.name {
+                                return true;
+                            }
+                        }
+                        Variable::External(varj) => {
+                            if vari.name == varj.name {
+                                return true;
+                            }
+                        }
+                        Variable::Query(varj) => {
+                            if vari.name == varj.name {
+                                return true;
+                            }
+                        }
+                    },
                 }
-
             }
         }
     }

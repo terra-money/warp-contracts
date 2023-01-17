@@ -204,8 +204,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let mut msgs = vec![];
             let mut new_job_attrs = vec![];
 
-            if new_job.recurring
-            {
+            if new_job.recurring {
                 let state = STATE.load(deps.storage)?;
                 let config = CONFIG.load(deps.storage)?;
                 let account = ACCOUNTS().load(deps.storage, new_job.owner.clone())?;
@@ -241,7 +240,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 )?;
 
                 //assume reward.amount == warp token allowance
-                let fee = new_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+                let fee = new_job.reward * Uint128::from(config.creation_fee_percentage)
+                    / Uint128::new(100);
 
                 msgs.push(
                     //send reward to controller

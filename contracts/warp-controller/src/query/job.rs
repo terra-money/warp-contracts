@@ -25,7 +25,10 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
     let page_size = data.limit.unwrap_or(QUERY_PAGE_SIZE);
 
     if page_size > QUERY_PAGE_SIZE {
-        return Err(StdError::generic_err(format!("Limit must be a max of {}.", QUERY_PAGE_SIZE)))
+        return Err(StdError::generic_err(format!(
+            "Limit must be a max of {}.",
+            QUERY_PAGE_SIZE
+        )));
     }
 
     match data {
@@ -98,13 +101,13 @@ pub fn query_jobs_by_reward(
     limit: usize,
 ) -> StdResult<JobsResponse> {
     let start = start_after.map(Bound::exclusive);
-    let map;
-    if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
-        map = FINISHED_JOBS();
+    let map= if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
+        FINISHED_JOBS()
     } else {
-        map = PENDING_JOBS();
-    }
-    let infos = map.idx
+        PENDING_JOBS()
+    };
+    let infos = map
+        .idx
         .reward
         .range(deps.storage, None, start, Order::Descending)
         .filter(|h| {
@@ -117,7 +120,8 @@ pub fn query_jobs_by_reward(
                 job_status.clone(),
             )
         })
-        .take(limit).collect::<StdResult<Vec<_>>>()?;
+        .take(limit)
+        .collect::<StdResult<Vec<_>>>()?;
 
     let mut jobs = vec![];
     for info in infos.clone() {
