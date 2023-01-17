@@ -388,6 +388,76 @@ pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, Contract
     Err(ContractError::Unauthorized {}) //todo: err
 }
 
+pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
+    for i in 0..vars.len() {
+        for j in i..vars.len() {
+            if i != j {
+                match vars[i].clone() {
+                    Variable::Static(vari) => {
+                        match vars[j].clone() {
+                            Variable::Static(varj) => {
+                                if vari.name == varj.name {
+                                    return true;
+                                }
+                            }
+                            Variable::External(varj) => {
+                                if vari.name == varj.name {
+                                    return true;
+                                }
+                            }
+                            Variable::Query(varj) => {
+                                if vari.name == varj.name {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    Variable::External(vari) => {
+                        match vars[j].clone() {
+                            Variable::Static(varj) => {
+                                if vari.name == varj.name {
+                                    return true;
+                                }
+                            }
+                            Variable::External(varj) => {
+                                if vari.name == varj.name {
+                                    return true;
+                                }
+                            }
+                            Variable::Query(varj) => {
+                                if vari.name == varj.name {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    Variable::Query(vari) => {
+                        match vars[j].clone() {
+                            Variable::Static(varj) => {
+                                if vari.name == varj.name {
+                                    return true;
+                                }
+                            }
+                            Variable::External(varj) => {
+                                if vari.name == varj.name {
+                                    return true;
+                                }
+                            }
+                            Variable::Query(varj) => {
+                                if vari.name == varj.name {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+    false
+}
+
 pub fn is_recurring(vars: &Vec<Variable>) -> bool {
     for var in vars {
         match var {

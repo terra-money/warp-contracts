@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, FINISHED_JOBS, PENDING_JOBS, QUERY_PAGE_SIZE};
+use crate::state::{FINISHED_JOBS, PENDING_JOBS, QUERY_PAGE_SIZE};
 use crate::util::filter::resolve_filters;
 use cosmwasm_std::{Addr, Deps, Env, Order, StdError, StdResult, Uint64};
 use cw_storage_plus::Bound;
