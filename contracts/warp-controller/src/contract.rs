@@ -204,8 +204,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let mut msgs = vec![];
             let mut new_job_attrs = vec![];
 
-            if (new_job.status == JobStatus::Executed || new_job.status == JobStatus::Failed)
-                && new_job.recurring
+            if new_job.recurring
             {
                 let state = STATE.load(deps.storage)?;
                 let config = CONFIG.load(deps.storage)?;
