@@ -24,6 +24,10 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
 
     let page_size = data.limit.unwrap_or(QUERY_PAGE_SIZE);
 
+    if page_size > QUERY_PAGE_SIZE {
+        return Err(StdError::generic_err(format!("Limit must be a max of {}.", QUERY_PAGE_SIZE)))
+    }
+
     match data {
         QueryJobsMsg {
             ids: Some(ids),
@@ -45,7 +49,7 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
             owner,
             job_status,
             start_after.map(|i| (i._0.u128(), i._1.u64())),
-            Some(page_size as usize),
+            page_size as usize,
         ),
     }
 }
@@ -91,7 +95,7 @@ pub fn query_jobs_by_reward(
     owner: Option<Addr>,
     job_status: Option<JobStatus>,
     start_after: Option<(u128, u64)>,
-    limit: Option<usize>,
+    limit: usize,
 ) -> StdResult<JobsResponse> {
     let start = start_after.map(Bound::exclusive);
     if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
@@ -109,12 +113,7 @@ pub fn query_jobs_by_reward(
                     job_status.clone(),
                 )
             });
-        let infos = match limit {
-            None => infos
-                .take(QUERY_PAGE_SIZE as usize)
-                .collect::<StdResult<Vec<_>>>()?,
-            Some(limit) => infos.take(limit).collect::<StdResult<Vec<_>>>()?,
-        };
+        let infos = infos.take(limit).collect::<StdResult<Vec<_>>>()?;
 
         let mut jobs = vec![];
         for info in infos.clone() {
@@ -139,12 +138,7 @@ pub fn query_jobs_by_reward(
                     job_status.clone(),
                 )
             });
-        let infos = match limit {
-            None => infos
-                .take(QUERY_PAGE_SIZE as usize)
-                .collect::<StdResult<Vec<_>>>()?,
-            Some(limit) => infos.take(limit).collect::<StdResult<Vec<_>>>()?,
-        };
+        let infos = infos.take(limit).collect::<StdResult<Vec<_>>>()?;
 
         let mut jobs = vec![];
         for info in infos.clone() {
