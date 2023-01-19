@@ -61,7 +61,12 @@ pub fn resolve_path(r: Ref, path: String) -> Result<Ref, ContractError> {
 fn read_array_index(path: String, from: usize) -> Result<(usize, usize), ContractError> {
     let mut idx = from;
     let mut curr = String::new();
-    while path.chars().nth(idx).ok_or_else(|| ContractError::Unauthorized {})? != ']' {
+    while path
+        .chars()
+        .nth(idx)
+        .ok_or(ContractError::Unauthorized {})?
+        != ']'
+    {
         curr.push(
             path.chars()
                 .nth(idx)

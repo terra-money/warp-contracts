@@ -1,6 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
-use crate::util::variable::{hydrate_msgs, hydrate_vars, vars_valid};
+use crate::util::variable::{has_duplicates, hydrate_msgs, hydrate_vars, vars_valid};
 use crate::ContractError;
 use cosmwasm_std::{
     to_binary, Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
@@ -34,6 +34,10 @@ pub fn create_job(
 
     if !vars_valid(&data.vars) {
         return Err(ContractError::Unauthorized {}) //todo: err
+    }
+
+    if has_duplicates(&data.vars) {
+        return Err(ContractError::Unauthorized {}); //todo: err
     }
 
     let q = ACCOUNTS()
@@ -230,9 +234,9 @@ pub fn update_job(
                     })],
                 })?,
                 funds: vec![],
-            });
+            },
+        );
     }
-
 
     Ok(Response::new()
         .add_messages(cw20_send_msgs)

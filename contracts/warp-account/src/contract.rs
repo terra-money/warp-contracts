@@ -16,14 +16,13 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: deps.api.addr_validate(&msg.owner)?,
-            warp_addr: info.sender.clone(),
+            warp_addr: info.sender,
         },
     )?;
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_attribute("contract_addr", env.contract.address)
-        .add_attribute("owner", msg.owner)
-        .add_attribute("warp_addr", info.sender))
+        .add_attribute("owner", msg.owner))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

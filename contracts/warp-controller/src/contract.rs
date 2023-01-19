@@ -271,9 +271,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     new_job_attrs.push(Attribute::new("job_id", job.id));
                 }
             }
-            
-
-
             Ok(Response::new()
                 .add_attribute("action", "execute_reply")
                 .add_attribute("job_id", job.id)
