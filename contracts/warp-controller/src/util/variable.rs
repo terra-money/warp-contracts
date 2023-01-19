@@ -795,37 +795,6 @@ pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
     false
 }
 
-pub fn is_recurring(vars: &Vec<Variable>) -> bool {
-        for var in vars {
-        match var {
-            Variable::Static(v) => {
-                if v.update_fn.is_some()
-                    && (v.update_fn.as_ref().unwrap().on_success.is_some()
-                        || v.update_fn.as_ref().unwrap().on_error.is_some())
-                {
-                    return true;
-                }
-            }
-            Variable::External(v) => {
-                if v.update_fn.is_some()
-                    && (v.update_fn.as_ref().unwrap().on_success.is_some()
-                        || v.update_fn.as_ref().unwrap().on_error.is_some())
-                {
-                    return true;
-                }
-            }
-            Variable::Query(v) => {
-                if v.update_fn.is_some()
-                    && (v.update_fn.as_ref().unwrap().on_success.is_some()
-                        || v.update_fn.as_ref().unwrap().on_error.is_some())
-                {
-                    return true;
-                }
-            }
-        }
-    }
-    false
-}
 pub fn vars_valid(vars: &Vec<Variable>) -> bool {
     for var in vars {
         match var {
