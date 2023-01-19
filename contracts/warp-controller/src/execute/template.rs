@@ -1,6 +1,6 @@
-use crate::state::{ACCOUNTS, STATE, TEMPLATES};
+use crate::state::{ACCOUNTS, CONFIG, STATE, TEMPLATES};
 use crate::ContractError;
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint64};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, to_binary, Uint128, Uint64, WasmMsg};
 use warp_protocol::controller::template::{
     DeleteTemplateMsg, EditTemplateMsg, SubmitTemplateMsg, Template,
 };
@@ -12,6 +12,12 @@ pub fn submit_template(
     info: MessageInfo,
     data: SubmitTemplateMsg,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if !info.funds.contains(&Coin { denom: "uluna".to_string(), amount: config.template_fee }) {
+        return Err(ContractError::Unauthorized {}) //todo: err
+    }
+
     if !ACCOUNTS().has(deps.storage, info.sender.clone()) {
         return Err(ContractError::AccountDoesNotExist {});
     }
@@ -54,6 +60,7 @@ pub fn submit_template(
             current_template_id: state.current_template_id.saturating_add(Uint64::new(1)),
         },
     )?;
+
     Ok(Response::new()
         .add_attribute("action", "submit_msg_template")
         .add_attribute("id", state.current_template_id)

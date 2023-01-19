@@ -26,6 +26,8 @@ pub fn update_config(
         .cancellation_fee_percentage
         .unwrap_or(config.cancellation_fee_percentage);
 
+    config.template_fee = data.template_fee.unwrap_or(config.template_fee);
+
     if config.creation_fee_percentage.u64() > 100 {
         return Err(ContractError::CreationFeeTooHigh {});
     }

@@ -27,6 +27,7 @@ pub struct Config {
     pub minimum_reward: Uint128,
     pub creation_fee_percentage: Uint64,
     pub cancellation_fee_percentage: Uint64,
+    pub template_fee: Uint128,
 }
 
 #[cw_serde]
@@ -43,6 +44,7 @@ pub struct InstantiateMsg {
     pub minimum_reward: Uint128,
     pub creation_fee: Uint64,
     pub cancellation_fee: Uint64,
+    pub template_fee: Uint128,
 }
 
 //execute
@@ -68,6 +70,7 @@ pub struct UpdateConfigMsg {
     pub minimum_reward: Option<Uint128>,
     pub creation_fee_percentage: Option<Uint64>,
     pub cancellation_fee_percentage: Option<Uint64>,
+    pub template_fee: Option<Uint128>,
 }
 
 //query

@@ -31,6 +31,7 @@ pub fn instantiate(
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
         cancellation_fee_percentage: msg.cancellation_fee,
+        template_fee: msg.template_fee
     };
 
     if config.creation_fee_percentage.u64() > 100 {
@@ -101,19 +102,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            owner: config.owner,
-            warp_account_code_id: config.warp_account_code_id,
-            minimum_reward: config.minimum_reward,
-            creation_fee_percentage: config.creation_fee_percentage,
-            cancellation_fee_percentage: config.cancellation_fee_percentage,
-        },
-    )?;
-    Ok(Response::default())
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
