@@ -234,7 +234,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 STATE.save(
                     deps.storage,
                     &State {
-                        current_job_id: state.current_job_id.saturating_add(Uint64::new(1)),
+                        current_job_id: state.current_job_id.checked_add(Uint64::new(1))?,
                         current_template_id: state.current_template_id,
                     },
                 )?;

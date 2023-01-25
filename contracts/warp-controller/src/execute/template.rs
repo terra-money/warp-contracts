@@ -51,7 +51,7 @@ pub fn submit_template(
         deps.storage,
         &State {
             current_job_id: state.current_job_id,
-            current_template_id: state.current_template_id.saturating_add(Uint64::new(1)),
+            current_template_id: state.current_template_id.checked_add(Uint64::new(1))?,
         },
     )?;
     Ok(Response::new()
