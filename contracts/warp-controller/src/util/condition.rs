@@ -396,7 +396,7 @@ pub fn resolve_query_expr_decimal(
     let resolved = resolve_path(r, expr.selector)?;
 
     Ok(Decimal256::from_str(
-        resolved.string().ok_or(ContractError::Unauthorized {})?,
+        resolved.string().ok_or(ContractError::DecodeError {})?,
     )?)
 }
 
