@@ -329,6 +329,7 @@ pub fn execute_job(
         .add_message(reward_msg)
         .add_attribute("action", "execute_job")
         .add_attribute("executor", info.sender)
+        .add_attribute("job_id", job.id)
         .add_attribute("job_reward", job.reward)
         .add_attributes(attrs))
 }
