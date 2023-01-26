@@ -28,6 +28,24 @@ pub fn update_config(
 
     config.template_fee = data.template_fee.unwrap_or(config.template_fee);
 
+    config.a_max = data.a_max.unwrap_or(config.a_max);
+    config.a_min = data.a_min.unwrap_or(config.a_min);
+    config.t_max = data.t_max.unwrap_or(config.t_max);
+    config.t_min = data.t_min.unwrap_or(config.t_min);
+    config.q_max = data.q_max.unwrap_or(config.q_max);
+
+    if config.a_max < config.a_min {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
+    if config.t_max < config.t_min {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
+    if config.minimum_reward < config.a_min {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
     if config.creation_fee_percentage.u64() > 100 {
         return Err(ContractError::CreationFeeTooHigh {});
     }

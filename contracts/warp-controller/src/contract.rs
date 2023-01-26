@@ -44,6 +44,18 @@ pub fn instantiate(
         q_max: msg.q_max,
     };
 
+    if config.a_max < config.a_min {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
+    if config.t_max < config.t_min {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
+    if config.minimum_reward < config.a_min {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
     if config.creation_fee_percentage.u64() > 100 {
         return Err(ContractError::CreationFeeTooHigh {});
     }
