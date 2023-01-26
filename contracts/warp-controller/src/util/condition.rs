@@ -167,7 +167,7 @@ pub fn resolve_num_value_uint(
         NumValue::Simple(value) => Ok(value),
         NumValue::Expr(expr) => resolve_num_expr_uint(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_uint(deps, env, expr, vars), //todo: resolve ref
-        NumValue::Fn(_) => Err(ContractError::Unauthorized {}),  //todo: err
+        NumValue::Fn(_) => Err(ContractError::Unauthorized {}),         //todo: err
     }
 }
 

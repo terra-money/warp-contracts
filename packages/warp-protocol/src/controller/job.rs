@@ -18,6 +18,7 @@ pub struct Job {
     pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
     pub recurring: bool,
+    pub refreshing: bool,
     pub reward: Uint128,
 }
 
@@ -33,6 +34,7 @@ pub enum JobStatus {
     Executed,
     Failed,
     Cancelled,
+    Evicted,
 }
 
 #[cw_serde]
@@ -42,6 +44,7 @@ pub struct CreateJobMsg {
     pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
     pub recurring: bool,
+    pub refreshing: bool,
     pub reward: Uint128,
 }
 
@@ -61,6 +64,11 @@ pub struct UpdateJobMsg {
 pub struct ExecuteJobMsg {
     pub id: Uint64,
     pub external_inputs: Option<Vec<ExternalInput>>,
+}
+
+#[cw_serde]
+pub struct EvictJobMsg {
+    pub id: Uint64,
 }
 
 #[cw_serde]
