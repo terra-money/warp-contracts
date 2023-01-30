@@ -18,7 +18,7 @@ pub struct Job {
     pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
     pub recurring: bool,
-    pub refreshing: bool,
+    pub requeue_on_evict: bool,
     pub reward: Uint128,
 }
 
@@ -44,7 +44,7 @@ pub struct CreateJobMsg {
     pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
     pub recurring: bool,
-    pub refreshing: bool,
+    pub requeue_on_evict: bool,
     pub reward: Uint128,
 }
 

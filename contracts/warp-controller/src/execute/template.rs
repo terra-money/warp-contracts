@@ -1,8 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG, STATE, TEMPLATES};
 use crate::ContractError;
-use cosmwasm_std::{
-    Coin, DepsMut, Env, MessageInfo, Response, Uint64,
-};
+use cosmwasm_std::{Coin, DepsMut, Env, MessageInfo, Response, Uint64};
 use warp_protocol::controller::template::{
     DeleteTemplateMsg, EditTemplateMsg, SubmitTemplateMsg, Template,
 };

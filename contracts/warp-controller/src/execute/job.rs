@@ -66,7 +66,7 @@ pub fn create_job(
             status: JobStatus::Pending,
             condition: data.condition.clone(),
             recurring: data.recurring,
-            refreshing: data.refreshing,
+            requeue_on_evict: data.requeue_on_evict,
             vars: data.vars,
             msgs: data.msgs,
             reward: data.reward,
@@ -146,7 +146,7 @@ pub fn delete_job(
             msgs: job.msgs,
             vars: job.vars,
             recurring: job.recurring,
-            refreshing: job.refreshing,
+            requeue_on_evict: job.requeue_on_evict,
             reward: job.reward,
         }),
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
@@ -220,7 +220,7 @@ pub fn update_job(
             msgs: job.msgs,
             vars: job.vars,
             recurring: job.recurring,
-            refreshing: job.refreshing,
+            requeue_on_evict: job.requeue_on_evict,
             reward: job.reward + added_reward,
         }),
     })?;
@@ -307,7 +307,7 @@ pub fn execute_job(
                 msgs: job.msgs,
                 vars: job.vars,
                 recurring: job.recurring,
-                refreshing: job.refreshing,
+                requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
             },
         )?;
@@ -401,7 +401,7 @@ pub fn evict_job(
 
     let job_status;
 
-    if job.refreshing && account_amount > a {
+    if job.requeue_on_evict && account_amount >= a {
         //todo: keeper evicting gets nothing if fees not present or not refreshing type job
         cosmos_msgs.push(
             //send reward to controller
@@ -429,7 +429,7 @@ pub fn evict_job(
                     msgs: job.msgs,
                     vars: job.vars,
                     recurring: job.recurring,
-                    refreshing: job.refreshing,
+                    requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                 }),
             })?
@@ -448,7 +448,7 @@ pub fn evict_job(
                     msgs: job.msgs,
                     vars: job.vars,
                     recurring: job.recurring,
-                    refreshing: job.refreshing,
+                    requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                 }),
                 Some(_) => Err(ContractError::Unauthorized {}), //todo: err
