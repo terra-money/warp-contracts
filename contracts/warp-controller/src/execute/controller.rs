@@ -67,5 +67,11 @@ pub fn update_config(
         .add_attribute(
             "config_cancellation_fee_percentage",
             config.cancellation_fee_percentage,
-        ))
+        )
+        .add_attribute("config_template_fee", config.template_fee)
+        .add_attribute("config_a_max", config.a_max)
+        .add_attribute("config_a_min", config.a_min)
+        .add_attribute("config_t_max", config.t_max)
+        .add_attribute("config_t_min", config.t_min)
+        .add_attribute("config_q_max", config.q_max))
 }
