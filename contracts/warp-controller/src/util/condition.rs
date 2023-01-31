@@ -86,16 +86,25 @@ pub fn resolve_num_value_int(
 }
 
 fn resolve_ref_int(
-    deps: Deps,
-    env: Env,
+    _deps: Deps,
+    _env: Env,
     r: String,
     vars: &Vec<Variable>,
 ) -> Result<i128, ContractError> {
     let var = get_var(r, vars)?;
     let res = match var {
-        Variable::Static(s) => str::parse::<i128>(s.value.as_str())?,
-        Variable::Query(q) => resolve_query_expr_int(deps, env, q.init_fn.clone())?,
-        Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            str::parse::<i128>(&val[2..val.len() - 2])?
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            str::parse::<i128>(&val[2..val.len() - 2])?
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            str::parse::<i128>(&val[2..val.len() - 2])?
+        } //todo: err
     };
 
     Ok(res)
@@ -172,16 +181,25 @@ pub fn resolve_num_value_uint(
 }
 
 fn resolve_ref_uint(
-    deps: Deps,
-    env: Env,
+    _deps: Deps,
+    _env: Env,
     r: String,
     vars: &Vec<Variable>,
 ) -> Result<Uint256, ContractError> {
     let var = get_var(r, vars)?;
     let res = match var {
-        Variable::Static(s) => Uint256::from_str(&s.value)?,
-        Variable::Query(q) => resolve_query_expr_uint(deps, env, q.init_fn.clone())?,
-        Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            Uint256::from_str(&val[2..val.len() - 2])?
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            Uint256::from_str(&val[2..val.len() - 2])?
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            Uint256::from_str(&val[2..val.len() - 2])?
+        } //todo: err
     };
 
     Ok(res)
@@ -242,16 +260,25 @@ pub fn resolve_num_value_decimal(
 }
 
 fn resolve_ref_decimal(
-    deps: Deps,
-    env: Env,
+    _deps: Deps,
+    _env: Env,
     r: String,
     vars: &Vec<Variable>,
 ) -> Result<Decimal256, ContractError> {
     let var = get_var(r, vars)?;
     let res = match var {
-        Variable::Static(s) => Decimal256::from_str(&s.value)?,
-        Variable::Query(q) => resolve_query_expr_decimal(deps, env, q.init_fn.clone())?,
-        Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            Decimal256::from_str(&val[2..val.len() - 2])?
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            Decimal256::from_str(&val[2..val.len() - 2])?
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            Decimal256::from_str(&val[2..val.len() - 2])?
+        } //todo: err
     };
 
     Ok(res)
@@ -407,16 +434,25 @@ pub fn resolve_string_expr(
 }
 
 fn resolve_ref_string(
-    deps: Deps,
-    env: Env,
+    _deps: Deps,
+    _env: Env,
     r: String,
     vars: &Vec<Variable>,
 ) -> Result<String, ContractError> {
     let var = get_var(r, vars)?;
     let res = match var {
-        Variable::Static(s) => s.clone().value,
-        Variable::Query(q) => resolve_query_expr_string(deps, env, q.init_fn.clone())?,
-        Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            val[2..val.len() - 2].to_string()
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            val[2..val.len() - 2].to_string()
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            val[2..val.len() - 2].to_string()
+        } //todo: err
     };
 
     Ok(res)
@@ -468,16 +504,25 @@ pub fn resolve_query_expr_bool(
 }
 
 pub fn resolve_ref_bool(
-    deps: Deps,
-    env: Env,
+    _deps: Deps,
+    _env: Env,
     r: String,
     vars: &Vec<Variable>,
 ) -> Result<bool, ContractError> {
     let var = get_var(r, vars)?;
     let res = match var {
-        Variable::Static(_s) => return Err(ContractError::Unauthorized {}),
-        Variable::Query(q) => resolve_query_expr_bool(deps, env, q.init_fn.clone())?,
-        Variable::External(_) => return Err(ContractError::Unauthorized {}), //todo: err
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            serde_json_wasm::from_str::<bool>(&val[2..val.len() - 2])?
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            serde_json_wasm::from_str::<bool>(&val[2..val.len() - 2])?
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            serde_json_wasm::from_str::<bool>(&val[2..val.len() - 2])?
+        } //todo: err
     };
     Ok(res)
 }
