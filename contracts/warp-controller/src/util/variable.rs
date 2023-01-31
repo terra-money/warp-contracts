@@ -50,7 +50,7 @@ pub fn hydrate_vars(
                     match v.kind {
                         VariableKind::String => {
                             v.value = Some(format!(
-                                "\"{}\"",
+                                "\"{}\"", // \"$warp.variable\" => \"VALUE"\
                                 resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
                             ))
                         }
@@ -80,7 +80,7 @@ pub fn hydrate_vars(
                         }
                         VariableKind::Bool => {
                             v.value = Some(format!(
-                                "{}",
+                                "{}", //\"$warp.variable\" => VALUE
                                 resolve_query_expr_bool(deps, env.clone(), v.init_fn.clone())?
                             ))
                         }

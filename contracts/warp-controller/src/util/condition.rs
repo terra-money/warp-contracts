@@ -95,15 +95,15 @@ fn resolve_ref_int(
     let res = match var {
         Variable::Static(s) => {
             let val = s.clone().value;
-            str::parse::<i128>(&val[2..val.len() - 2])?
+            str::parse::<i128>(&val)?
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
-            str::parse::<i128>(&val[2..val.len() - 2])?
+            str::parse::<i128>(&val)?
         } //todo: err
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
-            str::parse::<i128>(&val[2..val.len() - 2])?
+            str::parse::<i128>(&val)?
         } //todo: err
     };
 
@@ -513,15 +513,15 @@ pub fn resolve_ref_bool(
     let res = match var {
         Variable::Static(s) => {
             let val = s.clone().value;
-            serde_json_wasm::from_str::<bool>(&val[2..val.len() - 2])?
+            str::parse::<bool>(&val)?
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
-            serde_json_wasm::from_str::<bool>(&val[2..val.len() - 2])?
+            str::parse::<bool>(&val)?
         } //todo: err
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
-            serde_json_wasm::from_str::<bool>(&val[2..val.len() - 2])?
+            str::parse::<bool>(&val)?
         } //todo: err
     };
     Ok(res)
