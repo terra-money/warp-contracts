@@ -1,4 +1,5 @@
 use crate::util::path::resolve_path;
+use crate::util::variable::get_var;
 use crate::ContractError;
 use cosmwasm_std::{
     to_vec, ContractResult, Decimal256, Deps, Env, StdError, SystemResult, Uint256,
@@ -9,14 +10,20 @@ use json_codec_wasm::Decoder;
 use std::str::FromStr;
 use warp_protocol::controller::condition::{
     BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumExprOp, NumExprValue, NumFnValue,
-    NumOp, NumValue, QueryExpr, StringOp, TimeExpr, TimeOp, Value,
+    NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
 };
+use warp_protocol::controller::variable::{QueryExpr, Variable};
 
-pub fn resolve_cond(deps: Deps, env: Env, cond: Condition) -> Result<bool, ContractError> {
+pub fn resolve_cond(
+    deps: Deps,
+    env: Env,
+    cond: Condition,
+    vars: &Vec<Variable>,
+) -> Result<bool, ContractError> {
     match cond {
         Condition::And(conds) => {
             for cond in conds {
-                if !resolve_cond(deps, env.clone(), *cond)? {
+                if !resolve_cond(deps, env.clone(), *cond, vars)? {
                     return Ok(false);
                 }
             }
@@ -24,26 +31,31 @@ pub fn resolve_cond(deps: Deps, env: Env, cond: Condition) -> Result<bool, Contr
         }
         Condition::Or(conds) => {
             for cond in conds {
-                if resolve_cond(deps, env.clone(), *cond)? {
+                if resolve_cond(deps, env.clone(), *cond, vars)? {
                     return Ok(true);
                 }
             }
             Ok(false)
         }
-        Condition::Not(cond) => Ok(!resolve_cond(deps, env, *cond)?),
-        Condition::Expr(expr) => Ok(resolve_expr(deps, env, *expr)?),
+        Condition::Not(cond) => Ok(!resolve_cond(deps, env, *cond, vars)?),
+        Condition::Expr(expr) => Ok(resolve_expr(deps, env, *expr, vars)?),
     }
 }
 
-pub fn resolve_expr(deps: Deps, env: Env, expr: Expr) -> Result<bool, ContractError> {
+pub fn resolve_expr(
+    deps: Deps,
+    env: Env,
+    expr: Expr,
+    vars: &Vec<Variable>,
+) -> Result<bool, ContractError> {
     match expr {
-        Expr::String(expr) => resolve_string_expr(deps, env, expr),
-        Expr::Uint(expr) => resolve_uint_expr(deps, env, expr),
-        Expr::Int(expr) => resolve_int_expr(deps, env, expr),
-        Expr::Decimal(expr) => resolve_decimal_expr(deps, env, expr),
+        Expr::String(expr) => resolve_string_expr(deps, env, expr, vars),
+        Expr::Uint(expr) => resolve_uint_expr(deps, env, expr, vars),
+        Expr::Int(expr) => resolve_int_expr(deps, env, expr, vars),
+        Expr::Decimal(expr) => resolve_decimal_expr(deps, env, expr, vars),
         Expr::Timestamp(expr) => resolve_timestamp_expr(deps, env, expr),
         Expr::BlockHeight(expr) => resolve_block_expr(deps, env, expr),
-        Expr::Bool(expr) => resolve_query_expr_bool(deps, env, expr),
+        Expr::Bool(expr) => resolve_ref_bool(deps, env, expr, vars),
     }
 }
 
@@ -51,9 +63,10 @@ pub fn resolve_int_expr(
     deps: Deps,
     env: Env,
     expr: GenExpr<NumValue<i128, NumExprOp, IntFnOp>, NumOp>,
+    vars: &Vec<Variable>,
 ) -> Result<bool, ContractError> {
-    let left = resolve_num_value_int(deps, env.clone(), expr.left)?;
-    let right = resolve_num_value_int(deps, env.clone(), expr.right)?;
+    let left = resolve_num_value_int(deps, env.clone(), expr.left, vars)?;
+    let right = resolve_num_value_int(deps, env.clone(), expr.right, vars)?;
 
     Ok(resolve_int_op(deps, env, left, right, expr.op))
 }
@@ -62,25 +75,54 @@ pub fn resolve_num_value_int(
     deps: Deps,
     env: Env,
     value: NumValue<i128, NumExprOp, IntFnOp>,
+    vars: &Vec<Variable>,
 ) -> Result<i128, ContractError> {
     match value {
         NumValue::Simple(value) => Ok(value),
-        NumValue::Expr(expr) => resolve_num_expr_int(deps, env, expr),
-        NumValue::Query(expr) => resolve_query_expr_int(deps, env, expr),
-        NumValue::Fn(expr) => resolve_num_fn_int(deps, env, expr),
+        NumValue::Expr(expr) => resolve_num_expr_int(deps, env, expr, vars),
+        NumValue::Ref(expr) => resolve_ref_int(deps, env, expr, vars),
+        NumValue::Fn(expr) => resolve_num_fn_int(deps, env, expr, vars),
     }
+}
+
+fn resolve_ref_int(
+    _deps: Deps,
+    _env: Env,
+    r: String,
+    vars: &Vec<Variable>,
+) -> Result<i128, ContractError> {
+    let var = get_var(r, vars)?;
+    let res = match var {
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            str::parse::<i128>(&val)?
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            str::parse::<i128>(&val)?
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            str::parse::<i128>(&val)?
+        } //todo: err
+    };
+
+    Ok(res)
 }
 
 fn resolve_num_fn_int(
     deps: Deps,
     env: Env,
     expr: NumFnValue<i128, NumExprOp, IntFnOp>,
+    vars: &Vec<Variable>,
 ) -> Result<i128, ContractError> {
-    let right = resolve_num_value_int(deps, env, *expr.right)?;
+    let right = resolve_num_value_int(deps, env, *expr.right, vars)?;
 
     match expr.op {
         IntFnOp::Abs => Ok(right.abs()),
-        IntFnOp::Neg => Ok(right.saturating_mul(i128::from(-1i64))),
+        IntFnOp::Neg => Ok(right
+            .checked_mul(i128::from(-1i64))
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -88,16 +130,27 @@ pub fn resolve_num_expr_int(
     deps: Deps,
     env: Env,
     expr: NumExprValue<i128, NumExprOp, IntFnOp>,
+    vars: &Vec<Variable>,
 ) -> Result<i128, ContractError> {
-    let left = resolve_num_value_int(deps, env.clone(), *expr.left)?;
-    let right = resolve_num_value_int(deps, env, *expr.right)?;
+    let left = resolve_num_value_int(deps, env.clone(), *expr.left, vars)?;
+    let right = resolve_num_value_int(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left.saturating_sub(right)),
-        NumExprOp::Add => Ok(left.saturating_add(right)),
-        NumExprOp::Div => Ok(left.checked_div(right).unwrap()),
-        NumExprOp::Mul => Ok(left.saturating_mul(right)),
-        NumExprOp::Mod => Ok(left.checked_rem(right).unwrap()),
+        NumExprOp::Sub => Ok(left
+            .checked_sub(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Add => Ok(left
+            .checked_add(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Div => Ok(left
+            .checked_div(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mul => Ok(left
+            .checked_mul(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mod => Ok(left
+            .checked_rem(right)
+            .ok_or(ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -105,9 +158,10 @@ pub fn resolve_uint_expr(
     deps: Deps,
     env: Env,
     expr: GenExpr<NumValue<Uint256, NumExprOp, IntFnOp>, NumOp>,
+    vars: &Vec<Variable>,
 ) -> Result<bool, ContractError> {
-    let left = resolve_num_value_uint(deps, env.clone(), expr.left)?;
-    let right = resolve_num_value_uint(deps, env.clone(), expr.right)?;
+    let left = resolve_num_value_uint(deps, env.clone(), expr.left, vars)?;
+    let right = resolve_num_value_uint(deps, env.clone(), expr.right, vars)?;
 
     Ok(resolve_uint_op(deps, env, left, right, expr.op))
 }
@@ -116,42 +170,66 @@ pub fn resolve_num_value_uint(
     deps: Deps,
     env: Env,
     value: NumValue<Uint256, NumExprOp, IntFnOp>,
+    vars: &Vec<Variable>,
 ) -> Result<Uint256, ContractError> {
     match value {
         NumValue::Simple(value) => Ok(value),
-        NumValue::Expr(expr) => resolve_num_expr_uint(deps, env, expr),
-        NumValue::Query(expr) => resolve_query_expr_uint(deps, env, expr),
-        NumValue::Fn(expr) => resolve_num_fn_uint(deps, env, expr),
+        NumValue::Expr(expr) => resolve_num_expr_uint(deps, env, expr, vars),
+        NumValue::Ref(expr) => resolve_ref_uint(deps, env, expr, vars), //todo: resolve ref
+        NumValue::Fn(_) => Err(ContractError::Unauthorized {}),         //todo: err
     }
 }
 
-fn resolve_num_fn_uint(
-    deps: Deps,
-    env: Env,
-    expr: NumFnValue<Uint256, NumExprOp, IntFnOp>,
+fn resolve_ref_uint(
+    _deps: Deps,
+    _env: Env,
+    r: String,
+    vars: &Vec<Variable>,
 ) -> Result<Uint256, ContractError> {
-    let right = resolve_num_value_uint(deps, env, *expr.right)?;
+    let var = get_var(r, vars)?;
+    let res = match var {
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            Uint256::from_str(&val[2..val.len() - 2])?
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            Uint256::from_str(&val[2..val.len() - 2])?
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            Uint256::from_str(&val[2..val.len() - 2])?
+        } //todo: err
+    };
 
-    match expr.op {
-        IntFnOp::Abs => Ok(right.abs_diff(Uint256::zero())),
-        IntFnOp::Neg => Ok(right.saturating_mul(Uint256::zero().saturating_sub(Uint256::one()))),
-    }
+    Ok(res)
 }
 
 pub fn resolve_num_expr_uint(
     deps: Deps,
     env: Env,
     expr: NumExprValue<Uint256, NumExprOp, IntFnOp>,
+    vars: &Vec<Variable>,
 ) -> Result<Uint256, ContractError> {
-    let left = resolve_num_value_uint(deps, env.clone(), *expr.left)?;
-    let right = resolve_num_value_uint(deps, env, *expr.right)?;
+    let left = resolve_num_value_uint(deps, env.clone(), *expr.left, vars)?;
+    let right = resolve_num_value_uint(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left.saturating_sub(right)),
-        NumExprOp::Add => Ok(left.saturating_add(right)),
-        NumExprOp::Div => Ok(left.checked_div(right).unwrap()),
-        NumExprOp::Mul => Ok(left.saturating_mul(right)),
-        NumExprOp::Mod => Ok(left.checked_rem(right).unwrap()),
+        NumExprOp::Sub => Ok(left
+            .checked_sub(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Add => Ok(left
+            .checked_add(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Div => Ok(left
+            .checked_div(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mul => Ok(left
+            .checked_mul(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mod => Ok(left
+            .checked_rem(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -159,9 +237,10 @@ pub fn resolve_decimal_expr(
     deps: Deps,
     env: Env,
     expr: GenExpr<NumValue<Decimal256, NumExprOp, DecimalFnOp>, NumOp>,
+    vars: &Vec<Variable>,
 ) -> Result<bool, ContractError> {
-    let left = resolve_num_value_decimal(deps, env.clone(), expr.left)?;
-    let right = resolve_num_value_decimal(deps, env.clone(), expr.right)?;
+    let left = resolve_num_value_decimal(deps, env.clone(), expr.left, vars)?;
+    let right = resolve_num_value_decimal(deps, env.clone(), expr.right, vars)?;
 
     Ok(resolve_decimal_op(deps, env, left, right, expr.op))
 }
@@ -170,26 +249,53 @@ pub fn resolve_num_value_decimal(
     deps: Deps,
     env: Env,
     value: NumValue<Decimal256, NumExprOp, DecimalFnOp>,
+    vars: &Vec<Variable>,
 ) -> Result<Decimal256, ContractError> {
     match value {
         NumValue::Simple(value) => Ok(value),
-        NumValue::Expr(expr) => resolve_num_expr_decimal(deps, env, expr),
-        NumValue::Query(expr) => resolve_query_expr_decimal(deps, env, expr),
-        NumValue::Fn(expr) => resolve_num_fn_decimal(deps, env, expr),
+        NumValue::Expr(expr) => resolve_num_expr_decimal(deps, env, expr, vars),
+        NumValue::Ref(expr) => resolve_ref_decimal(deps, env, expr, vars), //todo: resolve ref
+        NumValue::Fn(expr) => resolve_num_fn_decimal(deps, env, expr, vars),
     }
+}
+
+fn resolve_ref_decimal(
+    _deps: Deps,
+    _env: Env,
+    r: String,
+    vars: &Vec<Variable>,
+) -> Result<Decimal256, ContractError> {
+    let var = get_var(r, vars)?;
+    let res = match var {
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            Decimal256::from_str(&val[2..val.len() - 2])?
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            Decimal256::from_str(&val[2..val.len() - 2])?
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            Decimal256::from_str(&val[2..val.len() - 2])?
+        } //todo: err
+    };
+
+    Ok(res)
 }
 
 fn resolve_num_fn_decimal(
     deps: Deps,
     env: Env,
     expr: NumFnValue<Decimal256, NumExprOp, DecimalFnOp>,
+    vars: &Vec<Variable>,
 ) -> Result<Decimal256, ContractError> {
-    let right = resolve_num_value_decimal(deps, env, *expr.right)?;
+    let right = resolve_num_value_decimal(deps, env, *expr.right, vars)?;
 
     match expr.op {
         DecimalFnOp::Abs => Ok(right.abs_diff(Decimal256::zero())),
         DecimalFnOp::Neg => {
-            Ok(right.saturating_mul(Decimal256::zero().saturating_sub(Decimal256::one())))
+            Ok(right.checked_mul(Decimal256::zero().checked_sub(Decimal256::one())?)?)
         }
         DecimalFnOp::Floor => Ok(right.floor()),
         DecimalFnOp::Sqrt => Ok(right.sqrt()),
@@ -201,16 +307,27 @@ pub fn resolve_num_expr_decimal(
     deps: Deps,
     env: Env,
     expr: NumExprValue<Decimal256, NumExprOp, DecimalFnOp>,
+    vars: &Vec<Variable>,
 ) -> Result<Decimal256, ContractError> {
-    let left = resolve_num_value_decimal(deps, env.clone(), *expr.left)?;
-    let right = resolve_num_value_decimal(deps, env, *expr.right)?;
+    let left = resolve_num_value_decimal(deps, env.clone(), *expr.left, vars)?;
+    let right = resolve_num_value_decimal(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left.saturating_sub(right)),
-        NumExprOp::Add => Ok(left.saturating_add(right)),
-        NumExprOp::Div => Ok(left.checked_div(right).unwrap()),
-        NumExprOp::Mul => Ok(left.saturating_mul(right)),
-        NumExprOp::Mod => Ok(left.checked_rem(right).unwrap()),
+        NumExprOp::Sub => Ok(left
+            .checked_sub(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Add => Ok(left
+            .checked_add(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Div => Ok(left
+            .checked_div(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mul => Ok(left
+            .checked_mul(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
+        NumExprOp::Mod => Ok(left
+            .checked_rem(right)
+            .map_err(|_| ContractError::Unauthorized {})?), //todo: err
     }
 }
 
@@ -283,33 +400,62 @@ pub fn resolve_string_expr(
     deps: Deps,
     env: Env,
     expr: GenExpr<Value<String>, StringOp>,
+    vars: &Vec<Variable>,
 ) -> Result<bool, ContractError> {
     match (expr.left, expr.right) {
         (Value::Simple(left), Value::Simple(right)) => {
             Ok(resolve_str_op(deps, env, left, right, expr.op))
         }
-        (Value::Simple(left), Value::Query(right)) => Ok(resolve_str_op(
+        (Value::Simple(left), Value::Ref(right)) => Ok(resolve_str_op(
+            //todo: resolve ref
             deps,
             env.clone(),
             left,
-            resolve_query_expr_string(deps, env, right)?,
+            resolve_ref_string(deps, env, right, vars)?,
             expr.op,
         )),
-        (Value::Query(left), Value::Simple(right)) => Ok(resolve_str_op(
+        (Value::Ref(left), Value::Simple(right)) => Ok(resolve_str_op(
+            //todo: resolve ref
             deps,
             env.clone(),
-            resolve_query_expr_string(deps, env, left)?,
+            resolve_ref_string(deps, env, left, vars)?,
             right,
             expr.op,
         )),
-        (Value::Query(left), Value::Query(right)) => Ok(resolve_str_op(
+        (Value::Ref(left), Value::Ref(right)) => Ok(resolve_str_op(
+            //todo: resolve ref
             deps,
             env.clone(),
-            resolve_query_expr_string(deps, env.clone(), left)?,
-            resolve_query_expr_string(deps, env, right)?,
+            resolve_ref_string(deps, env.clone(), left, vars)?,
+            resolve_ref_string(deps, env, right, vars)?,
             expr.op,
         )),
     }
+}
+
+fn resolve_ref_string(
+    _deps: Deps,
+    _env: Env,
+    r: String,
+    vars: &Vec<Variable>,
+) -> Result<String, ContractError> {
+    let var = get_var(r, vars)?;
+    let res = match var {
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            val[2..val.len() - 2].to_string()
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            val[2..val.len() - 2].to_string()
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            val[2..val.len() - 2].to_string()
+        } //todo: err
+    };
+
+    Ok(res)
 }
 
 pub fn resolve_str_op(_deps: Deps, _env: Env, left: String, right: String, op: StringOp) -> bool {
@@ -357,6 +503,30 @@ pub fn resolve_query_expr_bool(
     resolved.bool().ok_or(ContractError::DecodeError {})
 }
 
+pub fn resolve_ref_bool(
+    _deps: Deps,
+    _env: Env,
+    r: String,
+    vars: &Vec<Variable>,
+) -> Result<bool, ContractError> {
+    let var = get_var(r, vars)?;
+    let res = match var {
+        Variable::Static(s) => {
+            let val = s.clone().value;
+            str::parse::<bool>(&val)?
+        }
+        Variable::Query(q) => {
+            let val = q.clone().value.ok_or(ContractError::Unauthorized {})?;
+            str::parse::<bool>(&val)?
+        } //todo: err
+        Variable::External(e) => {
+            let val = e.clone().value.ok_or(ContractError::Unauthorized {})?;
+            str::parse::<bool>(&val)?
+        } //todo: err
+    };
+    Ok(res)
+}
+
 pub fn resolve_query_expr_uint(
     deps: Deps,
     env: Env,
@@ -367,9 +537,14 @@ pub fn resolve_query_expr_uint(
     let r = Ref::new(&value);
     let resolved = resolve_path(r, expr.selector)?;
 
-    Ok(Uint256::from_str(
-        resolved.string().ok_or(ContractError::DecodeError {})?,
-    )?)
+    let str_result = Uint256::from_str(resolved.string().ok_or(ContractError::DecodeError {})?);
+
+    let val = match str_result {
+        Ok(result) => result,
+        Err(_) => Uint256::from(resolved.u128().ok_or(ContractError::DecodeError {})?),
+    };
+
+    Ok(val)
 }
 
 pub fn resolve_query_expr_int(

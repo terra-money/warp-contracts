@@ -4,10 +4,12 @@ use crate::query::condition;
 use crate::execute::template::{delete_template, edit_template, submit_template};
 use crate::query::template::{query_template, query_templates};
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
+use crate::util::variable::apply_var_fn;
 use crate::{query, state::STATE, ContractError};
 use cosmwasm_std::{
-    entry_point, to_binary, Attribute, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdError, StdResult, SubMsgResult, Uint64,
+    entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
+    CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
+    SubMsgResult, Uint128, Uint64, WasmMsg,
 };
 use warp_protocol::controller::account::Account;
 use warp_protocol::controller::job::{Job, JobStatus};
@@ -21,8 +23,9 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let state = State {
-        current_job_id: Uint64::zero() + Uint64::one() * Uint64::pow(Uint64::new(1), 100),
+        current_job_id: Uint64::one(),
         current_template_id: Uint64::zero(),
+        q: Uint64::zero(),
     };
 
     let config = Config {
@@ -33,13 +36,31 @@ pub fn instantiate(
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
         cancellation_fee_percentage: msg.cancellation_fee,
+        template_fee: msg.template_fee,
+        t_max: msg.t_max,
+        t_min: msg.t_min,
+        a_max: msg.a_max,
+        a_min: msg.a_min,
+        q_max: msg.q_max,
     };
 
-    if config.creation_fee_percentage.u128() > 100 {
+    if config.a_max < config.a_min {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
+    if config.t_max < config.t_min {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
+    if config.minimum_reward < config.a_min {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
+    if config.creation_fee_percentage.u64() > 100 {
         return Err(ContractError::CreationFeeTooHigh {});
     }
 
-    if config.cancellation_fee_percentage.u128() > 100 {
+    if config.cancellation_fee_percentage.u64() > 100 {
         return Err(ContractError::CancellationFeeTooHigh {});
     }
 
@@ -61,6 +82,7 @@ pub fn execute(
         ExecuteMsg::DeleteJob(data) => job::delete_job(deps, env, info, data),
         ExecuteMsg::UpdateJob(data) => job::update_job(deps, env, info, data),
         ExecuteMsg::ExecuteJob(data) => job::execute_job(deps, env, info, data),
+        ExecuteMsg::EvictJob(data) => job::evict_job(deps, env, info, data),
 
         ExecuteMsg::CreateAccount(_) => account::create_account(deps, env, info),
 
@@ -103,23 +125,12 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            owner: config.owner,
-            warp_account_code_id: config.warp_account_code_id,
-            minimum_reward: config.minimum_reward,
-            creation_fee_percentage: config.creation_fee_percentage,
-            cancellation_fee_percentage: config.cancellation_fee_percentage,
-        },
-    )?;
-    Ok(Response::default())
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         //account creation
         0 => {
@@ -171,6 +182,8 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
         }
         //job execution
         _ => {
+            let mut state = STATE.load(deps.storage)?;
+
             let new_status = match msg.result {
                 SubMsgResult::Ok(_) => JobStatus::Executed,
                 SubMsgResult::Err(_) => JobStatus::Failed,
@@ -179,7 +192,9 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
             let job = PENDING_JOBS().load(deps.storage, msg.id)?;
             PENDING_JOBS().remove(deps.storage, msg.id)?;
 
-            let _new_job = FINISHED_JOBS().update(deps.storage, msg.id, |j| match j {
+            state.q = state.q.checked_sub(Uint64::new(1))?;
+
+            let new_job = FINISHED_JOBS().update(deps.storage, msg.id, |j| match j {
                 None => Ok(Job {
                     id: job.id,
                     owner: job.owner,
@@ -188,6 +203,9 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                     status: new_status,
                     condition: job.condition,
                     msgs: job.msgs,
+                    vars: job.vars,
+                    recurring: job.recurring,
+                    requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                 }),
                 Some(_) => Err(ContractError::JobAlreadyFinished {}),
@@ -198,11 +216,94 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                 _ => vec![],
             };
 
+            let mut msgs = vec![];
+            let mut new_job_attrs = vec![];
+
+            let account = ACCOUNTS().load(deps.storage, new_job.owner.clone())?;
+            let config = CONFIG.load(deps.storage)?;
+
+            //assume reward.amount == warp token allowance
+            let fee =
+                new_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+
+            let account_amount = deps
+                .querier
+                .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
+                    address: account.account.to_string(),
+                    denom: "uluna".to_string(),
+                }))?
+                .amount
+                .amount;
+
+            if new_job.recurring {
+                if account_amount < fee + new_job.reward {
+                    new_job_attrs.push(Attribute::new("action", "recur_job"));
+                    new_job_attrs
+                        .push(Attribute::new("creation_status", "failed_insufficient_fee"));
+                } else if !(new_job.status == JobStatus::Executed
+                    || new_job.status == JobStatus::Failed)
+                {
+                    new_job_attrs.push(Attribute::new("action", "recur_job"));
+                    new_job_attrs.push(Attribute::new(
+                        "creation_status",
+                        "failed_invalid_job_status",
+                    ));
+                } else {
+                    let new_vars =
+                        apply_var_fn(deps.as_ref(), env.clone(), new_job.vars, new_job.status)?;
+                    let job = PENDING_JOBS().update(
+                        deps.storage,
+                        state.current_job_id.u64(),
+                        |s| match s {
+                            None => Ok(Job {
+                                id: state.current_job_id,
+                                owner: new_job.owner,
+                                last_update_time: Uint64::from(env.block.time.seconds()),
+                                name: new_job.name,
+                                status: JobStatus::Pending,
+                                condition: new_job.condition.clone(),
+                                vars: new_vars,
+                                requeue_on_evict: new_job.requeue_on_evict,
+                                recurring: new_job.recurring,
+                                msgs: new_job.msgs,
+                                reward: new_job.reward,
+                            }),
+                            Some(_) => Err(ContractError::JobAlreadyExists {}),
+                        },
+                    )?;
+
+                    state.current_job_id = state.current_job_id.checked_add(Uint64::new(1))?;
+                    state.q = state.q.checked_add(Uint64::new(1))?;
+
+                    msgs.push(
+                        //send reward to controller
+                        WasmMsg::Execute {
+                            contract_addr: account.account.to_string(),
+                            msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                                    to_address: env.contract.address.to_string(),
+                                    amount: vec![Coin::new((new_job.reward + fee).u128(), "uluna")],
+                                })],
+                            })?,
+                            funds: vec![],
+                        },
+                    );
+
+                    new_job_attrs.push(Attribute::new("action", "recur_job"));
+                    new_job_attrs.push(Attribute::new("creation_status", "created"));
+                    new_job_attrs.push(Attribute::new("job_id", job.id));
+                }
+            }
+
+            STATE.save(deps.storage, &state)?;
+
             Ok(Response::new()
                 .add_attribute("action", "execute_reply")
                 .add_attribute("job_id", job.id)
                 .add_attribute("job_status", serde_json_wasm::to_string(&job.status)?)
-                .add_attributes(res_attrs)) //todo: trying no attrs
+                .add_attributes(res_attrs)
+                .add_attributes(new_job_attrs)
+                .add_messages(msgs))
         }
     }
 }

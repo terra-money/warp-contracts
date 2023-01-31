@@ -1,6 +1,6 @@
-use crate::state::{ACCOUNTS, STATE, TEMPLATES};
+use crate::state::{ACCOUNTS, CONFIG, STATE, TEMPLATES};
 use crate::ContractError;
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint64};
+use cosmwasm_std::{Coin, DepsMut, Env, MessageInfo, Response, Uint64};
 use warp_protocol::controller::template::{
     DeleteTemplateMsg, EditTemplateMsg, SubmitTemplateMsg, Template,
 };
@@ -12,6 +12,15 @@ pub fn submit_template(
     info: MessageInfo,
     data: SubmitTemplateMsg,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if !info.funds.contains(&Coin {
+        denom: "uluna".to_string(),
+        amount: config.template_fee,
+    }) {
+        return Err(ContractError::Unauthorized {}); //todo: err
+    }
+
     if !ACCOUNTS().has(deps.storage, info.sender.clone()) {
         return Err(ContractError::AccountDoesNotExist {});
     }
@@ -21,6 +30,14 @@ pub fn submit_template(
     }
 
     if data.name.is_empty() {
+        return Err(ContractError::NameTooShort {});
+    }
+
+    if data.formatted_str.len() > 280 {
+        return Err(ContractError::NameTooLong {});
+    }
+
+    if data.formatted_str.is_empty() {
         return Err(ContractError::NameTooShort {});
     }
 
@@ -35,6 +52,7 @@ pub fn submit_template(
         msg: data.msg.clone(),
         formatted_str: data.formatted_str.clone(),
         vars: data.vars.clone(),
+        condition: data.condition.clone(),
     };
 
     TEMPLATES.save(deps.storage, state.current_template_id.u64(), &msg_template)?;
@@ -43,8 +61,10 @@ pub fn submit_template(
         &State {
             current_job_id: state.current_job_id,
             current_template_id: state.current_template_id.saturating_add(Uint64::new(1)),
+            q: state.q,
         },
     )?;
+
     Ok(Response::new()
         .add_attribute("action", "submit_msg_template")
         .add_attribute("id", state.current_template_id)
@@ -83,9 +103,10 @@ pub fn edit_template(
             owner: t.owner,
             name: data.name.unwrap_or(t.name),
             kind: t.kind,
-            msg: data.msg.unwrap_or(t.msg),
-            formatted_str: data.formatted_str.unwrap_or(t.formatted_str),
-            vars: data.vars.unwrap_or(t.vars),
+            msg: t.msg,
+            formatted_str: t.formatted_str,
+            vars: t.vars,
+            condition: t.condition,
         }),
     })?;
 

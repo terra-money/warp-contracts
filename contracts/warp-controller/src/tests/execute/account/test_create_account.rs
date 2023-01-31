@@ -18,8 +18,14 @@ fn test_create_account_success() {
         Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 
@@ -72,8 +78,14 @@ fn test_create_account_exists() {
         Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 
@@ -122,8 +134,14 @@ fn test_create_account_by_account() {
         Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 
