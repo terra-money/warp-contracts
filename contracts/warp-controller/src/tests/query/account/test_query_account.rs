@@ -23,8 +23,14 @@ fn test_query_account_successful() {
         Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 
@@ -81,8 +87,14 @@ fn test_query_account_does_not_exist() {
         Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 
