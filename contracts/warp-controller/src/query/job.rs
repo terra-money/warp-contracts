@@ -101,7 +101,7 @@ pub fn query_jobs_by_reward(
     limit: usize,
 ) -> StdResult<JobsResponse> {
     let start = start_after.map(Bound::exclusive);
-    let map= if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
+    let map = if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
         FINISHED_JOBS()
     } else {
         PENDING_JOBS()
