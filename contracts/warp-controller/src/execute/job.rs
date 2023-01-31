@@ -285,7 +285,14 @@ pub fn execute_job(
         return Err(ContractError::JobNotActive {});
     }
 
-    let resolution = resolve_cond(deps.as_ref(), env.clone(), job.condition.clone(), &job.vars);
+    let vars = hydrate_vars(
+        deps.as_ref(),
+        env.clone(),
+        job.vars.clone(),
+        data.external_inputs,
+    )?;
+
+    let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
 
     let mut attrs = vec![];
 
@@ -305,7 +312,7 @@ pub fn execute_job(
                 status: JobStatus::Failed,
                 condition: job.condition,
                 msgs: job.msgs,
-                vars: job.vars,
+                vars,
                 recurring: job.recurring,
                 requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
@@ -325,8 +332,6 @@ pub fn execute_job(
         if !resolution? {
             return Err(ContractError::JobNotActive {});
         }
-
-        let vars = hydrate_vars(deps.as_ref(), env, job.vars.clone(), data.external_inputs)?;
 
         submsgs.push(SubMsg {
             id: job.id.u64(),
