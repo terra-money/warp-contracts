@@ -57,10 +57,10 @@ fn test_create_account_success() {
         reply_res.unwrap(),
         Response::new()
             .add_attribute("action", "save_account")
-            .add_attribute("owner", "terra1vladvladvladvladvladvladvladvladvla100")
+            .add_attribute("owner", "terra1vladvladvladvladvladvladvladvladvl1000")
             .add_attribute(
                 "account_address",
-                "terra1vladvladvladvladvladvladvladvladvla101"
+                "terra1vladvladvladvladvladvladvladvladvl2000"
             )
     )
 }

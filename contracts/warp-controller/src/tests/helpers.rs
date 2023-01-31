@@ -61,15 +61,15 @@ pub fn create_warp_account(
                 Attribute::new(
                     "owner",
                     format!(
-                        "terra1vladvladvladvladvladvladvladvladvla{}",
-                        account_id + Uint64::new(100)
+                        "terra1vladvladvladvladvladvladvladvladvl{}",
+                        account_id + Uint64::new(1000)
                     ),
                 ),
                 Attribute::new(
                     "contract_addr",
                     format!(
-                        "terra1vladvladvladvladvladvladvladvladvla{}",
-                        account_id + Uint64::new(101)
+                        "terra1vladvladvladvladvladvladvladvladvl{}",
+                        account_id + Uint64::new(2000)
                     ),
                 ),
             ])],
