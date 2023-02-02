@@ -248,7 +248,7 @@ pub fn apply_var_fn(
                                         match on_success {
                                             UpdateFnValue::Uint(nv) => {
                                                 if v.kind != VariableKind::Uint {
-                                                    return Err(CContractError::FunctionError { msg: "Static Uint function mismatch.".to_string() });
+                                                    return Err(ContractError::FunctionError { msg: "Static Uint function mismatch.".to_string() });
                                                 }
                                                 v.value = resolve_num_value_uint(
                                                     deps,
@@ -272,7 +272,7 @@ pub fn apply_var_fn(
                                             }
                                             UpdateFnValue::Decimal(nv) => {
                                                 if v.kind != VariableKind::Decimal {
-                                                    return Err(ContractError::Decimal { msg: "Static Uint function mismatch.".to_string() });
+                                                    return Err(ContractError::FunctionError { msg: "Static Uint function mismatch.".to_string() });
                                                 }
                                                 v.value = resolve_num_value_decimal(
                                                     deps,
