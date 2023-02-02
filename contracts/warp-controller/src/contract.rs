@@ -45,15 +45,15 @@ pub fn instantiate(
     };
 
     if config.a_max < config.a_min {
-        return Err(ContractError::Unauthorized {}); //todo: err
+        return Err(ContractError::MaxFeeUnderMinFee {});
     }
 
     if config.t_max < config.t_min {
-        return Err(ContractError::Unauthorized {}); //todo: err
+        return Err(ContractError::MaxTimeUnderMinTime {});
     }
 
     if config.minimum_reward < config.a_min {
-        return Err(ContractError::Unauthorized {}); //todo: err
+        return Err(ContractError::RewardSmallerThanFee {});
     }
 
     if config.creation_fee_percentage.u64() > 100 {

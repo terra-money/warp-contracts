@@ -18,7 +18,7 @@ pub fn submit_template(
         denom: "uluna".to_string(),
         amount: config.template_fee,
     }) {
-        return Err(ContractError::Unauthorized {}); //todo: err
+        return Err(ContractError::TemplateFeeNotFound {});
     }
 
     if !ACCOUNTS().has(deps.storage, info.sender.clone()) {

@@ -75,6 +75,39 @@ pub enum ContractError {
 
     #[error("Error resolving JSON path")]
     ResolveError {},
+
+    #[error("Hydration error: {msg:?}")]
+    HydrationError { msg: String },
+
+    #[error("Function error: {msg:?}")]
+    FunctionError { msg: String },
+
+    #[error("Variable not found.")]
+    VariableNotFound {},
+
+    #[error("Condition error: {msg:?}")]
+    ConditionError { msg: String },
+
+    #[error("Max eviction fee smaller than minimum eviction fee.")]
+    MaxFeeUnderMinFee {},
+
+    #[error("Max eviction time smaller than minimum eviction time.")]
+    MaxTimeUnderMinTime {},
+
+    #[error("Job reward smaller than eviction fee.")]
+    RewardSmallerThanFee {},
+
+    #[error("Invalid variables.")]
+    InvalidVariables {},
+
+    #[error("Variables list contains duplicates.")]
+    VariablesContainDuplicates {},
+
+    #[error("Eviction period not elapsed.")]
+    EvictionPeriodNotElapsed {},
+
+    #[error("Template fee not found.")]
+    TemplateFeeNotFound {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {

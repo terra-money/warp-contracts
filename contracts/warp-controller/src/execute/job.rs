@@ -10,6 +10,7 @@ use warp_protocol::controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use warp_protocol::controller::State;
+use crate::ContractError::EvictionPeriodNotElapsed;
 
 pub fn create_job(
     deps: DepsMut,
@@ -33,11 +34,11 @@ pub fn create_job(
     }
 
     if !vars_valid(&data.vars) {
-        return Err(ContractError::Unauthorized {}); //todo: err
+        return Err(ContractError::InvalidVariables {});
     }
 
     if has_duplicates(&data.vars) {
-        return Err(ContractError::Unauthorized {}); //todo: err
+        return Err(ContractError::VariablesContainDuplicates {});
     }
 
     let q = ACCOUNTS()
@@ -300,6 +301,7 @@ pub fn execute_job(
 
     if resolution.is_err() {
         attrs.push(Attribute::new("job_condition_status", "invalid"));
+        attrs.push(Attribute::new("error", resolution.unwrap_err().to_string()));
         let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
         FINISHED_JOBS().save(
             deps.storage,
@@ -399,7 +401,7 @@ pub fn evict_job(
     };
 
     if env.block.time.seconds() - job.last_update_time.u64() < t.u64() {
-        return Err(ContractError::Unauthorized {}); //todo: err
+        return Err(EvictionPeriodNotElapsed {});
     }
 
     let mut cosmos_msgs = vec![];
@@ -407,7 +409,6 @@ pub fn evict_job(
     let job_status;
 
     if job.requeue_on_evict && account_amount >= a {
-        //todo: keeper evicting gets nothing if fees not present or not refreshing type job
         cosmos_msgs.push(
             //send reward to controller
             CosmosMsg::Wasm(WasmMsg::Execute {
@@ -423,7 +424,7 @@ pub fn evict_job(
         );
         job_status = PENDING_JOBS()
             .update(deps.storage, data.id.u64(), |j| match j {
-                None => Err(ContractError::Unauthorized {}), //todo: err
+                None => Err(ContractError::JobDoesNotExist {}),
                 Some(job) => Ok(Job {
                     id: job.id,
                     owner: job.owner,
@@ -456,7 +457,7 @@ pub fn evict_job(
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                 }),
-                Some(_) => Err(ContractError::Unauthorized {}), //todo: err
+                Some(_) => Err(ContractError::JobAlreadyExists {}),
             })?
             .status;
 
