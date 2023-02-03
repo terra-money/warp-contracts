@@ -41,6 +41,13 @@ pub enum NumValue<T, ExprOp, FnOp> {
     Expr(NumExprValue<T, ExprOp, FnOp>),
     Ref(String),
     Fn(NumFnValue<T, ExprOp, FnOp>),
+    Env(NumEnvValue),
+}
+
+#[cw_serde]
+pub enum NumEnvValue {
+    Time,
+    BlockHeight,
 }
 
 #[cw_serde]
