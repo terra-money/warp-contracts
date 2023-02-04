@@ -82,8 +82,8 @@ pub enum ContractError {
     #[error("Function error: {msg:?}")]
     FunctionError { msg: String },
 
-    #[error("Variable not found.")]
-    VariableNotFound {},
+    #[error("Variable not found: {name:?}.")]
+    VariableNotFound { name: String },
 
     #[error("Condition error: {msg:?}")]
     ConditionError { msg: String },

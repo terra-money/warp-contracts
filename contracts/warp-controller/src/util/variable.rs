@@ -152,6 +152,7 @@ pub fn apply_var_fn(
     vars: Vec<Variable>,
     status: JobStatus,
 ) -> Result<Vec<Variable>, ContractError> {
+    let mut res = vec![];
     for var in vars.clone() {
         match var {
             Variable::Static(mut v) => {
@@ -326,6 +327,7 @@ pub fn apply_var_fn(
                         }
                     }
                 }
+                res.push(Variable::Static(v));
             }
             Variable::External(mut v) => {
                 match v.update_fn.clone() {
@@ -523,6 +525,7 @@ pub fn apply_var_fn(
                         }
                     }
                 }
+                res.push(Variable::External(v));
             }
             Variable::Query(mut v) => {
                 match v.update_fn.clone() {
@@ -720,10 +723,11 @@ pub fn apply_var_fn(
                         }
                     }
                 }
+                res.push(Variable::Query(v));
             }
         }
     }
-    Ok(vars)
+    Ok(res)
 }
 
 pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, ContractError> {
@@ -733,11 +737,11 @@ pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, Contract
             Variable::External(v) => v.name.clone(),
             Variable::Query(v) => v.name.clone(),
         };
-        if n == name {
+        if format!("$warp.variable.{}",n) == name {
             return Ok(var);
         }
     }
-    Err(ContractError::VariableNotFound {})
+    Err(ContractError::VariableNotFound { name })
 }
 
 pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
