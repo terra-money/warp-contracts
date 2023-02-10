@@ -5,7 +5,6 @@ use crate::util::condition::{
 };
 use crate::ContractError;
 use cosmwasm_std::{CosmosMsg, Deps, Env};
-use warp_protocol::controller::condition::Condition;
 
 use warp_protocol::controller::job::{ExternalInput, JobStatus};
 use warp_protocol::controller::variable::{UpdateFnValue, Variable, VariableKind};
@@ -713,11 +712,11 @@ pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
     false
 }
 
-pub fn string_vars_in_vector(vars: &Vec<Variable>, s: String) -> bool {
-    let mut s = msg.clone();
+pub fn string_vars_in_vector(vars: &Vec<Variable>, s: &String) -> bool {
+    let mut s = s.to_owned();
     for var in vars {
         let name = get_var_name(var);
-        s = s.replace(format!("$warp.variable.{}", name), "VAR_CHECKED")
+        s = s.replace(format!("$warp.variable.{}", name).as_str(), "VAR_CHECKED")
     }
     if s.contains("$warp.variable.") {
         return false;
@@ -728,7 +727,7 @@ pub fn string_vars_in_vector(vars: &Vec<Variable>, s: String) -> bool {
 pub fn all_vector_vars_present(vars: &Vec<Variable>, s: String) -> bool {
     for var in vars {
         let name = get_var_name(var);
-        if !s.contains(format!("$warp.variable.{}", name)) {
+        if !s.contains(format!("$warp.variable.{}", name.as_str()).as_str()) {
             return false;
         }
     }
@@ -737,10 +736,10 @@ pub fn all_vector_vars_present(vars: &Vec<Variable>, s: String) -> bool {
 
 fn get_var_name(var: &Variable) -> String {
     match var.clone() {
-        Variable::Static(v) => {v},
-        Variable::External(v) => {v},
-        Variable::Query(v) => {v}
-    }.name
+        Variable::Static(v) => v.name,
+        Variable::External(v) => v.name,
+        Variable::Query(v) => v.name,
+    }
 }
 
 pub fn vars_valid(vars: &Vec<Variable>) -> bool {

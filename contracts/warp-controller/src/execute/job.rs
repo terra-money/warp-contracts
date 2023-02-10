@@ -1,6 +1,9 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
-use crate::util::variable::{all_vector_vars_present, has_duplicates, hydrate_msgs, hydrate_vars, string_vars_in_vector, vars_valid};
+use crate::util::variable::{
+    all_vector_vars_present, has_duplicates, hydrate_msgs, hydrate_vars, string_vars_in_vector,
+    vars_valid,
+};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
 use cosmwasm_std::{
@@ -41,11 +44,13 @@ pub fn create_job(
         return Err(ContractError::VariablesContainDuplicates {});
     }
 
-    let cond_string = serde_json_wasm::to_string(&data.condition).unwrap_or_else(Err(ContractError::ConditionError { msg: "Cannot stringify condition.".to_string() }));
-    let msg_string = serde_json_wasm::to_string(&data.msgs).unwrap_or_else(Err(ContractError::MsgError { msg: "Cannot stringify msgs vector.".to_string() }));
+    let cond_string = serde_json_wasm::to_string(&data.condition)?;
+    let msg_string = serde_json_wasm::to_string(&data.msgs)?;
 
-    if !(string_vars_in_vector(&data.vars, cond_string) && string_vars_in_vector(&data.vars, msg_string)) {
-        return Err(ContractError::VariablesMissingFromVector {})
+    if !(string_vars_in_vector(&data.vars, &cond_string)
+        && string_vars_in_vector(&data.vars, &msg_string))
+    {
+        return Err(ContractError::VariablesMissingFromVector {});
     }
 
     if !all_vector_vars_present(&data.vars, format!("{}{}", cond_string, msg_string)) {
