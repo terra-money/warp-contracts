@@ -299,10 +299,9 @@ pub fn execute_job(
 
     let mut submsgs = vec![];
 
-    #[allow(clippy::unnecessary_unwrap)]
-    if resolution.is_err() {
+    if let Err(e) = resolution {
         attrs.push(Attribute::new("job_condition_status", "invalid"));
-        attrs.push(Attribute::new("error", resolution.unwrap_err().to_string()));
+        attrs.push(Attribute::new("error", e.to_string()));
         let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
         FINISHED_JOBS().save(
             deps.storage,
