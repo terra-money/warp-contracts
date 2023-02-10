@@ -47,7 +47,7 @@ pub fn create_job(
     if !(string_vars_in_vector(&data.vars, cond_string) && string_vars_in_vector(&data.vars, msg_string)) {
         return Err(ContractError::VariablesMissingFromVector {})
     }
-    
+
     if !all_vector_vars_present(&data.vars, format!("{}{}", cond_string, msg_string)) {
         return Err(ContractError::ExcessVariablesInVector {});
     }

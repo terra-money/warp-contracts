@@ -823,7 +823,7 @@ pub fn string_vars_in_vector(vars: &Vec<Variable>, s: String) -> bool {
 pub fn all_vector_vars_present(vars: &Vec<Variable>, s: String) -> bool {
     for var in vars {
         let name = get_var_name(var);
-        if !s.contains(name) {
+        if !s.contains(format!("$warp.variable.{}", name)) {
             return false;
         }
     }
