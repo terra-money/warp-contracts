@@ -82,7 +82,7 @@ pub fn resolve_num_value_int(
         NumValue::Expr(expr) => resolve_num_expr_int(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_int(deps, env, expr, vars),
         NumValue::Fn(expr) => resolve_num_fn_int(deps, env, expr, vars),
-        NumValue::Env(expr) => resolve_num_env_int(deps, env, expr, vars),
+        NumValue::Env(_expr) => Err(ContractError::ConditionError { msg: "Int resolve Env.".to_string() }),
     }
 }
 
@@ -132,18 +132,6 @@ fn resolve_num_fn_int(
                     msg: "Int negation error.".to_string(),
                 })?)
         }
-    }
-}
-
-fn resolve_num_env_int(
-    _deps: Deps,
-    env: Env,
-    expr: NumEnvValue,
-    _vars: &Vec<Variable>,
-) -> Result<i128, ContractError> {
-    match expr {
-        NumEnvValue::Time => Ok(env.block.time.seconds().into()),
-        NumEnvValue::BlockHeight => Ok(env.block.height.into()),
     }
 }
 
@@ -326,7 +314,7 @@ pub fn resolve_num_value_decimal(
         NumValue::Expr(expr) => resolve_num_expr_decimal(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_decimal(deps, env, expr, vars),
         NumValue::Fn(expr) => resolve_num_fn_decimal(deps, env, expr, vars),
-        NumValue::Env(expr) => resolve_num_env_decimal(deps, env, expr, vars),
+        NumValue::Env(_expr) => Err(ContractError::ConditionError { msg: "Decimal resolve Env.".to_string() }),
     }
 }
 
@@ -375,18 +363,6 @@ fn resolve_num_fn_decimal(
         DecimalFnOp::Floor => Ok(right.floor()),
         DecimalFnOp::Sqrt => Ok(right.sqrt()),
         DecimalFnOp::Ceil => Ok(right.ceil()),
-    }
-}
-
-fn resolve_num_env_decimal(
-    _deps: Deps,
-    env: Env,
-    expr: NumEnvValue,
-    _vars: &Vec<Variable>,
-) -> Result<Decimal256, ContractError> {
-    match expr {
-        NumEnvValue::Time => Ok(Decimal256::new(env.block.time.seconds().into())),
-        NumEnvValue::BlockHeight => Ok(Decimal256::new(env.block.height.into())),
     }
 }
 
