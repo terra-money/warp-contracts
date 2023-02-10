@@ -88,6 +88,9 @@ pub enum ContractError {
     #[error("Condition error: {msg:?}")]
     ConditionError { msg: String },
 
+    #[error("Msg error: {msg:?}")]
+    MsgError { msg: String },
+
     #[error("Max eviction fee smaller than minimum eviction fee.")]
     MaxFeeUnderMinFee {},
 
@@ -108,6 +111,9 @@ pub enum ContractError {
 
     #[error("Template fee not found.")]
     TemplateFeeNotFound {},
+
+    #[error("Variables in condition or msgs missing from variables vector.")]
+    VariablesMissingFromVector {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {

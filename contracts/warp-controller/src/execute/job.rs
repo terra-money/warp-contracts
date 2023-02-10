@@ -1,6 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
-use crate::util::variable::{has_duplicates, hydrate_msgs, hydrate_vars, vars_valid};
+use crate::util::variable::{has_duplicates, hydrate_msgs, hydrate_vars, string_vars_in_vector, vars_valid};
 use crate::ContractError;
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
@@ -39,6 +39,13 @@ pub fn create_job(
 
     if has_duplicates(&data.vars) {
         return Err(ContractError::VariablesContainDuplicates {});
+    }
+
+    let cond_string = serde_json_wasm::to_string(&data.condition).unwrap_or_else(Err(ContractError::ConditionError { msg: "Cannot stringify condition.".to_string() }));
+    let msg_string = serde_json_wasm::to_string(&data.msgs).unwrap_or_else(Err(ContractError::MsgError { msg: "Cannot stringify msgs vector.".to_string() }));
+
+    if !(string_vars_in_vector(&data.vars, cond_string) && string_vars_in_vector(&data.vars, msg_string)) {
+        return Err(ContractError::VariablesMissingFromVector {})
     }
 
     let q = ACCOUNTS()

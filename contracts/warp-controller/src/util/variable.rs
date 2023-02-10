@@ -5,6 +5,7 @@ use crate::util::condition::{
 };
 use crate::ContractError;
 use cosmwasm_std::{CosmosMsg, Deps, Env};
+use warp_protocol::controller::condition::Condition;
 
 use warp_protocol::controller::job::{ExternalInput, JobStatus};
 use warp_protocol::controller::variable::{UpdateFnValue, Variable, VariableKind};
@@ -805,6 +806,22 @@ pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
         }
     }
     false
+}
+
+pub fn string_vars_in_vector(vars: &Vec<Variable>, s: String) -> bool {
+    let mut s = msg.clone();
+    for var in vars {
+        let name = match var.clone() {
+            Variable::Static(v) => {v},
+            Variable::External(v) => {v},
+            Variable::Query(v) => {v}
+        }.name;
+        s = s.replace(format!("$warp.variable.{}", name), "VAR_CHECKED")
+    }
+    if s.contains("$warp.variable.") {
+        return false;
+    }
+    true
 }
 
 pub fn vars_valid(vars: &Vec<Variable>) -> bool {
