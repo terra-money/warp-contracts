@@ -114,6 +114,9 @@ pub enum ContractError {
 
     #[error("Variables in condition or msgs missing from variables vector.")]
     VariablesMissingFromVector {},
+
+    #[error("Variable vector contains unused variables.")]
+    ExcessVariablesInVector {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {

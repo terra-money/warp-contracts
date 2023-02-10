@@ -1,6 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
-use crate::util::variable::{has_duplicates, hydrate_msgs, hydrate_vars, string_vars_in_vector, vars_valid};
+use crate::util::variable::{all_vector_vars_present, has_duplicates, hydrate_msgs, hydrate_vars, string_vars_in_vector, vars_valid};
 use crate::ContractError;
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
@@ -46,6 +46,10 @@ pub fn create_job(
 
     if !(string_vars_in_vector(&data.vars, cond_string) && string_vars_in_vector(&data.vars, msg_string)) {
         return Err(ContractError::VariablesMissingFromVector {})
+    }
+    
+    if !all_vector_vars_present(&data.vars, format!("{}{}", cond_string, msg_string)) {
+        return Err(ContractError::ExcessVariablesInVector {});
     }
 
     let q = ACCOUNTS()
