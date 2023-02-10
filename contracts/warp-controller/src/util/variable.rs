@@ -712,6 +712,36 @@ pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
     false
 }
 
+pub fn string_vars_in_vector(vars: &Vec<Variable>, s: &String) -> bool {
+    let mut s = s.to_owned();
+    for var in vars {
+        let name = get_var_name(var);
+        s = s.replace(format!("$warp.variable.{}", name).as_str(), "VAR_CHECKED")
+    }
+    if s.contains("$warp.variable.") {
+        return false;
+    }
+    true
+}
+
+pub fn all_vector_vars_present(vars: &Vec<Variable>, s: String) -> bool {
+    for var in vars {
+        let name = get_var_name(var);
+        if !s.contains(format!("$warp.variable.{}", name.as_str()).as_str()) {
+            return false;
+        }
+    }
+    true
+}
+
+fn get_var_name(var: &Variable) -> String {
+    match var.clone() {
+        Variable::Static(v) => v.name,
+        Variable::External(v) => v.name,
+        Variable::Query(v) => v.name,
+    }
+}
+
 pub fn vars_valid(vars: &Vec<Variable>) -> bool {
     for var in vars {
         match var {
