@@ -9,8 +9,8 @@ use json_codec_wasm::ast::Ref;
 use json_codec_wasm::Decoder;
 use std::str::FromStr;
 use warp_protocol::controller::condition::{
-    BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumExprOp, NumExprValue, NumFnValue,
-    NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
+    BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
+    NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
 };
 use warp_protocol::controller::variable::{QueryExpr, Variable};
 
@@ -82,6 +82,9 @@ pub fn resolve_num_value_int(
         NumValue::Expr(expr) => resolve_num_expr_int(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_int(deps, env, expr, vars),
         NumValue::Fn(expr) => resolve_num_fn_int(deps, env, expr, vars),
+        NumValue::Env(_expr) => Err(ContractError::ConditionError {
+            msg: "Int resolve Env.".to_string(),
+        }),
     }
 }
 
@@ -197,6 +200,7 @@ pub fn resolve_num_value_uint(
         NumValue::Fn(_) => Err(ContractError::ConditionError {
             msg: "Uint resolve Fn.".to_string(),
         }),
+        NumValue::Env(expr) => resolve_num_env_uint(deps, env, expr, vars),
     }
 }
 
@@ -277,6 +281,18 @@ pub fn resolve_num_expr_uint(
     }
 }
 
+pub fn resolve_num_env_uint(
+    _deps: Deps,
+    env: Env,
+    expr: NumEnvValue,
+    _vars: &[Variable],
+) -> Result<Uint256, ContractError> {
+    match expr {
+        NumEnvValue::Time => Ok(env.block.time.seconds().into()),
+        NumEnvValue::BlockHeight => Ok(env.block.height.into()),
+    }
+}
+
 pub fn resolve_decimal_expr(
     deps: Deps,
     env: Env,
@@ -300,6 +316,9 @@ pub fn resolve_num_value_decimal(
         NumValue::Expr(expr) => resolve_num_expr_decimal(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_decimal(deps, env, expr, vars),
         NumValue::Fn(expr) => resolve_num_fn_decimal(deps, env, expr, vars),
+        NumValue::Env(_expr) => Err(ContractError::ConditionError {
+            msg: "Decimal resolve Env.".to_string(),
+        }),
     }
 }
 
