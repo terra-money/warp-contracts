@@ -285,7 +285,7 @@ pub fn resolve_num_env_uint(
     _deps: Deps,
     env: Env,
     expr: NumEnvValue,
-    _vars: &Vec<Variable>,
+    _vars: &[Variable],
 ) -> Result<Uint256, ContractError> {
     match expr {
         NumEnvValue::Time => Ok(env.block.time.seconds().into()),
