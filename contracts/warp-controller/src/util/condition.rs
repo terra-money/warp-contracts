@@ -82,7 +82,9 @@ pub fn resolve_num_value_int(
         NumValue::Expr(expr) => resolve_num_expr_int(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_int(deps, env, expr, vars),
         NumValue::Fn(expr) => resolve_num_fn_int(deps, env, expr, vars),
-        NumValue::Env(_expr) => Err(ContractError::ConditionError { msg: "Int resolve Env.".to_string() }),
+        NumValue::Env(_expr) => Err(ContractError::ConditionError {
+            msg: "Int resolve Env.".to_string(),
+        }),
     }
 }
 
@@ -314,7 +316,9 @@ pub fn resolve_num_value_decimal(
         NumValue::Expr(expr) => resolve_num_expr_decimal(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_decimal(deps, env, expr, vars),
         NumValue::Fn(expr) => resolve_num_fn_decimal(deps, env, expr, vars),
-        NumValue::Env(_expr) => Err(ContractError::ConditionError { msg: "Decimal resolve Env.".to_string() }),
+        NumValue::Env(_expr) => Err(ContractError::ConditionError {
+            msg: "Decimal resolve Env.".to_string(),
+        }),
     }
 }
 
