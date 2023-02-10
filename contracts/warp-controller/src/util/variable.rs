@@ -26,14 +26,20 @@ pub fn hydrate_vars(
                     match external_inputs {
                         None => {
                             if v.value.is_none() {
-                                return Err(ContractError::HydrationError { msg: "External input value is none.".to_string() });
+                                return Err(ContractError::HydrationError {
+                                    msg: "External input value is none.".to_string(),
+                                });
                             }
                             Variable::External(v)
                         }
                         Some(ref input) => {
                             let idx = input.iter().position(|i| i.name == v.name);
                             v.value = match idx {
-                                None => return Err(ContractError::HydrationError { msg: "External input variable not found.".to_string() }),
+                                None => {
+                                    return Err(ContractError::HydrationError {
+                                        msg: "External input variable not found.".to_string(),
+                                    })
+                                }
                                 Some(i) => Some(input[i].input.clone()),
                             };
                             Variable::External(v)
@@ -41,7 +47,9 @@ pub fn hydrate_vars(
                     }
                 } else {
                     if v.value.is_none() {
-                        return Err(ContractError::HydrationError { msg: "External value is none.".to_string() });
+                        return Err(ContractError::HydrationError {
+                            msg: "External value is none.".to_string(),
+                        });
                     }
                     Variable::External(v)
                 }
@@ -119,26 +127,28 @@ pub fn hydrate_msgs(
         for var in &vars {
             let (name, replacement) = match var {
                 Variable::Static(v) => (v.name.clone(), v.value.clone()),
-                Variable::External(v) => {
-                    match v.value.clone() {
-                        None => {
-                            return Err(ContractError::HydrationError { msg: "External msg value is none.".to_string() });
-                        }
-                        Some(val) => (v.name.clone(), val),
+                Variable::External(v) => match v.value.clone() {
+                    None => {
+                        return Err(ContractError::HydrationError {
+                            msg: "External msg value is none.".to_string(),
+                        });
                     }
-                }
-                Variable::Query(v) => {
-                    match v.value.clone() {
-                        None => {
-                            return Err(ContractError::HydrationError { msg: "Query msg value is none.".to_string() });
-                        }
-                        Some(val) => (v.name.clone(), val),
+                    Some(val) => (v.name.clone(), val),
+                },
+                Variable::Query(v) => match v.value.clone() {
+                    None => {
+                        return Err(ContractError::HydrationError {
+                            msg: "Query msg value is none.".to_string(),
+                        });
                     }
-                }
+                    Some(val) => (v.name.clone(), val),
+                },
             };
             msg = msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
             if replacement.contains("$warp.variable") {
-                return Err(ContractError::HydrationError { msg: "Attempt to inject warp variable.".to_string() });
+                return Err(ContractError::HydrationError {
+                    msg: "Attempt to inject warp variable.".to_string(),
+                });
             }
         }
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&msg)?)
@@ -159,570 +169,465 @@ pub fn apply_var_fn(
             Variable::Static(mut v) => {
                 match v.update_fn.clone() {
                     None => (),
-                    Some(update_fn) => {
-                        match status {
-                            JobStatus::Pending => return Err(ContractError::FunctionError { msg: "Static job status pending.".to_string() }),
-                            JobStatus::Executed => {
-                                match update_fn.on_success {
-                                    None => (),
-                                    Some(on_success) => {
-                                        match on_success {
-                                            UpdateFnValue::Uint(nv) => {
-                                                if v.kind != VariableKind::Uint {
-                                                    return Err(ContractError::FunctionError { msg: "Static Uint function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_uint(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::Int(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Static Int function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_int(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::Decimal(nv) => {
-                                                if v.kind != VariableKind::Decimal {
-                                                    return Err(ContractError::FunctionError { msg: "Static Decimal function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_decimal(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::Timestamp(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Static Timestamp function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_int(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::BlockHeight(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Static BlockHeight function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_int(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::Bool(val) => {
-                                                if v.kind != VariableKind::Bool {
-                                                    return Err(ContractError::FunctionError { msg: "Static Bool function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_ref_bool(
-                                                    deps,
-                                                    env.clone(),
-                                                    val,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            JobStatus::Failed => {
-                                match update_fn.on_error {
-                                    None => (),
-                                    Some(on_success) => {
-                                        match on_success {
-                                            UpdateFnValue::Uint(nv) => {
-                                                if v.kind != VariableKind::Uint {
-                                                    return Err(ContractError::FunctionError { msg: "Static Uint function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_uint(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::Int(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Static Int function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_int(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::Decimal(nv) => {
-                                                if v.kind != VariableKind::Decimal {
-                                                    return Err(ContractError::FunctionError { msg: "Static Uint function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_decimal(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::Timestamp(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Static Timestamp function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_int(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::BlockHeight(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Static BlockHeight function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_num_value_int(
-                                                    deps,
-                                                    env.clone(),
-                                                    nv,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                            UpdateFnValue::Bool(val) => {
-                                                if v.kind != VariableKind::Bool {
-                                                    return Err(ContractError::FunctionError { msg: "Static Bool function mismatch.".to_string() });
-                                                }
-                                                v.value = resolve_ref_bool(
-                                                    deps,
-                                                    env.clone(),
-                                                    val,
-                                                    &vars,
-                                                )?
-                                                .to_string();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            _ => return Err(ContractError::FunctionError { msg: "Static status not supported.".to_string() }),
+                    Some(update_fn) => match status {
+                        JobStatus::Pending => {
+                            return Err(ContractError::FunctionError {
+                                msg: "Static job status pending.".to_string(),
+                            })
                         }
-                    }
+                        JobStatus::Executed => match update_fn.on_success {
+                            None => (),
+                            Some(on_success) => match on_success {
+                                UpdateFnValue::Uint(nv) => {
+                                    if v.kind != VariableKind::Uint {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Uint function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                        .to_string();
+                                }
+                                UpdateFnValue::Int(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Int function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                        .to_string();
+                                }
+                                UpdateFnValue::Decimal(nv) => {
+                                    if v.kind != VariableKind::Decimal {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Decimal function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value =
+                                        resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
+                                            .to_string();
+                                }
+                                UpdateFnValue::Timestamp(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Timestamp function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                        .to_string();
+                                }
+                                UpdateFnValue::BlockHeight(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static BlockHeight function mismatch."
+                                                .to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                        .to_string();
+                                }
+                                UpdateFnValue::Bool(val) => {
+                                    if v.kind != VariableKind::Bool {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Bool function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_ref_bool(deps, env.clone(), val, &vars)?
+                                        .to_string();
+                                }
+                            },
+                        },
+                        JobStatus::Failed => match update_fn.on_error {
+                            None => (),
+                            Some(on_success) => match on_success {
+                                UpdateFnValue::Uint(nv) => {
+                                    if v.kind != VariableKind::Uint {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Uint function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                        .to_string();
+                                }
+                                UpdateFnValue::Int(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Int function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                        .to_string();
+                                }
+                                UpdateFnValue::Decimal(nv) => {
+                                    if v.kind != VariableKind::Decimal {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Uint function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value =
+                                        resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
+                                            .to_string();
+                                }
+                                UpdateFnValue::Timestamp(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Timestamp function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                        .to_string();
+                                }
+                                UpdateFnValue::BlockHeight(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static BlockHeight function mismatch."
+                                                .to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                        .to_string();
+                                }
+                                UpdateFnValue::Bool(val) => {
+                                    if v.kind != VariableKind::Bool {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Static Bool function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = resolve_ref_bool(deps, env.clone(), val, &vars)?
+                                        .to_string();
+                                }
+                            },
+                        },
+                        _ => {
+                            return Err(ContractError::FunctionError {
+                                msg: "Static status not supported.".to_string(),
+                            })
+                        }
+                    },
                 }
                 res.push(Variable::Static(v));
             }
             Variable::External(mut v) => {
                 match v.update_fn.clone() {
                     None => (),
-                    Some(update_fn) => {
-                        match status {
-                            JobStatus::Pending => return Err(ContractError::FunctionError { msg: "External job status pending.".to_string() }),
-                            JobStatus::Executed => {
-                                match update_fn.on_success {
-                                    None => (),
-                                    Some(on_success) => {
-                                        match on_success {
-                                            UpdateFnValue::Uint(nv) => {
-                                                if v.kind != VariableKind::Uint {
-                                                    return Err(ContractError::FunctionError { msg: "External Uint function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_uint(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Int(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "External Int function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Decimal(nv) => {
-                                                if v.kind != VariableKind::Decimal {
-                                                    return Err(ContractError::FunctionError { msg: "External Decimal function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_decimal(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Timestamp(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "External Timestamp function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::BlockHeight(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "External BlockHeight function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Bool(val) => {
-                                                if v.kind != VariableKind::Bool {
-                                                    return Err(ContractError::FunctionError { msg: "External Bool function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_ref_bool(
-                                                        deps,
-                                                        env.clone(),
-                                                        val,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            JobStatus::Failed => {
-                                match update_fn.on_error {
-                                    None => (),
-                                    Some(on_success) => {
-                                        match on_success {
-                                            UpdateFnValue::Uint(nv) => {
-                                                if v.kind != VariableKind::Uint {
-                                                    return Err(ContractError::FunctionError { msg: "External Uint function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_uint(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Int(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "External Int function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Decimal(nv) => {
-                                                if v.kind != VariableKind::Decimal {
-                                                    return Err(ContractError::FunctionError { msg: "External Decimal function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_decimal(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Timestamp(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "External Timestamp function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::BlockHeight(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "External BlockHeight function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Bool(val) => {
-                                                if v.kind != VariableKind::Bool {
-                                                    return Err(ContractError::FunctionError { msg: "External Bool function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_ref_bool(
-                                                        deps,
-                                                        env.clone(),
-                                                        val,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            _ => return Err(ContractError::FunctionError { msg: "External status not supported.".to_string() }),
+                    Some(update_fn) => match status {
+                        JobStatus::Pending => {
+                            return Err(ContractError::FunctionError {
+                                msg: "External job status pending.".to_string(),
+                            })
                         }
-                    }
+                        JobStatus::Executed => match update_fn.on_success {
+                            None => (),
+                            Some(on_success) => match on_success {
+                                UpdateFnValue::Uint(nv) => {
+                                    if v.kind != VariableKind::Uint {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Uint function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Int(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Int function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Decimal(nv) => {
+                                    if v.kind != VariableKind::Decimal {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Decimal function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Timestamp(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Timestamp function mismatch."
+                                                .to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::BlockHeight(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External BlockHeight function mismatch."
+                                                .to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Bool(val) => {
+                                    if v.kind != VariableKind::Bool {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Bool function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_ref_bool(deps, env.clone(), val, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                            },
+                        },
+                        JobStatus::Failed => match update_fn.on_error {
+                            None => (),
+                            Some(on_success) => match on_success {
+                                UpdateFnValue::Uint(nv) => {
+                                    if v.kind != VariableKind::Uint {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Uint function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Int(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Int function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Decimal(nv) => {
+                                    if v.kind != VariableKind::Decimal {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Decimal function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Timestamp(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Timestamp function mismatch."
+                                                .to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::BlockHeight(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External BlockHeight function mismatch."
+                                                .to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Bool(val) => {
+                                    if v.kind != VariableKind::Bool {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "External Bool function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_ref_bool(deps, env.clone(), val, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                            },
+                        },
+                        _ => {
+                            return Err(ContractError::FunctionError {
+                                msg: "External status not supported.".to_string(),
+                            })
+                        }
+                    },
                 }
                 res.push(Variable::External(v));
             }
             Variable::Query(mut v) => {
                 match v.update_fn.clone() {
                     None => (),
-                    Some(update_fn) => {
-                        match status {
-                            JobStatus::Pending => return Err(ContractError::FunctionError { msg: "Query job status pending.".to_string() }),
-                            JobStatus::Executed => {
-                                match update_fn.on_success {
-                                    None => (),
-                                    Some(on_success) => {
-                                        match on_success {
-                                            UpdateFnValue::Uint(nv) => {
-                                                if v.kind != VariableKind::Uint {
-                                                    return Err(ContractError::FunctionError { msg: "Query Uint function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_uint(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Int(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Query Int function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Decimal(nv) => {
-                                                if v.kind != VariableKind::Decimal {
-                                                    return Err(ContractError::FunctionError { msg: "Query Decimal function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_decimal(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Timestamp(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Query Timestamp function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::BlockHeight(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Query Blockheighht function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Bool(val) => {
-                                                if v.kind != VariableKind::Bool {
-                                                    return Err(ContractError::FunctionError { msg: "Query Bool function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_ref_bool(
-                                                        deps,
-                                                        env.clone(),
-                                                        val,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            JobStatus::Failed => {
-                                match update_fn.on_error {
-                                    None => (),
-                                    Some(on_success) => {
-                                        match on_success {
-                                            UpdateFnValue::Uint(nv) => {
-                                                if v.kind != VariableKind::Uint {
-                                                    return Err(ContractError::FunctionError { msg: "Query Uint function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_uint(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Int(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Query Int function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Decimal(nv) => {
-                                                if v.kind != VariableKind::Decimal {
-                                                    return Err(ContractError::FunctionError { msg: "Query Decimal function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_decimal(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Timestamp(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Query Timestamp function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::BlockHeight(nv) => {
-                                                if v.kind != VariableKind::Int {
-                                                    return Err(ContractError::FunctionError { msg: "Query BlockHeight function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_num_value_int(
-                                                        deps,
-                                                        env.clone(),
-                                                        nv,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                            UpdateFnValue::Bool(val) => {
-                                                if v.kind != VariableKind::Bool {
-                                                    return Err(ContractError::FunctionError { msg: "Query Bool function mismatch.".to_string() });
-                                                }
-                                                v.value = Some(
-                                                    resolve_ref_bool(
-                                                        deps,
-                                                        env.clone(),
-                                                        val,
-                                                        &vars,
-                                                    )?
-                                                    .to_string(),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            _ => return Err(ContractError::FunctionError { msg: "Query status not supported.".to_string() }),
+                    Some(update_fn) => match status {
+                        JobStatus::Pending => {
+                            return Err(ContractError::FunctionError {
+                                msg: "Query job status pending.".to_string(),
+                            })
                         }
-                    }
+                        JobStatus::Executed => match update_fn.on_success {
+                            None => (),
+                            Some(on_success) => match on_success {
+                                UpdateFnValue::Uint(nv) => {
+                                    if v.kind != VariableKind::Uint {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Uint function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Int(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Int function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Decimal(nv) => {
+                                    if v.kind != VariableKind::Decimal {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Decimal function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Timestamp(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Timestamp function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::BlockHeight(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Blockheighht function mismatch."
+                                                .to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Bool(val) => {
+                                    if v.kind != VariableKind::Bool {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Bool function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_ref_bool(deps, env.clone(), val, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                            },
+                        },
+                        JobStatus::Failed => match update_fn.on_error {
+                            None => (),
+                            Some(on_success) => match on_success {
+                                UpdateFnValue::Uint(nv) => {
+                                    if v.kind != VariableKind::Uint {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Uint function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Int(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Int function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Decimal(nv) => {
+                                    if v.kind != VariableKind::Decimal {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Decimal function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Timestamp(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Timestamp function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::BlockHeight(nv) => {
+                                    if v.kind != VariableKind::Int {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query BlockHeight function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_num_value_int(deps, env.clone(), nv, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                                UpdateFnValue::Bool(val) => {
+                                    if v.kind != VariableKind::Bool {
+                                        return Err(ContractError::FunctionError {
+                                            msg: "Query Bool function mismatch.".to_string(),
+                                        });
+                                    }
+                                    v.value = Some(
+                                        resolve_ref_bool(deps, env.clone(), val, &vars)?
+                                            .to_string(),
+                                    )
+                                }
+                            },
+                        },
+                        _ => {
+                            return Err(ContractError::FunctionError {
+                                msg: "Query status not supported.".to_string(),
+                            })
+                        }
+                    },
                 }
                 res.push(Variable::Query(v));
             }
@@ -738,7 +643,7 @@ pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, Contract
             Variable::External(v) => v.name.clone(),
             Variable::Query(v) => v.name.clone(),
         };
-        if format!("$warp.variable.{}",n) == name {
+        if format!("$warp.variable.{}", n) == name {
             return Ok(var);
         }
     }

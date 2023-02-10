@@ -98,11 +98,15 @@ fn resolve_ref_int(
             str::parse::<i128>(&val)?
         }
         Variable::Query(q) => {
-            let val = q.clone().value.ok_or(ContractError::ConditionError { msg: "Int Query value not found.".to_string() })?;
+            let val = q.clone().value.ok_or(ContractError::ConditionError {
+                msg: "Int Query value not found.".to_string(),
+            })?;
             str::parse::<i128>(&val)?
         }
         Variable::External(e) => {
-            let val = e.clone().value.ok_or(ContractError::ConditionError { msg: "Int External value not found.".to_string() })?;
+            let val = e.clone().value.ok_or(ContractError::ConditionError {
+                msg: "Int External value not found.".to_string(),
+            })?;
             str::parse::<i128>(&val)?
         }
     };
@@ -120,9 +124,13 @@ fn resolve_num_fn_int(
 
     match expr.op {
         IntFnOp::Abs => Ok(right.abs()),
-        IntFnOp::Neg => Ok(right
-            .checked_mul(i128::from(-1i64))
-            .ok_or(ContractError::ConditionError { msg: "Int negation error.".to_string() })?),
+        IntFnOp::Neg => {
+            Ok(right
+                .checked_mul(i128::from(-1i64))
+                .ok_or(ContractError::ConditionError {
+                    msg: "Int negation error.".to_string(),
+                })?)
+        }
     }
 }
 
@@ -138,19 +146,29 @@ pub fn resolve_num_expr_int(
     match expr.op {
         NumExprOp::Sub => Ok(left
             .checked_sub(right)
-            .ok_or(ContractError::ConditionError { msg: "Int checked sub error.".to_string() })?),
+            .ok_or(ContractError::ConditionError {
+                msg: "Int checked sub error.".to_string(),
+            })?),
         NumExprOp::Add => Ok(left
             .checked_add(right)
-            .ok_or(ContractError::ConditionError { msg: "Int checked add error.".to_string() })?),
+            .ok_or(ContractError::ConditionError {
+                msg: "Int checked add error.".to_string(),
+            })?),
         NumExprOp::Div => Ok(left
             .checked_div(right)
-            .ok_or(ContractError::ConditionError { msg: "Int checked div error.".to_string() })?),
+            .ok_or(ContractError::ConditionError {
+                msg: "Int checked div error.".to_string(),
+            })?),
         NumExprOp::Mul => Ok(left
             .checked_mul(right)
-            .ok_or(ContractError::ConditionError { msg: "Int checked mul error.".to_string() })?),
+            .ok_or(ContractError::ConditionError {
+                msg: "Int checked mul error.".to_string(),
+            })?),
         NumExprOp::Mod => Ok(left
             .checked_rem(right)
-            .ok_or(ContractError::ConditionError { msg: "Int checked rem error.".to_string() })?),
+            .ok_or(ContractError::ConditionError {
+                msg: "Int checked rem error.".to_string(),
+            })?),
     }
 }
 
@@ -176,7 +194,9 @@ pub fn resolve_num_value_uint(
         NumValue::Simple(value) => Ok(value),
         NumValue::Expr(expr) => resolve_num_expr_uint(deps, env, expr, vars),
         NumValue::Ref(expr) => resolve_ref_uint(deps, env, expr, vars),
-        NumValue::Fn(_) => Err(ContractError::ConditionError { msg: "Uint resolve Fn.".to_string() }),
+        NumValue::Fn(_) => Err(ContractError::ConditionError {
+            msg: "Uint resolve Fn.".to_string(),
+        }),
     }
 }
 
@@ -193,11 +213,15 @@ fn resolve_ref_uint(
             Uint256::from_str(&val[1..val.len() - 1])?
         }
         Variable::Query(q) => {
-            let val = q.clone().value.ok_or(ContractError::ConditionError { msg: "Uint Query value not found.".to_string() })?;
+            let val = q.clone().value.ok_or(ContractError::ConditionError {
+                msg: "Uint Query value not found.".to_string(),
+            })?;
             Uint256::from_str(&val[1..val.len() - 1])?
         }
         Variable::External(e) => {
-            let val = e.clone().value.ok_or(ContractError::ConditionError { msg: "Uint External value not found.".to_string() })?;
+            let val = e.clone().value.ok_or(ContractError::ConditionError {
+                msg: "Uint External value not found.".to_string(),
+            })?;
             Uint256::from_str(&val[1..val.len() - 1])?
         }
     };
@@ -215,21 +239,41 @@ pub fn resolve_num_expr_uint(
     let right = resolve_num_value_uint(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left
-            .checked_sub(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Uint checked sub error.".to_string() })?),
-        NumExprOp::Add => Ok(left
-            .checked_add(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Uint checked add error.".to_string() })?),
-        NumExprOp::Div => Ok(left
-            .checked_div(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Uint checked div error.".to_string() })?),
-        NumExprOp::Mul => Ok(left
-            .checked_mul(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Uint checked mul error.".to_string() })?),
-        NumExprOp::Mod => Ok(left
-            .checked_rem(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Uint checked rem error.".to_string() })?),
+        NumExprOp::Sub => {
+            Ok(left
+                .checked_sub(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Uint checked sub error.".to_string(),
+                })?)
+        }
+        NumExprOp::Add => {
+            Ok(left
+                .checked_add(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Uint checked add error.".to_string(),
+                })?)
+        }
+        NumExprOp::Div => {
+            Ok(left
+                .checked_div(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Uint checked div error.".to_string(),
+                })?)
+        }
+        NumExprOp::Mul => {
+            Ok(left
+                .checked_mul(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Uint checked mul error.".to_string(),
+                })?)
+        }
+        NumExprOp::Mod => {
+            Ok(left
+                .checked_rem(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Uint checked rem error.".to_string(),
+                })?)
+        }
     }
 }
 
@@ -269,15 +313,19 @@ fn resolve_ref_decimal(
     let res = match var {
         Variable::Static(s) => {
             let val = s.clone().value;
-            Decimal256::from_str(&val[1..val.len()-1])?
+            Decimal256::from_str(&val[1..val.len() - 1])?
         }
         Variable::Query(q) => {
-            let val = q.clone().value.ok_or(ContractError::ConditionError { msg: "Decimal Query value not found.".to_string() })?;
-            Decimal256::from_str(&val[1..val.len()-1])?
+            let val = q.clone().value.ok_or(ContractError::ConditionError {
+                msg: "Decimal Query value not found.".to_string(),
+            })?;
+            Decimal256::from_str(&val[1..val.len() - 1])?
         }
         Variable::External(e) => {
-            let val = e.clone().value.ok_or(ContractError::ConditionError { msg: "Decimal External value not found.".to_string() })?;
-            Decimal256::from_str(&val[1..val.len()-1])?
+            let val = e.clone().value.ok_or(ContractError::ConditionError {
+                msg: "Decimal External value not found.".to_string(),
+            })?;
+            Decimal256::from_str(&val[1..val.len() - 1])?
         }
     };
 
@@ -313,21 +361,41 @@ pub fn resolve_num_expr_decimal(
     let right = resolve_num_value_decimal(deps, env, *expr.right, vars)?;
 
     match expr.op {
-        NumExprOp::Sub => Ok(left
-            .checked_sub(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Decimal checked sub error.".to_string() })?),
-        NumExprOp::Add => Ok(left
-            .checked_add(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Decimal checked sub error.".to_string() })?),
-        NumExprOp::Div => Ok(left
-            .checked_div(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Decimal checked sub error.".to_string() })?),
-        NumExprOp::Mul => Ok(left
-            .checked_mul(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Decimal checked sub error.".to_string() })?),
-        NumExprOp::Mod => Ok(left
-            .checked_rem(right)
-            .map_err(|_| ContractError::ConditionError { msg: "Decimal checked sub error.".to_string() })?),
+        NumExprOp::Sub => {
+            Ok(left
+                .checked_sub(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Decimal checked sub error.".to_string(),
+                })?)
+        }
+        NumExprOp::Add => {
+            Ok(left
+                .checked_add(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Decimal checked sub error.".to_string(),
+                })?)
+        }
+        NumExprOp::Div => {
+            Ok(left
+                .checked_div(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Decimal checked sub error.".to_string(),
+                })?)
+        }
+        NumExprOp::Mul => {
+            Ok(left
+                .checked_mul(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Decimal checked sub error.".to_string(),
+                })?)
+        }
+        NumExprOp::Mod => {
+            Ok(left
+                .checked_rem(right)
+                .map_err(|_| ContractError::ConditionError {
+                    msg: "Decimal checked sub error.".to_string(),
+                })?)
+        }
     }
 }
 
@@ -440,15 +508,19 @@ fn resolve_ref_string(
     let res = match var {
         Variable::Static(s) => {
             let val = s.clone().value;
-            val[1..val.len()-1].to_string()
+            val[1..val.len() - 1].to_string()
         }
         Variable::Query(q) => {
-            let val = q.clone().value.ok_or(ContractError::ConditionError { msg: "String Query value not found.".to_string() })?;
-            val[1..val.len()-1].to_string()
+            let val = q.clone().value.ok_or(ContractError::ConditionError {
+                msg: "String Query value not found.".to_string(),
+            })?;
+            val[1..val.len() - 1].to_string()
         }
         Variable::External(e) => {
-            let val = e.clone().value.ok_or(ContractError::ConditionError { msg: "String External value not found.".to_string() })?;
-            val[1..val.len()-1].to_string()
+            let val = e.clone().value.ok_or(ContractError::ConditionError {
+                msg: "String External value not found.".to_string(),
+            })?;
+            val[1..val.len() - 1].to_string()
         }
     };
 
@@ -513,11 +585,15 @@ pub fn resolve_ref_bool(
             str::parse::<bool>(&val)?
         }
         Variable::Query(q) => {
-            let val = q.clone().value.ok_or(ContractError::ConditionError { msg: "String Bool value not found.".to_string() })?;
+            let val = q.clone().value.ok_or(ContractError::ConditionError {
+                msg: "String Bool value not found.".to_string(),
+            })?;
             str::parse::<bool>(&val)?
         }
         Variable::External(e) => {
-            let val = e.clone().value.ok_or(ContractError::ConditionError { msg: "String Bool value not found.".to_string() })?;
+            let val = e.clone().value.ok_or(ContractError::ConditionError {
+                msg: "String Bool value not found.".to_string(),
+            })?;
             str::parse::<bool>(&val)?
         }
     };

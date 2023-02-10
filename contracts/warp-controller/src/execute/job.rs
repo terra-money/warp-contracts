@@ -2,6 +2,7 @@ use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
 use crate::util::variable::{all_vector_vars_present, has_duplicates, hydrate_msgs, hydrate_vars, string_vars_in_vector, vars_valid};
 use crate::ContractError;
+use crate::ContractError::EvictionPeriodNotElapsed;
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
     MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
@@ -10,7 +11,6 @@ use warp_protocol::controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use warp_protocol::controller::State;
-use crate::ContractError::EvictionPeriodNotElapsed;
 
 pub fn create_job(
     deps: DepsMut,
@@ -310,9 +310,9 @@ pub fn execute_job(
 
     let mut submsgs = vec![];
 
-    if resolution.is_err() {
+    if let Err(e) = resolution {
         attrs.push(Attribute::new("job_condition_status", "invalid"));
-        attrs.push(Attribute::new("error", resolution.unwrap_err().to_string()));
+        attrs.push(Attribute::new("error", e.to_string()));
         let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
         FINISHED_JOBS().save(
             deps.storage,
