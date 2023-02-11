@@ -6,9 +6,8 @@ use crate::util::condition::{
 use crate::ContractError;
 use cosmwasm_std::{CosmosMsg, Deps, Env};
 
-use warp_protocol::controller::condition::{Condition, Expr, GenExpr, NumExprOp, NumOp, NumValue};
 use warp_protocol::controller::job::{ExternalInput, JobStatus};
-use warp_protocol::controller::variable::{StaticVariable, UpdateFnValue, Variable, VariableKind};
+use warp_protocol::controller::variable::{UpdateFnValue, Variable, VariableKind};
 
 pub fn hydrate_vars(
     deps: Deps,

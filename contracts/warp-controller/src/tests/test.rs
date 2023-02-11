@@ -1,5 +1,3 @@
-use cosmwasm_std::{to_vec, Binary, QueryRequest, StdError, WasmQuery};
-
 #[test]
 fn lol() {
     let v = "\"32000\"";
