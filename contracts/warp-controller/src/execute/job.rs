@@ -1,9 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::util::condition::resolve_cond;
-use crate::util::variable::{
-    all_vector_vars_present, has_duplicates, hydrate_msgs, hydrate_vars, string_vars_in_vector,
-    vars_valid,
-};
+use crate::util::variable::{all_vector_vars_present, has_duplicates, hydrate_msgs, hydrate_vars, msgs_valid, string_vars_in_vector, vars_valid};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
 use cosmwasm_std::{
@@ -55,6 +52,10 @@ pub fn create_job(
 
     if !all_vector_vars_present(&data.vars, format!("{}{}", cond_string, msg_string)) {
         return Err(ContractError::ExcessVariablesInVector {});
+    }
+    
+    if !msgs_valid(&data.msgs, &data.vars)? {
+        return Err(ContractError::MsgError { msg: "msgs are invalid".to_string() });
     }
 
     let q = ACCOUNTS()
