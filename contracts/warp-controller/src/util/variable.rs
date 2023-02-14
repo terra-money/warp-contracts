@@ -122,7 +122,8 @@ pub fn hydrate_msgs(
     vars: Vec<Variable>,
 ) -> Result<Vec<CosmosMsg>, ContractError> {
     let mut parsed_msgs: Vec<CosmosMsg> = vec![];
-    for mut msg in msgs {
+    for msg in msgs {
+        let mut replaced_msg = msg.clone();
         for var in &vars {
             let (name, replacement) = match var {
                 Variable::Static(v) => (v.name.clone(), v.value.clone()),
@@ -143,17 +144,76 @@ pub fn hydrate_msgs(
                     Some(val) => (v.name.clone(), val),
                 },
             };
-            msg = msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
+            replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
             if replacement.contains("$warp.variable") {
                 return Err(ContractError::HydrationError {
                     msg: "Attempt to inject warp variable.".to_string(),
                 });
             }
         }
-        parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&msg)?)
+        parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
     }
 
     Ok(parsed_msgs)
+}
+
+pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, ContractError> {
+    let mut parsed_msgs: Vec<CosmosMsg> = vec![];
+    for msg in msgs {
+        let mut replaced_msg = msg.clone();
+        for var in vars {
+            let (name, replacement) = match var {
+                Variable::Static(v) => (
+                    v.name.clone(),
+                    match v.kind {
+                        VariableKind::String => "\"test\"",
+                        VariableKind::Uint => "\"0\"",
+                        VariableKind::Int => "0",
+                        VariableKind::Decimal => "\"0.0\"",
+                        VariableKind::Timestamp => "0",
+                        VariableKind::Bool => "true",
+                        VariableKind::Amount => "\"0\"",
+                        VariableKind::Asset => "\"test\"",
+                    },
+                ),
+                Variable::External(v) => (
+                    v.name.clone(),
+                    match v.kind {
+                        VariableKind::String => "\"test\"",
+                        VariableKind::Uint => "\"0\"",
+                        VariableKind::Int => "0",
+                        VariableKind::Decimal => "\"0.0\"",
+                        VariableKind::Timestamp => "0",
+                        VariableKind::Bool => "true",
+                        VariableKind::Amount => "\"0\"",
+                        VariableKind::Asset => "\"test\"",
+                    },
+                ),
+                Variable::Query(v) => (
+                    v.name.clone(),
+                    match v.kind {
+                        VariableKind::String => "\"test\"",
+                        VariableKind::Uint => "\"0\"",
+                        VariableKind::Int => "0",
+                        VariableKind::Decimal => "\"0.0\"",
+                        VariableKind::Timestamp => "0",
+                        VariableKind::Bool => "true",
+                        VariableKind::Amount => "\"0\"",
+                        VariableKind::Asset => "\"test\"",
+                    },
+                ),
+            };
+            replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), replacement);
+            if replacement.contains("$warp.variable") {
+                return Err(ContractError::HydrationError {
+                    msg: "Attempt to inject warp variable.".to_string(),
+                });
+            }
+        }
+        parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
+    } //todo: check if msgs valid
+
+    Ok(true)
 }
 
 pub fn apply_var_fn(
