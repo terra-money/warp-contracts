@@ -163,36 +163,45 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
         let mut replaced_msg = msg.clone();
         for var in vars {
             let (name, replacement) = match var {
-                Variable::Static(v) => (v.name.clone(), match v.kind {
-                    VariableKind::String => "\"test\"",
-                    VariableKind::Uint => "\"0\"",
-                    VariableKind::Int => "0",
-                    VariableKind::Decimal => "\"0.0\"",
-                    VariableKind::Timestamp => "0",
-                    VariableKind::Bool => "true",
-                    VariableKind::Amount => "\"0\"",
-                    VariableKind::Asset => "\"test\"",
-                }),
-                Variable::External(v) => (v.name.clone(), match v.kind {
-                    VariableKind::String => "\"test\"",
-                    VariableKind::Uint => "\"0\"",
-                    VariableKind::Int => "0",
-                    VariableKind::Decimal => "\"0.0\"",
-                    VariableKind::Timestamp => "0",
-                    VariableKind::Bool => "true",
-                    VariableKind::Amount => "\"0\"",
-                    VariableKind::Asset => "\"test\"",
-                }),
-                Variable::Query(v) => (v.name.clone(), match v.kind {
-                    VariableKind::String => "\"test\"",
-                    VariableKind::Uint => "\"0\"",
-                    VariableKind::Int => "0",
-                    VariableKind::Decimal => "\"0.0\"",
-                    VariableKind::Timestamp => "0",
-                    VariableKind::Bool => "true",
-                    VariableKind::Amount => "\"0\"",
-                    VariableKind::Asset => "\"test\"",
-                }),
+                Variable::Static(v) => (
+                    v.name.clone(),
+                    match v.kind {
+                        VariableKind::String => "\"test\"",
+                        VariableKind::Uint => "\"0\"",
+                        VariableKind::Int => "0",
+                        VariableKind::Decimal => "\"0.0\"",
+                        VariableKind::Timestamp => "0",
+                        VariableKind::Bool => "true",
+                        VariableKind::Amount => "\"0\"",
+                        VariableKind::Asset => "\"test\"",
+                    },
+                ),
+                Variable::External(v) => (
+                    v.name.clone(),
+                    match v.kind {
+                        VariableKind::String => "\"test\"",
+                        VariableKind::Uint => "\"0\"",
+                        VariableKind::Int => "0",
+                        VariableKind::Decimal => "\"0.0\"",
+                        VariableKind::Timestamp => "0",
+                        VariableKind::Bool => "true",
+                        VariableKind::Amount => "\"0\"",
+                        VariableKind::Asset => "\"test\"",
+                    },
+                ),
+                Variable::Query(v) => (
+                    v.name.clone(),
+                    match v.kind {
+                        VariableKind::String => "\"test\"",
+                        VariableKind::Uint => "\"0\"",
+                        VariableKind::Int => "0",
+                        VariableKind::Decimal => "\"0.0\"",
+                        VariableKind::Timestamp => "0",
+                        VariableKind::Bool => "true",
+                        VariableKind::Amount => "\"0\"",
+                        VariableKind::Asset => "\"test\"",
+                    },
+                ),
             };
             replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), replacement);
             if replacement.contains("$warp.variable") {
