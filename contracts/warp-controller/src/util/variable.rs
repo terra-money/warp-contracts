@@ -183,8 +183,10 @@ pub fn apply_var_fn(
                                             msg: "Static Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                        .to_string();
+                                    v.value = format!(
+                                        "\"{}\"",
+                                        resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                    );
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -201,9 +203,10 @@ pub fn apply_var_fn(
                                             msg: "Static Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value =
+                                    v.value = format!(
+                                        "\"{}\"",
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                            .to_string();
+                                    );
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -244,8 +247,10 @@ pub fn apply_var_fn(
                                             msg: "Static Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                        .to_string();
+                                    v.value = format!(
+                                        "\"{}\"",
+                                        resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                    );
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -262,9 +267,10 @@ pub fn apply_var_fn(
                                             msg: "Static Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value =
+                                    v.value = format!(
+                                        "\"{}\"",
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                            .to_string();
+                                    );
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -323,10 +329,10 @@ pub fn apply_var_fn(
                                             msg: "External Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(
+                                    v.value = Some(format!(
+                                        "\"{}\"",
                                         resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                            .to_string(),
-                                    )
+                                    ))
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -345,10 +351,10 @@ pub fn apply_var_fn(
                                             msg: "External Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(
+                                    v.value = Some(format!(
+                                        "\"{}\"",
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                            .to_string(),
-                                    )
+                                    ))
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -396,10 +402,10 @@ pub fn apply_var_fn(
                                             msg: "External Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(
+                                    v.value = Some(format!(
+                                        "\"{}\"",
                                         resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                            .to_string(),
-                                    )
+                                    ))
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -418,10 +424,10 @@ pub fn apply_var_fn(
                                             msg: "External Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(
+                                    v.value = Some(format!(
+                                        "\"{}\"",
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                            .to_string(),
-                                    )
+                                    ))
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -487,10 +493,10 @@ pub fn apply_var_fn(
                                             msg: "Query Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(
+                                    v.value = Some(format!(
+                                        "\"{}\"",
                                         resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                            .to_string(),
-                                    )
+                                    ))
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -509,10 +515,10 @@ pub fn apply_var_fn(
                                             msg: "Query Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(
+                                    v.value = Some(format!(
+                                        "\"{}\"",
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                            .to_string(),
-                                    )
+                                    ))
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -559,10 +565,10 @@ pub fn apply_var_fn(
                                             msg: "Query Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(
+                                    v.value = Some(format!(
+                                        "\"{}\"",
                                         resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                            .to_string(),
-                                    )
+                                    ))
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -581,10 +587,10 @@ pub fn apply_var_fn(
                                             msg: "Query Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(
+                                    v.value = Some(format!(
+                                        "\"{}\"",
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                            .to_string(),
-                                    )
+                                    ))
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
