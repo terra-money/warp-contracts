@@ -14,6 +14,7 @@ pub fn instantiate_warp(
     env: Env,
     info: MessageInfo,
     owner: Option<String>,
+    fee_collector: Option<String>,
     warp_account_code_id: Uint64,
     minimum_reward: Uint128,
     creation_fee: Uint64,
@@ -27,6 +28,7 @@ pub fn instantiate_warp(
 ) -> Result<Response, ContractError> {
     let instantiate_msg = InstantiateMsg {
         owner,
+        fee_collector,
         warp_account_code_id,
         minimum_reward,
         creation_fee,
