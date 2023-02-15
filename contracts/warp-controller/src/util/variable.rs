@@ -4,7 +4,8 @@ use crate::util::condition::{
     resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
 };
 use crate::ContractError;
-use cosmwasm_std::{CosmosMsg, Deps, Env};
+use cosmwasm_std::{CosmosMsg, Decimal256, Deps, Env, Uint128, Uint256};
+use std::str::FromStr;
 
 use warp_protocol::controller::job::{ExternalInput, JobStatus};
 use warp_protocol::controller::variable::{UpdateFnValue, Variable, VariableKind};
@@ -57,52 +58,53 @@ pub fn hydrate_vars(
                 if v.reinitialize || v.value.is_none() {
                     match v.kind {
                         VariableKind::String => {
-                            v.value = Some(format!(
-                                "\"{}\"", // \"$warp.variable\" => \"VALUE"\
+                            v.value = Some(
+                                // \"$warp.variable\" => \"VALUE"\
                                 resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
-                            ))
+                                    .to_string(),
+                            )
                         }
                         VariableKind::Uint => {
-                            v.value = Some(format!(
-                                "\"{}\"",
+                            v.value = Some(
                                 resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
-                            ))
+                                    .to_string(),
+                            )
                         }
                         VariableKind::Int => {
-                            v.value = Some(format!(
-                                "{}",
+                            v.value = Some(
                                 resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
-                            ))
+                                    .to_string(),
+                            )
                         }
                         VariableKind::Decimal => {
-                            v.value = Some(format!(
-                                "\"{}\"",
+                            v.value = Some(
                                 resolve_query_expr_decimal(deps, env.clone(), v.init_fn.clone())?
-                            ))
+                                    .to_string(),
+                            )
                         }
                         VariableKind::Timestamp => {
-                            v.value = Some(format!(
-                                "{}",
+                            v.value = Some(
                                 resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
-                            ))
+                                    .to_string(),
+                            )
                         }
                         VariableKind::Bool => {
-                            v.value = Some(format!(
-                                "{}", //\"$warp.variable\" => VALUE
+                            v.value = Some(
                                 resolve_query_expr_bool(deps, env.clone(), v.init_fn.clone())?
-                            ))
+                                    .to_string(),
+                            )
                         }
                         VariableKind::Amount => {
-                            v.value = Some(format!(
-                                "\"{}\"",
+                            v.value = Some(
                                 resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
-                            ))
+                                    .to_string(),
+                            )
                         }
                         VariableKind::Asset => {
-                            v.value = Some(format!(
-                                "\"{}\"",
+                            v.value = Some(
                                 resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
-                            ))
+                                    .to_string(),
+                            )
                         }
                     }
                 }
@@ -126,14 +128,38 @@ pub fn hydrate_msgs(
         let mut replaced_msg = msg.clone();
         for var in &vars {
             let (name, replacement) = match var {
-                Variable::Static(v) => (v.name.clone(), v.value.clone()),
+                Variable::Static(v) => (
+                    v.name.clone(),
+                    match v.kind {
+                        VariableKind::String => format!("\"{}\"", v.value),
+                        VariableKind::Uint => format!("\"{}\"", v.value),
+                        VariableKind::Int => v.value.clone(),
+                        VariableKind::Decimal => format!("\"{}\"", v.value),
+                        VariableKind::Timestamp => v.value.clone(),
+                        VariableKind::Bool => v.value.clone(),
+                        VariableKind::Amount => format!("\"{}\"", v.value),
+                        VariableKind::Asset => format!("\"{}\"", v.value),
+                    },
+                ),
                 Variable::External(v) => match v.value.clone() {
                     None => {
                         return Err(ContractError::HydrationError {
                             msg: "External msg value is none.".to_string(),
                         });
                     }
-                    Some(val) => (v.name.clone(), val),
+                    Some(val) => (
+                        v.name.clone(),
+                        match v.kind {
+                            VariableKind::String => format!("\"{}\"", val),
+                            VariableKind::Uint => format!("\"{}\"", val),
+                            VariableKind::Int => val.clone(),
+                            VariableKind::Decimal => format!("\"{}\"", val),
+                            VariableKind::Timestamp => val.clone(),
+                            VariableKind::Bool => val.clone(),
+                            VariableKind::Amount => format!("\"{}\"", val),
+                            VariableKind::Asset => format!("\"{}\"", val),
+                        },
+                    ),
                 },
                 Variable::Query(v) => match v.value.clone() {
                     None => {
@@ -141,7 +167,19 @@ pub fn hydrate_msgs(
                             msg: "Query msg value is none.".to_string(),
                         });
                     }
-                    Some(val) => (v.name.clone(), val),
+                    Some(val) => (
+                        v.name.clone(),
+                        match v.kind {
+                            VariableKind::String => format!("\"{}\"", val),
+                            VariableKind::Uint => format!("\"{}\"", val),
+                            VariableKind::Int => val.clone(),
+                            VariableKind::Decimal => format!("\"{}\"", val),
+                            VariableKind::Timestamp => val.clone(),
+                            VariableKind::Bool => val.clone(),
+                            VariableKind::Amount => format!("\"{}\"", val),
+                            VariableKind::Asset => format!("\"{}\"", val),
+                        },
+                    ),
                 },
             };
             replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
@@ -243,10 +281,8 @@ pub fn apply_var_fn(
                                             msg: "Static Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = format!(
-                                        "\"{}\"",
-                                        resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                    );
+                                    v.value = resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                        .to_string();
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -263,10 +299,9 @@ pub fn apply_var_fn(
                                             msg: "Static Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = format!(
-                                        "\"{}\"",
+                                    v.value =
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                    );
+                                            .to_string();
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -307,10 +342,8 @@ pub fn apply_var_fn(
                                             msg: "Static Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = format!(
-                                        "\"{}\"",
-                                        resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                    );
+                                    v.value = resolve_num_value_uint(deps, env.clone(), nv, &vars)?
+                                        .to_string();
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -327,10 +360,9 @@ pub fn apply_var_fn(
                                             msg: "Static Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = format!(
-                                        "\"{}\"",
+                                    v.value =
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                    );
+                                            .to_string()
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -389,10 +421,10 @@ pub fn apply_var_fn(
                                             msg: "External Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(format!(
-                                        "\"{}\"",
+                                    v.value = Some(
                                         resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                    ))
+                                            .to_string(),
+                                    )
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -411,10 +443,10 @@ pub fn apply_var_fn(
                                             msg: "External Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(format!(
-                                        "\"{}\"",
+                                    v.value = Some(
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                    ))
+                                            .to_string(),
+                                    )
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -462,10 +494,10 @@ pub fn apply_var_fn(
                                             msg: "External Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(format!(
-                                        "\"{}\"",
+                                    v.value = Some(
                                         resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                    ))
+                                            .to_string(),
+                                    )
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -484,10 +516,10 @@ pub fn apply_var_fn(
                                             msg: "External Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(format!(
-                                        "\"{}\"",
+                                    v.value = Some(
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                    ))
+                                            .to_string(),
+                                    )
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -553,10 +585,10 @@ pub fn apply_var_fn(
                                             msg: "Query Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(format!(
-                                        "\"{}\"",
+                                    v.value = Some(
                                         resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                    ))
+                                            .to_string(),
+                                    )
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -575,10 +607,10 @@ pub fn apply_var_fn(
                                             msg: "Query Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(format!(
-                                        "\"{}\"",
+                                    v.value = Some(
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                    ))
+                                            .to_string(),
+                                    )
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -625,10 +657,10 @@ pub fn apply_var_fn(
                                             msg: "Query Uint function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(format!(
-                                        "\"{}\"",
+                                    v.value = Some(
                                         resolve_num_value_uint(deps, env.clone(), nv, &vars)?
-                                    ))
+                                            .to_string(),
+                                    )
                                 }
                                 UpdateFnValue::Int(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -647,10 +679,10 @@ pub fn apply_var_fn(
                                             msg: "Query Decimal function mismatch.".to_string(),
                                         });
                                     }
-                                    v.value = Some(format!(
-                                        "\"{}\"",
+                                    v.value = Some(
                                         resolve_num_value_decimal(deps, env.clone(), nv, &vars)?
-                                    ))
+                                            .to_string(),
+                                    )
                                 }
                                 UpdateFnValue::Timestamp(nv) => {
                                     if v.kind != VariableKind::Int {
@@ -811,15 +843,145 @@ fn get_var_name(var: &Variable) -> String {
 pub fn vars_valid(vars: &Vec<Variable>) -> bool {
     for var in vars {
         match var {
-            Variable::Static(_) => {}
+            Variable::Static(v) => match v.kind {
+                VariableKind::String => {
+                    if v.value.is_empty() {
+                        return false;
+                    }
+                }
+                VariableKind::Uint => {
+                    if Uint256::from_str(&v.value).is_err() {
+                        return false;
+                    }
+                }
+                VariableKind::Int => {
+                    if i128::from_str(&v.value).is_err() {
+                        return false;
+                    }
+                }
+                VariableKind::Decimal => {
+                    if Decimal256::from_str(&v.value).is_err() {
+                        return false;
+                    }
+                }
+                VariableKind::Timestamp => {
+                    if i128::from_str(&v.value).is_err() {
+                        return false;
+                    }
+                }
+                VariableKind::Bool => {
+                    if bool::from_str(&v.value).is_err() {
+                        return false;
+                    }
+                }
+                VariableKind::Amount => {
+                    if Uint128::from_str(&v.value).is_err() {
+                        return false;
+                    }
+                }
+                VariableKind::Asset => {
+                    if v.value.is_empty() {
+                        return false;
+                    }
+                }
+            },
             Variable::External(v) => {
                 if v.reinitialize && v.update_fn.is_some() {
                     return false;
+                }
+
+                if let Some(val) = v.value.clone() {
+                    match v.kind {
+                        VariableKind::String => {
+                            if val.is_empty() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Uint => {
+                            if Uint256::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Int => {
+                            if i128::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Decimal => {
+                            if Decimal256::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Timestamp => {
+                            if i128::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Bool => {
+                            if bool::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Amount => {
+                            if Uint128::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Asset => {
+                            if val.is_empty() {
+                                return false;
+                            }
+                        }
+                    }
                 }
             }
             Variable::Query(v) => {
                 if v.reinitialize && v.update_fn.is_some() {
                     return false;
+                }
+                if let Some(val) = v.value.clone() {
+                    match v.kind {
+                        VariableKind::String => {
+                            if val.is_empty() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Uint => {
+                            if Uint256::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Int => {
+                            if i128::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Decimal => {
+                            if Decimal256::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Timestamp => {
+                            if i128::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Bool => {
+                            if bool::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Amount => {
+                            if Uint128::from_str(&val).is_err() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Asset => {
+                            if val.is_empty() {
+                                return false;
+                            }
+                        }
+                    }
                 }
             }
         }
