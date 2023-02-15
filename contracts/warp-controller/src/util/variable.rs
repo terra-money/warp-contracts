@@ -844,11 +844,7 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
     for var in vars {
         match var {
             Variable::Static(v) => match v.kind {
-                VariableKind::String => {
-                    if v.value.is_empty() {
-                        return false;
-                    }
-                }
+                VariableKind::String => {}
                 VariableKind::Uint => {
                     if Uint256::from_str(&v.value).is_err() {
                         return false;
@@ -892,11 +888,7 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
 
                 if let Some(val) = v.value.clone() {
                     match v.kind {
-                        VariableKind::String => {
-                            if val.is_empty() {
-                                return false;
-                            }
-                        }
+                        VariableKind::String => {}
                         VariableKind::Uint => {
                             if Uint256::from_str(&val).is_err() {
                                 return false;
@@ -941,11 +933,7 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
                 }
                 if let Some(val) = v.value.clone() {
                     match v.kind {
-                        VariableKind::String => {
-                            if val.is_empty() {
-                                return false;
-                            }
-                        }
+                        VariableKind::String => {}
                         VariableKind::Uint => {
                             if Uint256::from_str(&val).is_err() {
                                 return false;
