@@ -23,6 +23,7 @@ pub mod variable;
 #[cw_serde]
 pub struct Config {
     pub owner: Addr,
+    pub fee_collector: Addr,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
     pub creation_fee_percentage: Uint64,
@@ -46,6 +47,7 @@ pub struct State {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: Option<String>,
+    pub fee_collector: Option<String>,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
     pub creation_fee: Uint64,
@@ -79,6 +81,7 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub owner: Option<String>,
+    pub fee_collector: Option<String>,
     pub minimum_reward: Option<Uint128>,
     pub creation_fee_percentage: Option<Uint64>,
     pub cancellation_fee_percentage: Option<Uint64>,
