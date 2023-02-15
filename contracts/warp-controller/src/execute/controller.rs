@@ -18,6 +18,11 @@ pub fn update_config(
         None => config.owner,
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
+
+    config.fee_collector = match data.fee_collector {
+        None => config.fee_collector,
+        Some(data) => deps.api.addr_validate(data.as_str())?,
+    };
     config.minimum_reward = data.minimum_reward.unwrap_or(config.minimum_reward);
     config.creation_fee_percentage = data
         .creation_fee_percentage

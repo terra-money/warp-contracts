@@ -115,7 +115,7 @@ pub fn create_job(
             contract_addr: account.account.to_string(),
             msg: to_binary(&warp_protocol::account::ExecuteMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                    to_address: env.contract.address.to_string(),
+                    to_address: config.fee_collector.to_string(),
                     amount: vec![Coin::new((data.reward + fee).u128(), "uluna")],
                 })],
             })?,
@@ -192,6 +192,10 @@ pub fn delete_job(
             to_address: account.account.to_string(),
             amount: vec![Coin::new((job.reward - fee).u128(), "uluna")],
         },
+        BankMsg::Send {
+            to_address: config.fee_collector.to_string(),
+            amount: vec![Coin::new(fee.u128(), "uluna")],
+        },
     ];
 
     Ok(Response::new()
@@ -265,7 +269,7 @@ pub fn update_job(
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&warp_protocol::account::ExecuteMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                        to_address: env.contract.address.to_string(),
+                        to_address: config.fee_collector.to_string(),
                         amount: vec![Coin::new((added_reward + fee).u128(), "uluna")],
                     })],
                 })?,
@@ -432,7 +436,7 @@ pub fn evict_job(
 
     if job.requeue_on_evict && account_amount >= a {
         cosmos_msgs.push(
-            //send reward to controller
+            //send reward to evictor
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&warp_protocol::account::ExecuteMsg {

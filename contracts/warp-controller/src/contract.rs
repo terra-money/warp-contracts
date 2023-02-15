@@ -32,6 +32,9 @@ pub fn instantiate(
         owner: deps
             .api
             .addr_validate(&msg.owner.unwrap_or_else(|| info.sender.to_string()))?,
+        fee_collector: deps
+            .api
+            .addr_validate(&msg.fee_collector.unwrap_or_else(|| info.sender.to_string()))?,
         warp_account_code_id: msg.warp_account_code_id,
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
@@ -281,7 +284,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             contract_addr: account.account.to_string(),
                             msg: to_binary(&warp_protocol::account::ExecuteMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                                    to_address: env.contract.address.to_string(),
+                                    to_address: config.fee_collector.to_string(),
                                     amount: vec![Coin::new((new_job.reward + fee).u128(), "uluna")],
                                 })],
                             })?,

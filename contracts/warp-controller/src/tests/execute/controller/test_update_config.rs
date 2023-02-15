@@ -16,6 +16,7 @@ fn test_modify_config_success() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
+        Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
         Uint64::new(0),
@@ -31,6 +32,7 @@ fn test_modify_config_success() {
 
     let modify_config_msg = UpdateConfigMsg {
         owner: Some(info.sender.to_string()),
+        fee_collector: None,
         minimum_reward: Some(Uint128::new(7)),
         creation_fee_percentage: Some(Uint64::new(2)),
         cancellation_fee_percentage: Some(Uint64::new(3)),
@@ -73,6 +75,7 @@ fn test_modify_config_unauthorized() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
+        Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
         Uint64::new(0),
@@ -88,6 +91,7 @@ fn test_modify_config_unauthorized() {
 
     let modify_config_msg = UpdateConfigMsg {
         owner: Some(info.sender.to_string()),
+        fee_collector: None,
         minimum_reward: Some(Uint128::new(1)),
         creation_fee_percentage: Some(Uint64::new(2)),
         cancellation_fee_percentage: Some(Uint64::new(3)),
@@ -118,6 +122,7 @@ fn test_modify_config_bad_percentages() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
+        Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
         Uint64::new(0),
@@ -133,6 +138,7 @@ fn test_modify_config_bad_percentages() {
 
     let modify_config_msg = UpdateConfigMsg {
         owner: Some(info.sender.to_string()),
+        fee_collector: None,
         minimum_reward: Some(Uint128::new(7)),
         creation_fee_percentage: Some(Uint64::new(101)),
         cancellation_fee_percentage: Some(Uint64::new(3)),
@@ -151,6 +157,7 @@ fn test_modify_config_bad_percentages() {
 
     let modify_config_msg = UpdateConfigMsg {
         owner: Some(info.sender.to_string()),
+        fee_collector: None,
         minimum_reward: Some(Uint128::new(100)),
         creation_fee_percentage: Some(Uint64::new(2)),
         cancellation_fee_percentage: Some(Uint64::new(101)),
