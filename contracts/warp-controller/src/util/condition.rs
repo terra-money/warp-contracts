@@ -214,19 +214,19 @@ fn resolve_ref_uint(
     let res = match var {
         Variable::Static(s) => {
             let val = s.clone().value;
-            Uint256::from_str(&val[1..val.len() - 1])?
+            Uint256::from_str(&val)?
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
                 msg: "Uint Query value not found.".to_string(),
             })?;
-            Uint256::from_str(&val[1..val.len() - 1])?
+            Uint256::from_str(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
                 msg: "Uint External value not found.".to_string(),
             })?;
-            Uint256::from_str(&val[1..val.len() - 1])?
+            Uint256::from_str(&val)?
         }
     };
 
@@ -332,19 +332,19 @@ fn resolve_ref_decimal(
     let res = match var {
         Variable::Static(s) => {
             let val = s.clone().value;
-            Decimal256::from_str(&val[1..val.len() - 1])?
+            Decimal256::from_str(&val)?
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
                 msg: "Decimal Query value not found.".to_string(),
             })?;
-            Decimal256::from_str(&val[1..val.len() - 1])?
+            Decimal256::from_str(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
                 msg: "Decimal External value not found.".to_string(),
             })?;
-            Decimal256::from_str(&val[1..val.len() - 1])?
+            Decimal256::from_str(&val)?
         }
     };
 
@@ -525,22 +525,13 @@ fn resolve_ref_string(
 ) -> Result<String, ContractError> {
     let var = get_var(r, vars)?;
     let res = match var {
-        Variable::Static(s) => {
-            let val = s.clone().value;
-            val[1..val.len() - 1].to_string()
-        }
-        Variable::Query(q) => {
-            let val = q.clone().value.ok_or(ContractError::ConditionError {
-                msg: "String Query value not found.".to_string(),
-            })?;
-            val[1..val.len() - 1].to_string()
-        }
-        Variable::External(e) => {
-            let val = e.clone().value.ok_or(ContractError::ConditionError {
-                msg: "String External value not found.".to_string(),
-            })?;
-            val[1..val.len() - 1].to_string()
-        }
+        Variable::Static(s) => s.value.clone(),
+        Variable::Query(q) => q.value.clone().ok_or(ContractError::ConditionError {
+            msg: "String Query value not found.".to_string(),
+        })?,
+        Variable::External(e) => e.value.clone().ok_or(ContractError::ConditionError {
+            msg: "String External value not found.".to_string(),
+        })?,
     };
 
     Ok(res)
