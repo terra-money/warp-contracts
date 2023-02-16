@@ -306,7 +306,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         },
                     );
 
-
                     new_job_attrs.push(Attribute::new("action", "recur_job"));
                     new_job_attrs.push(Attribute::new("creation_status", "created"));
                     new_job_attrs.push(Attribute::new("job_id", job.id));

@@ -116,8 +116,7 @@ pub fn create_job(
             msg: to_binary(&warp_protocol::account::ExecuteMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
-                    amount: vec![Coin::new(
-                        (data.reward).u128(), "uluna")],
+                    amount: vec![Coin::new((data.reward).u128(), "uluna")],
                 })],
             })?,
             funds: vec![],
@@ -127,8 +126,7 @@ pub fn create_job(
             msg: to_binary(&warp_protocol::account::ExecuteMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
-                    amount: vec![Coin::new(
-                        (fee).u128(), "uluna")],
+                    amount: vec![Coin::new((fee).u128(), "uluna")],
                 })],
             })?,
             funds: vec![],
