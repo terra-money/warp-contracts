@@ -18,11 +18,11 @@
   },
   "mainnet": {
     "warp-account": {
-      "codeId": "1111"
+      "codeId": "1113"
     },
     "warp-controller": {
-      "codeId": "1117",
-      "address": "terra1f4a02j6gnc3pdd4uq89w02j39emm2vten97c8sphd9ac4w7rms5szsfn54"
+      "codeId": "1118",
+      "address": "terra12w6h8u5wsurkgntam3xjc7n0ypjpp5ugeq5jhn52d2j8d3rq0ulqs02427"
     }
   }
 }
