@@ -285,7 +285,21 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             msg: to_binary(&warp_protocol::account::ExecuteMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: config.fee_collector.to_string(),
-                                    amount: vec![Coin::new((new_job.reward + fee).u128(), "uluna")],
+                                    amount: vec![Coin::new((fee).u128(), "uluna")],
+                                })],
+                            })?,
+                            funds: vec![],
+                        },
+                    );
+
+                    msgs.push(
+                        //send reward to controller
+                        WasmMsg::Execute {
+                            contract_addr: account.account.to_string(),
+                            msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                                    to_address: env.contract.address.to_string(),
+                                    amount: vec![Coin::new((new_job.reward).u128(), "uluna")],
                                 })],
                             })?,
                             funds: vec![],

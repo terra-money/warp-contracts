@@ -1,6 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG, STATE, TEMPLATES};
 use crate::ContractError;
-use cosmwasm_std::{Coin, DepsMut, Env, MessageInfo, Response, Uint64};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, Uint64};
 use warp_protocol::controller::template::{
     DeleteTemplateMsg, EditTemplateMsg, SubmitTemplateMsg, Template,
 };
@@ -65,7 +65,13 @@ pub fn submit_template(
         },
     )?;
 
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: config.fee_collector.to_string(),
+        amount: vec![Coin::new((config.template_fee).u128(), "uluna")],
+    });
+
     Ok(Response::new()
+        .add_message(msg)
         .add_attribute("action", "submit_msg_template")
         .add_attribute("id", state.current_template_id)
         .add_attribute("owner", info.sender)
