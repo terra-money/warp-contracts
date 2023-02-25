@@ -1,3 +1,4 @@
+use crate::cron::CrontabError;
 use crate::ContractError::{CustomError, DecodeError, DeserializationError, SerializationError};
 use cosmwasm_std::{DivideByZeroError, OverflowError, StdError};
 use std::num::ParseIntError;
@@ -8,6 +9,9 @@ use thiserror::Error;
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
+
+    #[error("{0}")]
+    Crontab(#[from] CrontabError),
 
     #[error("Unauthorized")]
     Unauthorized {},

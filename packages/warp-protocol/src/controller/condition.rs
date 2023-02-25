@@ -48,6 +48,7 @@ pub enum NumValue<T, ExprOp, FnOp> {
 pub enum NumEnvValue {
     Time,
     BlockHeight,
+    NextTimeFromCron(String),
 }
 
 #[cw_serde]
