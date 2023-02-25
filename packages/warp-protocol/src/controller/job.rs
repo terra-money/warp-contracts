@@ -84,6 +84,7 @@ pub struct QueryJobMsg {
 
 #[cw_serde]
 pub struct QueryJobsMsg {
+    // if set, will only return the specified ids.
     pub ids: Option<Vec<Uint64>>,
     pub active: Option<bool>,
     pub owner: Option<Addr>,
@@ -92,6 +93,8 @@ pub struct QueryJobsMsg {
     pub condition_status: Option<bool>,
     pub start_after: Option<JobIndex>,
     pub limit: Option<u32>,
+    // if set to true, it will order ascending based on the id. start_after will only use the second part of JobIndex (_1)
+    pub use_id_order: Option<bool>,
 }
 
 #[cw_serde]

@@ -36,7 +36,25 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
             ids: Some(ids),
             job_status,
             ..
-        } => query_jobs_by_ids(deps, env, ids, job_status),
+        } => query_jobs_filter_by_ids(deps, env, ids, job_status),
+        QueryJobsMsg {
+            active: _,
+            name,
+            owner,
+            job_status,
+            start_after,
+            limit: _,
+            use_id_order: Some(true),
+            ..
+        } => query_jobs_by_id(
+            deps,
+            env,
+            name,
+            owner,
+            job_status,
+            start_after.map(|i| (i._0.u128(), i._1.u64())),
+            page_size as usize,
+        ),
         QueryJobsMsg {
             active: _,
             name,
@@ -57,7 +75,7 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
     }
 }
 
-pub fn query_jobs_by_ids(
+pub fn query_jobs_filter_by_ids(
     deps: Deps,
     env: Env,
     ids: Vec<Uint64>,
@@ -120,15 +138,55 @@ pub fn query_jobs_by_reward(
                 job_status.clone(),
             )
         })
+        .map(|item| {
+            let (_, job) = item?;
+            Ok(job)
+        })
         .take(limit)
         .collect::<StdResult<Vec<_>>>()?;
 
-    let mut jobs = vec![];
-    for info in infos.clone() {
-        jobs.push(info.1);
-    }
     Ok(JobsResponse {
-        jobs,
         total_count: infos.len(),
+        jobs: infos,
+    })
+}
+
+pub fn query_jobs_by_id(
+    deps: Deps,
+    env: Env,
+    name: Option<String>,
+    owner: Option<Addr>,
+    job_status: Option<JobStatus>,
+    start_after: Option<(u128, u64)>,
+    limit: usize,
+) -> StdResult<JobsResponse> {
+    let start = start_after.map(|(_reward, id)| Bound::exclusive(id));
+    let map = if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
+        FINISHED_JOBS()
+    } else {
+        PENDING_JOBS()
+    };
+    let infos = map
+        .range(deps.storage, start, None, Order::Ascending)
+        .filter(|h| {
+            resolve_filters(
+                deps,
+                env.clone(),
+                h.as_ref().unwrap().clone().1,
+                name.clone(),
+                owner.clone(),
+                job_status.clone(),
+            )
+        })
+        .map(|item| {
+            let (_, job) = item?;
+            Ok(job)
+        })
+        .take(limit)
+        .collect::<StdResult<Vec<_>>>()?;
+
+    Ok(JobsResponse {
+        total_count: infos.len(),
+        jobs: infos,
     })
 }
