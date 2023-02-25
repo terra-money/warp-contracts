@@ -92,6 +92,7 @@ pub struct QueryJobsMsg {
     pub condition_status: Option<bool>,
     pub start_after: Option<JobIndex>,
     pub limit: Option<u32>,
+    pub use_id_order: Option<bool>,
 }
 
 #[cw_serde]
