@@ -1,6 +1,7 @@
 use crate::ContractError::{CustomError, DecodeError, DeserializationError, SerializationError};
-use cosmwasm_std::{DivideByZeroError, StdError};
+use cosmwasm_std::{DivideByZeroError, OverflowError, StdError};
 use std::num::ParseIntError;
+use std::str::ParseBoolError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -74,6 +75,48 @@ pub enum ContractError {
 
     #[error("Error resolving JSON path")]
     ResolveError {},
+
+    #[error("Hydration error: {msg:?}")]
+    HydrationError { msg: String },
+
+    #[error("Function error: {msg:?}")]
+    FunctionError { msg: String },
+
+    #[error("Variable not found: {name:?}.")]
+    VariableNotFound { name: String },
+
+    #[error("Condition error: {msg:?}")]
+    ConditionError { msg: String },
+
+    #[error("Msg error: {msg:?}")]
+    MsgError { msg: String },
+
+    #[error("Max eviction fee smaller than minimum eviction fee.")]
+    MaxFeeUnderMinFee {},
+
+    #[error("Max eviction time smaller than minimum eviction time.")]
+    MaxTimeUnderMinTime {},
+
+    #[error("Job reward smaller than eviction fee.")]
+    RewardSmallerThanFee {},
+
+    #[error("Invalid variables.")]
+    InvalidVariables {},
+
+    #[error("Variables list contains duplicates.")]
+    VariablesContainDuplicates {},
+
+    #[error("Eviction period not elapsed.")]
+    EvictionPeriodNotElapsed {},
+
+    #[error("Template fee not found.")]
+    TemplateFeeNotFound {},
+
+    #[error("Variables in condition or msgs missing from variables vector.")]
+    VariablesMissingFromVector {},
+
+    #[error("Variable vector contains unused variables.")]
+    ExcessVariablesInVector {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {
@@ -114,10 +157,26 @@ impl From<ParseIntError> for ContractError {
     }
 }
 
+impl From<ParseBoolError> for ContractError {
+    fn from(_: ParseBoolError) -> Self {
+        CustomError {
+            val: "Parse bool error".to_string(),
+        }
+    }
+}
+
 impl From<DivideByZeroError> for ContractError {
     fn from(_: DivideByZeroError) -> Self {
         CustomError {
             val: "ERROR: Division by zero".to_string(),
+        }
+    }
+}
+
+impl From<OverflowError> for ContractError {
+    fn from(_: OverflowError) -> Self {
+        CustomError {
+            val: "ERROR: Overflow error".to_string(),
         }
     }
 }

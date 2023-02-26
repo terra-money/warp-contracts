@@ -14,12 +14,18 @@ task(async ({ deployer, signer, refs }) => {
 
   await deployer.storeCode("warp-controller");
   await new Promise((resolve) => setTimeout(resolve, 3000));
-
+  //
   const instantiateMsg = {
     warp_account_code_id: id,
-    creation_fee: "0",
-    cancellation_fee: "0",
-    minimum_reward: "0",
+    creation_fee: "5",
+    cancellation_fee: "5",
+    minimum_reward: "10000",
+    template_fee: "10000000",
+    t_max: "86400",
+    t_min: "86400",
+    a_max: "10000",
+    a_min: "10000",
+    q_max: "10",
   };
 
   await deployer.instantiate("warp-controller", instantiateMsg, {

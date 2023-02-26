@@ -1,9 +1,11 @@
 use crate::controller::condition::Condition;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, CosmosMsg, Uint128, Uint64};
+use cosmwasm_std::{Addr, Uint128, Uint64};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
+
+use super::variable::Variable;
 
 #[cw_serde]
 pub struct Job {
@@ -13,8 +15,17 @@ pub struct Job {
     pub name: String,
     pub status: JobStatus,
     pub condition: Condition,
-    pub msgs: Vec<CosmosMsg>,
+    pub msgs: Vec<String>,
+    pub vars: Vec<Variable>,
+    pub recurring: bool,
+    pub requeue_on_evict: bool,
     pub reward: Uint128,
+}
+
+#[cw_serde]
+pub enum JobVarKind {
+    Query,
+    External,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, Display)]
@@ -23,6 +34,7 @@ pub enum JobStatus {
     Executed,
     Failed,
     Cancelled,
+    Evicted,
 }
 
 #[cw_serde]
@@ -30,6 +42,9 @@ pub struct CreateJobMsg {
     pub name: String,
     pub condition: Condition,
     pub msgs: Vec<String>,
+    pub vars: Vec<Variable>,
+    pub recurring: bool,
+    pub requeue_on_evict: bool,
     pub reward: Uint128,
 }
 
@@ -42,13 +57,24 @@ pub struct DeleteJobMsg {
 pub struct UpdateJobMsg {
     pub id: Uint64,
     pub name: Option<String>,
-    pub condition: Option<Condition>,
     pub added_reward: Option<Uint128>,
 }
 
 #[cw_serde]
 pub struct ExecuteJobMsg {
     pub id: Uint64,
+    pub external_inputs: Option<Vec<ExternalInput>>,
+}
+
+#[cw_serde]
+pub struct EvictJobMsg {
+    pub id: Uint64,
+}
+
+#[cw_serde]
+pub struct ExternalInput {
+    pub name: String,
+    pub input: String,
 }
 
 #[cw_serde]

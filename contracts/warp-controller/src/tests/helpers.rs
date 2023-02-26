@@ -14,17 +14,31 @@ pub fn instantiate_warp(
     env: Env,
     info: MessageInfo,
     owner: Option<String>,
+    fee_collector: Option<String>,
     warp_account_code_id: Uint64,
     minimum_reward: Uint128,
-    creation_fee: Uint128,
-    cancellation_fee: Uint128,
+    creation_fee: Uint64,
+    cancellation_fee: Uint64,
+    template_fee: Uint128,
+    t_max: Uint64,
+    t_min: Uint64,
+    a_max: Uint128,
+    a_min: Uint128,
+    q_max: Uint64,
 ) -> Result<Response, ContractError> {
     let instantiate_msg = InstantiateMsg {
         owner,
+        fee_collector,
         warp_account_code_id,
         minimum_reward,
         creation_fee,
         cancellation_fee,
+        template_fee,
+        t_max,
+        t_min,
+        a_max,
+        a_min,
+        q_max,
     };
 
     return instantiate(deps, env.clone(), info.clone(), instantiate_msg.clone());

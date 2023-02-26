@@ -2,6 +2,7 @@ use std::env::current_dir;
 use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
+use cosmwasm_std::{CosmosMsg, QueryRequest};
 use warp_protocol::controller::{
     account::{AccountResponse, AccountsResponse},
     job::{JobResponse, JobsResponse},
@@ -28,4 +29,6 @@ fn main() {
     export_schema(&schema_for!(TemplateResponse), &out_dir);
     export_schema(&schema_for!(TemplatesResponse), &out_dir);
     export_schema(&schema_for!(Template), &out_dir);
+    export_schema(&schema_for!(CosmosMsg), &out_dir);
+    export_schema(&schema_for!(QueryRequest<String>), &out_dir);
 }

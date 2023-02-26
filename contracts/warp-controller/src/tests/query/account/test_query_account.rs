@@ -21,10 +21,17 @@ fn test_query_account_successful() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
+        Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 
@@ -79,10 +86,17 @@ fn test_query_account_does_not_exist() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
+        Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 

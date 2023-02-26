@@ -16,10 +16,17 @@ fn test_create_account_success() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
+        Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 
@@ -70,10 +77,17 @@ fn test_create_account_exists() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
+        Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 
@@ -120,10 +134,17 @@ fn test_create_account_by_account() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
+        Some(info.sender.to_string()),
         Uint64::new(0),
         Uint128::new(0),
-        Uint128::new(0),
-        Uint128::new(0),
+        Uint64::new(0),
+        Uint64::new(0),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
     )
     .unwrap();
 
