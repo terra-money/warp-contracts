@@ -144,7 +144,8 @@ pub fn create_job(
         .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
         .add_attribute("job_reward", job.reward)
         .add_attribute("job_creation_fee", fee)
-        .add_attribute("job_last_updated_time", job.last_update_time))
+        .add_attribute("job_last_updated_time", job.last_update_time)
+        .add_attribute("job_vars", serde_json_wasm::to_string(&job.vars)?))
 }
 
 pub fn delete_job(
@@ -312,7 +313,8 @@ pub fn update_job(
         .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
         .add_attribute("job_reward", job.reward)
         .add_attribute("job_update_fee", fee)
-        .add_attribute("job_last_updated_time", job.last_update_time))
+        .add_attribute("job_last_updated_time", job.last_update_time)
+        .add_attribute("job_vars", serde_json_wasm::to_string(&job.vars)?))
 }
 
 pub fn execute_job(
