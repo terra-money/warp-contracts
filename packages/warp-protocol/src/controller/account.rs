@@ -1,8 +1,10 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, CosmosMsg};
 
 #[cw_serde]
-pub struct CreateAccountMsg {}
+pub struct CreateAccountMsg {
+    pub msgs: Option<Vec<CosmosMsg>>
+}
 
 #[cw_serde]
 pub struct QueryAccountMsg {

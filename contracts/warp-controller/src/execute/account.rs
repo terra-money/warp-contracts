@@ -3,11 +3,13 @@ use crate::ContractError;
 use cosmwasm_std::{
     to_binary, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, SubMsg, WasmMsg,
 };
+use warp_protocol::controller::account::CreateAccountMsg;
 
 pub fn create_account(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
+    data: CreateAccountMsg
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -35,8 +37,9 @@ pub fn create_account(
             code_id: config.warp_account_code_id.u64(),
             msg: to_binary(&warp_protocol::account::InstantiateMsg {
                 owner: info.sender.to_string(),
+                msgs: data.msgs,
             })?,
-            funds: vec![],
+            funds: info.funds,
             label: info.sender.to_string(),
         }),
         gas_limit: None,

@@ -87,7 +87,7 @@ pub fn execute(
         ExecuteMsg::ExecuteJob(data) => job::execute_job(deps, env, info, data),
         ExecuteMsg::EvictJob(data) => job::evict_job(deps, env, info, data),
 
-        ExecuteMsg::CreateAccount(_) => account::create_account(deps, env, info),
+        ExecuteMsg::CreateAccount(data) => account::create_account(deps, env, info, data),
 
         ExecuteMsg::UpdateConfig(data) => controller::update_config(deps, env, info, data),
 
@@ -166,6 +166,27 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .ok_or_else(|| StdError::generic_err("cannot find `contract_addr` attribute"))?
                 .value;
 
+            let funds = event
+                .attributes
+                .iter()
+                .cloned()
+                .find(|attr| attr.key == "funds")
+                .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
+                .value;
+
+            let msgs: Option<Vec<CosmosMsg>> = serde_json_wasm::from_str(&event
+                .attributes
+                .iter()
+                .cloned()
+                .find(|attr| attr.key == "funds")
+                .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
+                .value)?;
+
+            let msgs_vec = match msgs {
+                None => {vec![]},
+                Some(msgs) => {msgs}
+            };
+
             if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
                 return Err(ContractError::AccountAlreadyExists {});
             }
@@ -181,7 +202,9 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             Ok(Response::new()
                 .add_attribute("action", "save_account")
                 .add_attribute("owner", owner)
-                .add_attribute("account_address", address))
+                .add_attribute("account_address", address)
+                .add_attribute("funds", funds)
+                .add_messages(msgs_vec))
         }
         //job execution
         _ => {

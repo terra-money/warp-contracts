@@ -22,7 +22,10 @@ pub fn instantiate(
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_attribute("contract_addr", env.contract.address)
-        .add_attribute("owner", msg.owner))
+        .add_attribute("owner", msg.owner)
+        .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
+        .add_attribute("msgs", serde_json_wasm::to_string(&msg.msgs)?)
+    )
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
