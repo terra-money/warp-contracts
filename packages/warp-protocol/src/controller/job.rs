@@ -7,6 +7,21 @@ use strum_macros::Display;
 
 use super::variable::Variable;
 
+
+// pub enum JobFund {
+//     Cw20(...),
+//     Native(...),
+//     Ibc(...)
+// }
+
+// 1. create_account (can potential embed funds here)
+// 2. cw20_sends, native (native send or within the create_job msg itself), ibc_send (to account)
+// 3. create_job msg
+//      - job.funds -> withdraw_asset_from_account(...), withdraws from account to controller contract
+// ...
+// 4. execute_job msg
+//      - job succceeded - 
+
 #[cw_serde]
 pub struct Job {
     pub id: Uint64,
@@ -47,6 +62,10 @@ pub struct CreateJobMsg {
     pub requeue_on_evict: bool,
     pub reward: Uint128,
 }
+
+#[cw_serde]
+pub struct WithdrawAssetMsg {
+} 
 
 #[cw_serde]
 pub struct DeleteJobMsg {
