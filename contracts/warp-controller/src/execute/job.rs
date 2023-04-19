@@ -11,7 +11,7 @@ use cosmwasm_std::{
     MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
 };
 use warp_protocol::controller::job::{
-    CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg, WithdrawAssetMsg,
+    CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use warp_protocol::controller::State;
 
@@ -145,53 +145,6 @@ pub fn create_job(
         .add_attribute("job_reward", job.reward)
         .add_attribute("job_creation_fee", fee)
         .add_attribute("job_last_updated_time", job.last_update_time))
-}
-
-pub fn withdraw_asset(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    data: WithdrawAssetMsg,
-) -> Result<Response, ContractError> {
-    // let q = ACCOUNTS()
-    //     .idx
-    //     .account
-    //     .item(deps.storage, info.sender.clone())?;
-
-    // let account = match q {
-    //     None => ACCOUNTS()
-    //         .load(deps.storage, info.sender)
-    //         .map_err(|_e| ContractError::AccountDoesNotExist {})?,
-    //     Some(q) => q.1,
-    // };
-
-    // let reward_send_msgs = vec![
-    //     //send reward to controller
-    //     WasmMsg::Execute {
-    //         contract_addr: account.account.to_string(),
-    //         msg: to_binary(&warp_protocol::account::ExecuteMsg {
-    //             msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-    //                 to_address: env.contract.address.to_string(),
-    //                 amount: vec![Coin::new((data.reward).u128(), "uluna")],
-    //             })],
-    //         })?,
-    //         funds: vec![],
-    //     },
-    // ];
-
-    // Ok(Response::new()
-    //     .add_messages(reward_send_msgs)
-    //     .add_attribute("action", "create_job")
-    //     .add_attribute("job_id", job.id)
-    //     .add_attribute("job_owner", job.owner)
-    //     .add_attribute("job_name", job.name)
-    //     .add_attribute("job_status", serde_json_wasm::to_string(&job.status)?)
-    //     .add_attribute("job_condition", serde_json_wasm::to_string(&job.condition)?)
-    //     .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
-    //     .add_attribute("job_reward", job.reward)
-    //     .add_attribute("job_creation_fee", fee)
-    //     .add_attribute("job_last_updated_time", job.last_update_time))
-    Ok(Response::new())
 }
 
 pub fn delete_job(

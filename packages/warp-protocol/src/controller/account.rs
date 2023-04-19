@@ -5,6 +5,10 @@ use cosmwasm_std::Addr;
 pub struct CreateAccountMsg {}
 
 #[cw_serde]
+pub struct WithdrawAssetMsg {
+} 
+
+#[cw_serde]
 pub struct QueryAccountMsg {
     pub owner: String,
 }

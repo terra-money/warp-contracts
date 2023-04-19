@@ -64,10 +64,6 @@ pub struct CreateJobMsg {
 }
 
 #[cw_serde]
-pub struct WithdrawAssetMsg {
-} 
-
-#[cw_serde]
 pub struct DeleteJobMsg {
     pub id: Uint64,
 }

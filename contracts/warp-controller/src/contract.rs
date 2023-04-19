@@ -88,6 +88,7 @@ pub fn execute(
         ExecuteMsg::EvictJob(data) => job::evict_job(deps, env, info, data),
 
         ExecuteMsg::CreateAccount(_) => account::create_account(deps, env, info),
+        ExecuteMsg::WithdrawAsset(data) => account::withdraw_asset(deps, env, info, data),
 
         ExecuteMsg::UpdateConfig(data) => controller::update_config(deps, env, info, data),
 
