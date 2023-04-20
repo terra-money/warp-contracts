@@ -1,11 +1,14 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
+use cw_asset::AssetInfo;
 
 #[cw_serde]
 pub struct CreateAccountMsg {}
 
+
 #[cw_serde]
 pub struct WithdrawAssetMsg {
+    pub asset_info: AssetInfo,
 } 
 
 #[cw_serde]
