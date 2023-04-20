@@ -15,7 +15,6 @@ use cosmwasm_std::{Addr, QueryRequest, Uint128, Uint64};
 
 use self::account::WithdrawAssetMsg;
 
-
 pub mod account;
 pub mod condition;
 pub mod job;

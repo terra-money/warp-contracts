@@ -7,7 +7,6 @@ use strum_macros::Display;
 
 use super::variable::Variable;
 
-
 // pub enum JobFund {
 //     Cw20(...),
 //     Native(...),
@@ -20,7 +19,7 @@ use super::variable::Variable;
 //      - job.funds -> withdraw_asset_from_account(...), withdraws from account to controller contract
 // ...
 // 4. execute_job msg
-//      - job succceeded - 
+//      - job succceeded -
 
 #[cw_serde]
 pub struct Job {

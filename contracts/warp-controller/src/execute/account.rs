@@ -2,9 +2,8 @@ use crate::state::{ACCOUNTS, CONFIG};
 use crate::ContractError;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
-use cw1155::{Cw1155ExecuteMsg, Cw1155QueryMsg};
 use cw20::BalanceResponse;
 use cw20::Cw20ExecuteMsg;
 use cw_asset::AssetInfoBase;
@@ -75,8 +74,12 @@ pub fn withdraw_asset(
     match data.asset_info {
         AssetInfoBase::Native(denom) => withdraw_asset_native(deps, &account, &denom),
         AssetInfoBase::Cw20(token) => withdraw_asset_cw20(deps, &account, &token),
-        AssetInfoBase::Cw1155(token, id) => withdraw_asset_cw1155(deps, &account, &token, id),
-        _ => panic!(),
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        _ => {
+            return Err(ContractError::Std(StdError::generic_err(
+                "Unknown asset type",
+            )))
+        }
     }
 }
 
@@ -134,39 +137,6 @@ fn withdraw_asset_cw20(
         .add_attribute("asset", token))
 }
 
-fn withdraw_asset_cw1155(
-    deps: DepsMut,
-    account: &Account,
-    token: &Addr,
-    token_id: String,
-) -> Result<Response, ContractError> {
-    let amount = query_cw1155_balance(deps, &account.account, token, &token_id).unwrap();
-
-    let msgs = vec![WasmMsg::Execute {
-        contract_addr: account.account.to_string(),
-        msg: to_binary(&warp_protocol::account::ExecuteMsg {
-            msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: token.to_string(),
-                msg: to_binary(&Cw1155ExecuteMsg::SendFrom {
-                    from: account.account.to_string(),
-                    to: account.owner.to_string(),
-                    token_id: token_id,
-                    value: amount,
-                    msg: None,
-                })?,
-                funds: vec![],
-            })],
-        })?,
-        funds: vec![],
-    }];
-
-    Ok(Response::new()
-        .add_messages(msgs)
-        .add_attribute("action", "withdraw_asset")
-        .add_attribute("amount", amount)
-        .add_attribute("asset", token))
-}
-
 fn query_native_token_balance(
     deps: DepsMut,
     wallet_address: &Addr,
@@ -196,25 +166,4 @@ fn query_cw20_balance(
     )?;
 
     Ok(response.balance)
-}
-
-fn query_cw1155_balance(
-    deps: DepsMut,
-    wallet_address: &Addr,
-    cw1155_token_address: &Addr,
-    token_id: &str,
-) -> StdResult<Uint128> {
-    let querier = deps.querier;
-
-    let balance_query_msg = Cw1155QueryMsg::Balance {
-        owner: wallet_address.to_string(),
-        token_id: token_id.to_string(),
-    };
-
-    let balances: Vec<Uint128> =
-        querier.query_wasm_smart(cw1155_token_address, &to_binary(&balance_query_msg)?)?;
-
-    let balance = balances.into_iter().next().unwrap_or_else(Uint128::zero);
-
-    Ok(balance)
 }

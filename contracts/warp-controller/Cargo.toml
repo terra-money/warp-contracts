@@ -39,7 +39,6 @@ cw-storage-plus = "0.16"
 cw-utils = "0.16"
 cw2 = "0.16"
 cw20 = "0.16"
-cw1155 = "0.16.0"
 warp-protocol = { path = "../../packages/warp-protocol", default-features = false, version = "*" }
 schemars = "0.8"
 thiserror = "1"
