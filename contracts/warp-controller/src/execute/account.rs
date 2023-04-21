@@ -37,7 +37,7 @@ pub fn create_account(
             code_id: config.warp_account_code_id.u64(),
             msg: to_binary(&warp_protocol::account::InstantiateMsg {
                 owner: info.sender.to_string(),
-                msgs: data.msgs,
+                funds: data.funds,
             })?,
             funds: info.funds,
             label: info.sender.to_string(),

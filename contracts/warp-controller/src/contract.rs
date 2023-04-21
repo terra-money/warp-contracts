@@ -11,7 +11,7 @@ use cosmwasm_std::{
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
-use warp_protocol::controller::account::Account;
+use warp_protocol::controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use warp_protocol::controller::job::{Job, JobStatus};
 use warp_protocol::controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
@@ -174,7 +174,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
                 .value;
 
-            let msgs: Option<Vec<CosmosMsg>> = serde_json_wasm::from_str(&event
+            let cw_funds: Option<Vec<Fund>> = serde_json_wasm::from_str(&event
                 .attributes
                 .iter()
                 .cloned()
@@ -182,10 +182,34 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
                 .value)?;
 
-            let msgs_vec = match msgs {
+            let cw_funds_vec = match cw_funds {
                 None => {vec![]},
-                Some(msgs) => {msgs}
+                Some(funds) => {funds}
             };
+
+            let mut msgs_vec: Vec<CosmosMsg> = vec![];
+
+            for fund in &cw_funds_vec {
+                msgs_vec.push(CosmosMsg::Wasm(match fund {
+                    Fund::Cw20(cw20_fund) => WasmMsg::Execute {
+                        contract_addr: deps.api.addr_validate(&cw20_fund.contract_addr)?.to_string(),
+                        msg: to_binary(&FundTransferMsgs::TransferFrom(TransferFromMsg {
+                            owner: owner.clone(),
+                            recipient: address.clone(),
+                            amount: cw20_fund.amount,
+                        }))?,
+                        funds: vec![],
+                    },
+                    Fund::Cw721(cw721_fund) => WasmMsg::Execute {
+                        contract_addr: deps.api.addr_validate(&cw721_fund.contract_addr)?.to_string(),
+                        msg: to_binary(&FundTransferMsgs::TransferNft(TransferNftMsg {
+                            recipient: address.clone(),
+                            token_id: cw721_fund.token_id.clone(),
+                        }))?,
+                        funds: vec![],
+                    }
+                }))
+            }
 
             if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
                 return Err(ContractError::AccountAlreadyExists {});
@@ -204,6 +228,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .add_attribute("owner", owner)
                 .add_attribute("account_address", address)
                 .add_attribute("funds", funds)
+                .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?)
                 .add_messages(msgs_vec))
         }
         //job execution

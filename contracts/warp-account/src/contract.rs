@@ -24,7 +24,7 @@ pub fn instantiate(
         .add_attribute("contract_addr", env.contract.address)
         .add_attribute("owner", msg.owner)
         .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
-        .add_attribute("msgs", serde_json_wasm::to_string(&msg.msgs)?)
+        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
     )
 }
 
