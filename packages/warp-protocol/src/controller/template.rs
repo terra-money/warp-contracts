@@ -1,7 +1,8 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint64};
 
-use super::{condition::Condition, variable::Variable};
+use super::{variable::Variable};
+use crate::resolver::condition::Condition;
 
 //msg templates
 #[cw_serde]

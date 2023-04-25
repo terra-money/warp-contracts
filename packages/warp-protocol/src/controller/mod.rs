@@ -1,7 +1,7 @@
 use crate::controller::account::{
     AccountResponse, AccountsResponse, CreateAccountMsg, QueryAccountMsg, QueryAccountsMsg,
 };
-use crate::controller::condition::QueryResolveConditionMsg;
+use crate::resolver::condition::QueryResolveConditionMsg;
 use crate::controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, QueryResolveJobConditionMsg, UpdateJobMsg,
@@ -16,7 +16,6 @@ use cosmwasm_std::{Addr, QueryRequest, Uint128, Uint64};
 use self::account::WithdrawAssetMsg;
 
 pub mod account;
-pub mod condition;
 pub mod job;
 pub mod template;
 pub mod variable;
@@ -104,13 +103,6 @@ pub enum QueryMsg {
     QueryJob(QueryJobMsg),
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
-    #[returns(bool)]
-    QueryResolveJobCondition(QueryResolveJobConditionMsg),
-    #[returns(bool)]
-    QueryResolveCondition(QueryResolveConditionMsg),
-
-    #[returns(SimulateResponse)]
-    SimulateQuery(SimulateQueryMsg),
 
     #[returns(AccountResponse)]
     QueryAccount(QueryAccountMsg),
@@ -124,16 +116,6 @@ pub enum QueryMsg {
     QueryTemplate(QueryTemplateMsg),
     #[returns(TemplatesResponse)]
     QueryTemplates(QueryTemplatesMsg),
-}
-
-#[cw_serde]
-pub struct SimulateQueryMsg {
-    pub query: QueryRequest<String>,
-}
-
-#[cw_serde]
-pub struct SimulateResponse {
-    pub response: String,
 }
 
 #[cw_serde]

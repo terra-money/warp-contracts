@@ -971,6 +971,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "warp-resolver"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-asset",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw2 0.16.0",
+ "cw20",
+ "json-codec-wasm",
+ "schemars",
+ "serde-json-wasm 0.4.1",
+ "thiserror",
+ "warp-protocol",
+]
+
+[[package]]
 name = "wasi"
 version = "0.11.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -8,7 +8,7 @@ use cw_storage_plus::KeyDeserialize;
 use json_codec_wasm::ast::Ref;
 use json_codec_wasm::Decoder;
 use std::str::FromStr;
-use warp_protocol::controller::condition::{
+use warp_protocol::resolver::condition::{
     BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
     NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
 };

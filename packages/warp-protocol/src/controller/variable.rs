@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, QueryRequest, Uint256};
 
-use super::condition::{DecimalFnOp, IntFnOp, NumExprOp, NumValue};
+use crate::resolver::condition::{DecimalFnOp, IntFnOp, NumExprOp, NumValue};
 
 #[cw_serde]
 pub enum VariableKind {
