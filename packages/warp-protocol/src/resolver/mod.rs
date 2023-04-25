@@ -22,11 +22,11 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     ApplyVarFns(ApplyVarFnsMsg),
     ResolveCondition(ResolveConditionMsg),
-    VarsValid(VarsValidMsg),
-    HasDuplicates(HasDuplicatesMsg),
-    StringVarsInVector(StringVarsInVectorMsg),
-    AllVectorVarsPresent(AllVectorVarsPresentMsg),
-    MsgsValid(MsgsValidMsg),
+    // VarsValid(VarsValidMsg),
+    // HasDuplicates(HasDuplicatesMsg),
+    // StringVarsInVector(StringVarsInVectorMsg),
+    // AllVectorVarsPresent(AllVectorVarsPresentMsg),
+    // MsgsValid(MsgsValidMsg),
     ValidateVarsAndMsgs(ValidateVarsAndMsgsMsg),
     HydrateVars(HydrateVarsMsg),
     HydrateMsgs(HydrateMsgsMsg),
@@ -81,7 +81,7 @@ pub struct ValidateVarsAndMsgsMsg {
 #[cw_serde]
 pub struct HydrateVarsMsg {
     pub vars: Vec<Variable>,
-    pub external_inputs: Vec<ExternalInput>,
+    pub external_inputs: Option<Vec<ExternalInput>>,
 }
 
 #[cw_serde]

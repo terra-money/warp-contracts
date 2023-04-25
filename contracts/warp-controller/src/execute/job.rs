@@ -10,9 +10,10 @@ use warp_protocol::controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use warp_protocol::controller::State;
-use warp_protocol::resolver::QueryMsg::{AllVectorVarsPresent, HasDuplicates, HydrateMsgs, HydrateVars, ResolveCondition, StringVarsInVector, ValidateVarsAndMsgs, VarsValid};
+// use warp_protocol::resolver::QueryMsg::{AllVectorVarsPresent, HasDuplicates, HydrateMsgs, HydrateVars, ResolveCondition, StringVarsInVector, ValidateVarsAndMsgs, VarsValid};
 use warp_protocol::resolver::variable::Variable;
 use warp_protocol::resolver::{AllVectorVarsPresentMsg, HasDuplicatesMsg, HydrateMsgsMsg, HydrateVarsMsg, ResolveConditionMsg, StringVarsInVectorMsg, ValidateVarsAndMsgsMsg, VarsValidMsg};
+use warp_protocol::resolver::QueryMsg::{HydrateMsgs, HydrateVars, ResolveCondition, ValidateVarsAndMsgs};
 
 pub fn create_job(
     deps: DepsMut,
@@ -381,14 +382,10 @@ pub fn execute_job(
     //     data.external_inputs,
     // )?;
 
-    let vars = if let Some(external_inputs) = data.external_inputs {
-        Box::new(deps.querier.query_wasm_smart::<Vec<Variable>>(config.resolver.to_string(), &HydrateVars(HydrateVarsMsg {
+    let vars = Box::new(deps.querier.query_wasm_smart::<Vec<Variable>>(config.resolver.to_string(), &HydrateVars(HydrateVarsMsg {
             vars: boxed_vars.to_vec(),
-            external_inputs
-        }))?)
-    } else {
-        boxed_vars
-    };
+            external_inputs: data.external_inputs
+        }))?);
 
     // let resolution = resolve_cond(deps.as_ref(), env, job.condition, &vars);
 
