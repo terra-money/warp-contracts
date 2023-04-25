@@ -1,6 +1,12 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
-use cw_asset::AssetInfo;
+
+#[cw_serde]
+pub enum AssetInfo {
+    Native(String),
+    Cw20(Addr),
+    Cw721(Addr, String),
+}
 
 #[cw_serde]
 pub struct CreateAccountMsg {}

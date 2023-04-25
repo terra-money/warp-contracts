@@ -2,12 +2,12 @@ use crate::state::{ACCOUNTS, CONFIG};
 use crate::ContractError;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
-    StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::BalanceResponse;
 use cw20::Cw20ExecuteMsg;
-use cw_asset::AssetInfoBase;
-use warp_protocol::controller::account::{Account, WithdrawAssetMsg};
+use cw721::Cw721ExecuteMsg;
+use warp_protocol::controller::account::{Account, AssetInfo, WithdrawAssetMsg};
 
 pub fn create_account(
     deps: DepsMut,
@@ -72,13 +72,10 @@ pub fn withdraw_asset(
     };
 
     match data.asset_info {
-        AssetInfoBase::Native(denom) => withdraw_asset_native(deps, &account, &denom),
-        AssetInfoBase::Cw20(token) => withdraw_asset_cw20(deps, &account, &token),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-        _ => {
-            return Err(ContractError::Std(StdError::generic_err(
-                "Unknown asset type",
-            )))
+        AssetInfo::Native(denom) => withdraw_asset_native(deps, &account, &denom),
+        AssetInfo::Cw20(token) => withdraw_asset_cw20(deps, &account, &token),
+        AssetInfo::Cw721(token, token_id) => {
+            withdraw_asset_cw721(deps, &account, &token, &token_id)
         }
     }
 }
@@ -134,6 +131,34 @@ fn withdraw_asset_cw20(
         .add_messages(msgs)
         .add_attribute("action", "withdraw_asset")
         .add_attribute("amount", amount)
+        .add_attribute("asset", token))
+}
+
+fn withdraw_asset_cw721(
+    _deps: DepsMut,
+    account: &Account,
+    token: &Addr,
+    token_id: &str,
+) -> Result<Response, ContractError> {
+    let msgs = vec![WasmMsg::Execute {
+        contract_addr: account.account.to_string(),
+        msg: to_binary(&warp_protocol::account::ExecuteMsg {
+            msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: token.to_string(),
+                msg: to_binary(&Cw721ExecuteMsg::TransferNft {
+                    recipient: account.owner.to_string(),
+                    token_id: token_id.to_string(),
+                })?,
+                funds: vec![],
+            })],
+        })?,
+        funds: vec![],
+    }];
+
+    Ok(Response::new()
+        .add_messages(msgs)
+        .add_attribute("action", "withdraw_asset")
+        .add_attribute("token_id", token_id.to_string())
         .add_attribute("asset", token))
 }
 
