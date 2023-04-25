@@ -3,16 +3,13 @@ use crate::execute::{account, controller, job};
 use crate::execute::template::{delete_template, edit_template, submit_template};
 use crate::query::template::{query_template, query_templates};
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
-use crate::util::variable::apply_var_fn;
 use crate::{query, state::STATE, ContractError};
-use cosmwasm_std::{
-    entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
-    CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
-    SubMsgResult, Uint128, Uint64, WasmMsg,
-};
+use cosmwasm_std::{entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg, WasmQuery};
 use warp_protocol::controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use warp_protocol::controller::job::{Job, JobStatus};
 use warp_protocol::controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
+use warp_protocol::resolver::{ApplyVarFnsMsg, ApplyVarFnsResponse};
+use warp_protocol::resolver::QueryMsg::ApplyVarFns;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -34,6 +31,7 @@ pub fn instantiate(
         fee_collector: deps
             .api
             .addr_validate(&msg.fee_collector.unwrap_or_else(|| info.sender.to_string()))?,
+        resolver: deps.api.addr_validate(&msg.resolver)?,
         warp_account_code_id: msg.warp_account_code_id,
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
@@ -290,8 +288,13 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         "failed_invalid_job_status",
                     ));
                 } else {
-                    let new_vars =
-                        apply_var_fn(deps.as_ref(), env.clone(), new_job.vars, new_job.status)?;
+                    let new_vars: ApplyVarFnsResponse = deps.querier.query( &QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: config.resolver.to_string(),
+                        msg: to_binary(&ApplyVarFns(ApplyVarFnsMsg {
+                            vars: new_job.vars,
+                            status: new_job.status,
+                        }))?
+                    }))?;
                     let job = PENDING_JOBS().update(
                         deps.storage,
                         state.current_job_id.u64(),
@@ -303,7 +306,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                                 name: new_job.name,
                                 status: JobStatus::Pending,
                                 condition: new_job.condition.clone(),
-                                vars: new_vars,
+                                vars: new_vars.vars,
                                 requeue_on_evict: new_job.requeue_on_evict,
                                 recurring: new_job.recurring,
                                 msgs: new_job.msgs,

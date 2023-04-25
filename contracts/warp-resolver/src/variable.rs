@@ -1,14 +1,14 @@
-use crate::util::condition::{
+use crate::condition::{
     resolve_num_value_decimal, resolve_num_value_int, resolve_num_value_uint,
     resolve_query_expr_bool, resolve_query_expr_decimal, resolve_query_expr_int,
     resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
 };
 use crate::ContractError;
-use cosmwasm_std::{CosmosMsg, Decimal256, Deps, Env, Uint128, Uint256};
+use cosmwasm_std::{CosmosMsg, Decimal256, Deps, Env, StdResult, Uint128, Uint256};
 use std::str::FromStr;
 
 use warp_protocol::controller::job::{ExternalInput, JobStatus};
-use warp_protocol::controller::variable::{UpdateFnValue, Variable, VariableKind};
+use warp_protocol::resolver::variable::{UpdateFnValue, Variable, VariableKind};
 
 pub fn hydrate_vars(
     deps: Deps,
@@ -834,9 +834,9 @@ pub fn all_vector_vars_present(vars: &Vec<Variable>, s: String) -> bool {
 
 fn get_var_name(var: &Variable) -> String {
     match var.clone() {
-        Variable::Static(v) => v.name,
-        Variable::External(v) => v.name,
-        Variable::Query(v) => v.name,
+        Variable::Static(v) => v.name.clone(),
+        Variable::External(v) => v.name.clone(),
+        Variable::Query(v) => v.name.clone(),
     }
 }
 
@@ -975,4 +975,32 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
         }
     }
     true
+}
+
+pub fn validate_vars_and_msgs(vars: Vec<Variable>, cond_string: String, msg_string: String) -> Result<bool, ContractError> {
+    if !vars_valid(&vars) {
+        return Err(ContractError::InvalidVariables {});
+    }
+
+    if has_duplicates(&vars) {
+        return Err(ContractError::VariablesContainDuplicates {});
+    }
+
+    if !(string_vars_in_vector(&vars, &cond_string)
+        && string_vars_in_vector(&vars, &msg_string))
+    {
+        return Err(ContractError::VariablesMissingFromVector {});
+    }
+
+    if !all_vector_vars_present(&vars, format!("{}{}", cond_string, msg_string)) {
+        return Err(ContractError::ExcessVariablesInVector {});
+    }
+
+    if !msgs_valid(&serde_json_wasm::from_str(&msg_string)?, &vars)? {
+        return Err(ContractError::MsgError {
+            msg: "msgs are invalid".to_string(),
+        });
+    }
+
+    Ok(true)
 }

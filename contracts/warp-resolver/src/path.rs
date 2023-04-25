@@ -1,6 +1,6 @@
-use crate::ContractError;
 use cosmwasm_std::StdError;
 use json_codec_wasm::ast::Ref;
+use crate::ContractError;
 
 // supports custom jsonpath-like expression with options for indexing
 // - fields - $.field

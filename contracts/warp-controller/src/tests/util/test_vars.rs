@@ -1,7 +1,7 @@
 use warp_protocol::controller::{
     condition::{Condition, Expr, GenExpr, NumOp, NumValue},
-    variable::{StaticVariable, Variable, VariableKind},
 };
+use warp_protocol::resolver::variable::{StaticVariable, Variable, VariableKind};
 
 use crate::util::variable::all_vector_vars_present;
 

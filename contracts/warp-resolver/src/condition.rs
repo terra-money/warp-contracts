@@ -1,6 +1,5 @@
-use crate::util::path::resolve_path;
-use crate::util::variable::get_var;
-use crate::ContractError;
+use crate::path::resolve_path;
+use crate::variable::get_var;
 use cosmwasm_std::{
     to_vec, ContractResult, Decimal256, Deps, Env, StdError, SystemResult, Uint256,
 };
@@ -12,7 +11,8 @@ use warp_protocol::resolver::condition::{
     BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
     NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
 };
-use warp_protocol::controller::variable::{QueryExpr, Variable};
+use warp_protocol::resolver::variable::{QueryExpr, Variable};
+use crate::ContractError;
 
 pub fn resolve_cond(
     deps: Deps,

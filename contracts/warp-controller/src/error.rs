@@ -76,15 +76,6 @@ pub enum ContractError {
     #[error("Error resolving JSON path")]
     ResolveError {},
 
-    #[error("Hydration error: {msg:?}")]
-    HydrationError { msg: String },
-
-    #[error("Function error: {msg:?}")]
-    FunctionError { msg: String },
-
-    #[error("Variable not found: {name:?}.")]
-    VariableNotFound { name: String },
-
     #[error("Condition error: {msg:?}")]
     ConditionError { msg: String },
 
@@ -149,21 +140,6 @@ impl From<String> for ContractError {
     }
 }
 
-impl From<ParseIntError> for ContractError {
-    fn from(_: ParseIntError) -> Self {
-        CustomError {
-            val: "Parse int error".to_string(),
-        }
-    }
-}
-
-impl From<ParseBoolError> for ContractError {
-    fn from(_: ParseBoolError) -> Self {
-        CustomError {
-            val: "Parse bool error".to_string(),
-        }
-    }
-}
 
 impl From<DivideByZeroError> for ContractError {
     fn from(_: DivideByZeroError) -> Self {

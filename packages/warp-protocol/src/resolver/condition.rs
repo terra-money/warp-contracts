@@ -1,4 +1,3 @@
-use crate::controller::variable::Variable;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, Uint256, Uint64};
 
@@ -98,11 +97,6 @@ pub enum Expr {
     Bool(String), //ref
 }
 
-// #[cw_serde]
-// pub enum BoolExpr {
-//     Ref(String),
-// }
-
 #[cw_serde]
 pub enum NumOp {
     Eq,
@@ -126,10 +120,4 @@ pub enum StringOp {
     Contains,
     Eq,
     Neq,
-}
-
-#[cw_serde]
-pub struct QueryResolveConditionMsg {
-    pub condition: Condition,
-    pub vars: Vec<Variable>,
 }

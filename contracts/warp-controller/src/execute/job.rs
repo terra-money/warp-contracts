@@ -1,9 +1,5 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
-use crate::util::condition::resolve_cond;
-use crate::util::variable::{
-    all_vector_vars_present, has_duplicates, hydrate_msgs, hydrate_vars, msgs_valid,
-    string_vars_in_vector, vars_valid,
-};
+
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
 use cosmwasm_std::{
@@ -14,6 +10,9 @@ use warp_protocol::controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use warp_protocol::controller::State;
+use warp_protocol::resolver::QueryMsg::{AllVectorVarsPresent, HasDuplicates, HydrateMsgs, HydrateVars, ResolveCondition, StringVarsInVector, ValidateVarsAndMsgs, VarsValid};
+use warp_protocol::resolver::variable::Variable;
+use warp_protocol::resolver::{AllVectorVarsPresentMsg, HasDuplicatesMsg, HydrateMsgsMsg, HydrateVarsMsg, ResolveConditionMsg, StringVarsInVectorMsg, ValidateVarsAndMsgsMsg, VarsValidMsg};
 
 pub fn create_job(
     deps: DepsMut,
@@ -36,32 +35,74 @@ pub fn create_job(
         return Err(ContractError::RewardTooSmall {});
     }
 
-    if !vars_valid(&data.vars) {
-        return Err(ContractError::InvalidVariables {});
-    }
+    let boxed_vars: Box<Vec<Variable>> = Box::from(data.vars);
 
-    if has_duplicates(&data.vars) {
-        return Err(ContractError::VariablesContainDuplicates {});
-    }
+    // if !vars_valid(&data.vars) {
+    //     return Err(ContractError::InvalidVariables {});
+    // }
+
+    // if deps.querier.query_wasm_smart::<bool>(config.resolver.to_string(), &VarsValid(VarsValidMsg {
+    //     vars: boxed_vars.to_vec()
+    // }))? {
+    //     return Err(ContractError::InvalidVariables {});
+    // }
+
+    // if has_duplicates(&data.vars) {
+    //     return Err(ContractError::VariablesContainDuplicates {});
+    // }
+
+    // if deps.querier.query_wasm_smart::<bool>(config.resolver.to_string(), &HasDuplicates(HasDuplicatesMsg {
+    //     vars: boxed_vars.to_vec()
+    // }))? {
+    //     return Err(ContractError::InvalidVariables {});
+    // }
 
     let cond_string = serde_json_wasm::to_string(&data.condition)?;
     let msg_string = serde_json_wasm::to_string(&data.msgs)?;
 
-    if !(string_vars_in_vector(&data.vars, &cond_string)
-        && string_vars_in_vector(&data.vars, &msg_string))
-    {
-        return Err(ContractError::VariablesMissingFromVector {});
-    }
+    // if !(string_vars_in_vector(&data.vars, &cond_string)
+    //     && string_vars_in_vector(&data.vars, &msg_string))
+    // {
+    //     return Err(ContractError::VariablesMissingFromVector {});
+    // }
 
-    if !all_vector_vars_present(&data.vars, format!("{}{}", cond_string, msg_string)) {
-        return Err(ContractError::ExcessVariablesInVector {});
-    }
+    // if !(
+    //         deps.querier.query_wasm_smart::<bool>(config.resolver.to_string(), &StringVarsInVector(StringVarsInVectorMsg {
+    //             vars: boxed_vars.to_vec(),
+    //             s: cond_string.clone()
+    //         }))?
+    // &&
+    //         deps.querier.query_wasm_smart::<bool>(config.resolver.to_string(), &StringVarsInVector(StringVarsInVectorMsg {
+    //             vars: boxed_vars.to_vec(),
+    //             s: msg_string.clone()
+    //         }))?
+    // ) {
+    //     return Err(ContractError::VariablesMissingFromVector {});
+    // }
 
-    if !msgs_valid(&data.msgs, &data.vars)? {
-        return Err(ContractError::MsgError {
-            msg: "msgs are invalid".to_string(),
-        });
-    }
+    // if !all_vector_vars_present(&data.vars, format!("{}{}", cond_string, msg_string)) {
+    //     return Err(ContractError::ExcessVariablesInVector {});
+    // }
+
+    // if deps.querier.query_wasm_smart::<bool>(config.resolver.to_string(), &AllVectorVarsPresent(AllVectorVarsPresentMsg {
+    //     vars: boxed_vars.to_vec(),
+    //     cond_string: cond_string.clone(),
+    //     msg_string: cond_string.clone(),
+    // }))? {
+    //     return Err(ContractError::ExcessVariablesInVector {});
+    // }
+
+    // if !msgs_valid(&data.msgs, &data.vars)? {
+    //     return Err(ContractError::MsgError {
+    //         msg: "msgs are invalid".to_string(),
+    //     });
+    // }
+
+    let _ = deps.querier.query_wasm_smart(config.resolver.to_string(), &ValidateVarsAndMsgs(ValidateVarsAndMsgsMsg {
+        vars: boxed_vars.to_vec(),
+        cond_string,
+        msg_string,
+    }))?;
 
     let q = ACCOUNTS()
         .idx
@@ -75,11 +116,6 @@ pub fn create_job(
         Some(q) => q.1,
     };
 
-    // let mut msgs = vec![];
-    // for msg in data.msgs {
-    //     msgs.push(serde_json_wasm::from_str::<CosmosMsg>(msg.as_str())?)
-    // }
-
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
         None => Ok(Job {
             id: state.current_job_id,
@@ -90,7 +126,7 @@ pub fn create_job(
             condition: data.condition.clone(),
             recurring: data.recurring,
             requeue_on_evict: data.requeue_on_evict,
-            vars: data.vars,
+            vars: boxed_vars.to_vec(),
             msgs: data.msgs,
             reward: data.reward,
         }),
@@ -322,6 +358,7 @@ pub fn execute_job(
     data: ExecuteJobMsg,
 ) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
     let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
@@ -335,14 +372,30 @@ pub fn execute_job(
         return Err(ContractError::JobNotActive {});
     }
 
-    let vars = hydrate_vars(
-        deps.as_ref(),
-        env.clone(),
-        job.vars.clone(),
-        data.external_inputs,
-    )?;
+    let boxed_vars = Box::new(job.vars);
 
-    let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
+    // let vars = hydrate_vars(
+    //     deps.as_ref(),
+    //     env.clone(),
+    //     boxed_vars.to_vec(),
+    //     data.external_inputs,
+    // )?;
+
+    let vars = if let Some(external_inputs) = data.external_inputs {
+        Box::new(deps.querier.query_wasm_smart::<Vec<Variable>>(config.resolver.to_string(), &HydrateVars(HydrateVarsMsg {
+            vars: boxed_vars.to_vec(),
+            external_inputs
+        }))?)
+    } else {
+        boxed_vars
+    };
+
+    // let resolution = resolve_cond(deps.as_ref(), env, job.condition, &vars);
+
+    let resolution = deps.querier.query_wasm_smart::<bool>(config.resolver.to_string(), &ResolveCondition(ResolveConditionMsg {
+        condition: job.condition,
+        vars: vars.to_vec(),
+    }));
 
     let mut attrs = vec![];
 
@@ -363,7 +416,7 @@ pub fn execute_job(
                 status: JobStatus::Failed,
                 condition: job.condition,
                 msgs: job.msgs,
-                vars,
+                vars: vars.to_vec(),
                 recurring: job.recurring,
                 requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
@@ -384,12 +437,17 @@ pub fn execute_job(
             return Err(ContractError::JobNotActive {});
         }
 
+        let hydrated_msgs = deps.querier.query_wasm_smart(config.resolver.to_string(), &HydrateMsgs(HydrateMsgsMsg {
+            msgs: job.msgs.clone(),
+            vars: vars.to_vec(),
+        }))?;
+
         submsgs.push(SubMsg {
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&warp_protocol::account::ExecuteMsg {
-                    msgs: hydrate_msgs(job.msgs.clone(), vars)?,
+                    msgs: hydrated_msgs,
                 })?,
                 funds: vec![],
             }),

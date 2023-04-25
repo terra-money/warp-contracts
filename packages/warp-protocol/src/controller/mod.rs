@@ -1,30 +1,29 @@
 use crate::controller::account::{
     AccountResponse, AccountsResponse, CreateAccountMsg, QueryAccountMsg, QueryAccountsMsg,
 };
-use crate::resolver::condition::QueryResolveConditionMsg;
 use crate::controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
-    QueryJobsMsg, QueryResolveJobConditionMsg, UpdateJobMsg,
+    QueryJobsMsg, UpdateJobMsg,
 };
 use crate::controller::template::{
     DeleteTemplateMsg, EditTemplateMsg, QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg,
     TemplateResponse, TemplatesResponse,
 };
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, QueryRequest, Uint128, Uint64};
+use cosmwasm_std::{Addr, Uint128, Uint64};
 
 use self::account::WithdrawAssetMsg;
 
 pub mod account;
 pub mod job;
 pub mod template;
-pub mod variable;
 
 //objects
 #[cw_serde]
 pub struct Config {
     pub owner: Addr,
     pub fee_collector: Addr,
+    pub resolver: Addr,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
     pub creation_fee_percentage: Uint64,
@@ -49,6 +48,7 @@ pub struct State {
 pub struct InstantiateMsg {
     pub owner: Option<String>,
     pub fee_collector: Option<String>,
+    pub resolver: String,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
     pub creation_fee: Uint64,

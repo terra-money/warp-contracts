@@ -1,5 +1,7 @@
-use crate::ContractError::{DecodeError, DeserializationError, SerializationError};
-use cosmwasm_std::StdError;
+use std::num::ParseIntError;
+use std::str::ParseBoolError;
+use crate::ContractError::{CustomError, DecodeError, DeserializationError, SerializationError};
+use cosmwasm_std::{OverflowError, StdError};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -37,6 +39,33 @@ pub enum ContractError {
 
     #[error("Error resolving JSON path")]
     ResolveError {},
+
+    #[error("Condition error: {msg:?}")]
+    ConditionError { msg: String },
+
+    #[error("Variable not found: {name:?}.")]
+    VariableNotFound { name: String },
+
+    #[error("Hydration error: {msg:?}")]
+    HydrationError { msg: String },
+
+    #[error("Function error: {msg:?}")]
+    FunctionError { msg: String },
+
+    #[error("Invalid variables.")]
+    InvalidVariables {},
+
+    #[error("Variables list contains duplicates.")]
+    VariablesContainDuplicates {},
+
+    #[error("Variables in condition or msgs missing from variables vector.")]
+    VariablesMissingFromVector {},
+
+    #[error("Variable vector contains unused variables.")]
+    ExcessVariablesInVector {},
+
+    #[error("Msg error: {msg:?}")]
+    MsgError { msg: String },
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {
@@ -60,5 +89,29 @@ impl From<json_codec_wasm::DecodeError> for ContractError {
 impl From<base64::DecodeError> for ContractError {
     fn from(_: base64::DecodeError) -> Self {
         DecodeError {}
+    }
+}
+
+impl From<ParseIntError> for ContractError {
+    fn from(_: ParseIntError) -> Self {
+        CustomError {
+            val: "Parse int error".to_string(),
+        }
+    }
+}
+
+impl From<ParseBoolError> for ContractError {
+    fn from(_: ParseBoolError) -> Self {
+        CustomError {
+            val: "Parse bool error".to_string(),
+        }
+    }
+}
+
+impl From<OverflowError> for ContractError {
+    fn from(_: OverflowError) -> Self {
+        CustomError {
+            val: "ERROR: Overflow error".to_string(),
+        }
     }
 }

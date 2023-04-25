@@ -5,7 +5,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 
-use super::variable::Variable;
+use crate::resolver::variable::Variable;
 
 // pub enum JobFund {
 //     Cw20(...),
@@ -123,11 +123,6 @@ impl QueryJobsMsg {
                 || self.condition_status.is_some()) as u8)
             <= 1
     }
-}
-
-#[cw_serde]
-pub struct QueryResolveJobConditionMsg {
-    pub id: Uint64,
 }
 
 #[cw_serde]
