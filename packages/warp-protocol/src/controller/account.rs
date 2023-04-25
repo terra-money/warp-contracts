@@ -10,13 +10,13 @@ pub enum AssetInfo {
 
 #[cw_serde]
 pub struct CreateAccountMsg {
-    pub funds: Option<Vec<Fund>>
+    pub funds: Option<Vec<Fund>>,
 }
 
 #[cw_serde]
 pub enum Fund {
     Cw20(Cw20Fund),
-    Cw721(Cw721Fund)
+    Cw721(Cw721Fund),
 }
 
 #[cw_serde]
@@ -53,6 +53,11 @@ pub struct TransferNftMsg {
 #[cw_serde]
 pub struct WithdrawAssetMsg {
     pub asset_info: AssetInfo,
+}
+
+#[cw_serde]
+pub enum Cw721ExecuteMsg {
+    TransferNft { recipient: String, token_id: String },
 }
 
 #[cw_serde]
