@@ -8,11 +8,13 @@ use cw20::BalanceResponse;
 use cw20::Cw20ExecuteMsg;
 use cw721::Cw721ExecuteMsg;
 use warp_protocol::controller::account::{Account, AssetInfo, WithdrawAssetMsg};
+use warp_protocol::controller::account::CreateAccountMsg;
 
 pub fn create_account(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
+    data: CreateAccountMsg
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -40,8 +42,9 @@ pub fn create_account(
             code_id: config.warp_account_code_id.u64(),
             msg: to_binary(&warp_protocol::account::InstantiateMsg {
                 owner: info.sender.to_string(),
+                funds: data.funds,
             })?,
-            funds: vec![],
+            funds: info.funds,
             label: info.sender.to_string(),
         }),
         gas_limit: None,
