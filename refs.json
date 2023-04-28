@@ -9,11 +9,15 @@
   },
   "testnet": {
     "warp-account": {
-      "codeId": "7647"
+      "codeId": "8858"
     },
     "warp-controller": {
-      "codeId": "7653",
-      "address": "terra1ug64jlaz0qfqqz3y4n6w8a59t4hgagrshutpm3wujhaqev45kcgqx8ygh6"
+      "codeId": "8860",
+      "address": "terra1chxdcfhjmpy52qwjvg7876ckg7f4xguxs9q5czde7rzghytf6dqs3s6lmy"
+    },
+    "warp-resolver": {
+      "codeId": "8859",
+      "address": "terra1ze03cu77l3dn3el40thky5hwh3gt9wctr4pn4qlyf28ce98ax4as29nx2z"
     }
   },
   "mainnet": {

@@ -2,18 +2,15 @@ use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
-use cosmwasm_std::{
-    to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
-    MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
-};
+use cosmwasm_std::{to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg, StdResult};
 use warp_protocol::controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use warp_protocol::controller::State;
 // use warp_protocol::resolver::QueryMsg::{AllVectorVarsPresent, HasDuplicates, HydrateMsgs, HydrateVars, ResolveCondition, StringVarsInVector, ValidateVarsAndMsgs, VarsValid};
-use warp_protocol::resolver::variable::Variable;
 use warp_protocol::resolver::{AllVectorVarsPresentMsg, HasDuplicatesMsg, HydrateMsgsMsg, HydrateVarsMsg, ResolveConditionMsg, StringVarsInVectorMsg, ValidateVarsAndMsgsMsg, VarsValidMsg};
 use warp_protocol::resolver::QueryMsg::{HydrateMsgs, HydrateVars, ResolveCondition, ValidateVarsAndMsgs};
+use warp_protocol::resolver::variable::Variable;
 
 pub fn create_job(
     deps: DepsMut,
@@ -382,14 +379,14 @@ pub fn execute_job(
     //     data.external_inputs,
     // )?;
 
-    let vars = Box::new(deps.querier.query_wasm_smart::<Vec<Variable>>(config.resolver.to_string(), &HydrateVars(HydrateVarsMsg {
+    let vars: Box<Vec<Variable>> = Box::new(deps.querier.query_wasm_smart(config.resolver.to_string(), &HydrateVars(HydrateVarsMsg {
             vars: boxed_vars.to_vec(),
             external_inputs: data.external_inputs
         }))?);
 
     // let resolution = resolve_cond(deps.as_ref(), env, job.condition, &vars);
 
-    let resolution = deps.querier.query_wasm_smart::<bool>(config.resolver.to_string(), &ResolveCondition(ResolveConditionMsg {
+    let resolution: StdResult<bool> = deps.querier.query_wasm_smart(config.resolver.to_string(), &ResolveCondition(ResolveConditionMsg {
         condition: job.condition,
         vars: vars.to_vec(),
     }));

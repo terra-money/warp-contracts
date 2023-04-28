@@ -1,8 +1,10 @@
 use crate::state::CONFIG;
 use crate::ContractError;
-use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError};
+use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError, CosmosMsg};
 use warp_protocol::resolver::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use warp_protocol::resolver::variable::Variable;
 use crate::condition::resolve_cond;
+use crate::ContractError::Std;
 use crate::variable::{apply_var_fn, hydrate_msgs, hydrate_vars, validate_vars_and_msgs};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -40,18 +42,53 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::ApplyVarFns(data) => Ok(to_binary(&apply_var_fn(deps, env, data.vars, data.status)?)?),
-        QueryMsg::ResolveCondition(data) => Ok(to_binary(&resolve_cond(deps, env, data.condition, &data.vars)?)?),
+        QueryMsg::ApplyVarFns(data) => {
+            let res = apply_var_fn(deps, env, data.vars, data.status);
+            let var_fns = match res {
+                Ok(v) => v,
+                Err(e) => {return Err(StdError::generic_err(e.to_string()))}
+            };
+            to_binary(&var_fns)
+        },
+        QueryMsg::ResolveCondition(data) => {
+            let res = resolve_cond(deps, env, data.condition, &data.vars);
+            let condition_resolution = match res {
+                Ok(b) => b,
+                Err(e) => {return Err(StdError::generic_err(e.to_string()))}
+            };
+            to_binary(&condition_resolution)
+        },
         // // QueryMsg::VarsValid(data) => {}
         // // QueryMsg::HasDuplicates(data) => {}
         // // QueryMsg::StringVarsInVector(data) => {}
         // // QueryMsg::AllVectorVarsPresent(data) => {}
         // // QueryMsg::MsgsValid(data) => {}
-        QueryMsg::ValidateVarsAndMsgs(data) => Ok(to_binary(&validate_vars_and_msgs(data.vars, data.cond_string, data.msg_string)?)?),
-        QueryMsg::HydrateVars(data) => Ok(to_binary(&hydrate_vars(deps, env, data.vars, data.external_inputs)?)?),
-        QueryMsg::HydrateMsgs(data) => Ok(to_binary(&hydrate_msgs(data.msgs, data.vars)?)?)
+        QueryMsg::ValidateVarsAndMsgs(data) => {
+            let res = validate_vars_and_msgs(data.vars, data.cond_string, data.msg_string);
+            let validated = match res {
+                Ok(b) => b,
+                Err(e) => {return Err(StdError::generic_err(e.to_string()))}
+            };
+            to_binary(&validated)
+        },
+        QueryMsg::HydrateVars(data) => {
+            let res = hydrate_vars(deps, env, data.vars, data.external_inputs);
+            let hydrated_vars = match res {
+                Ok(v) => v,
+                Err(e) => {return Err(StdError::generic_err(e.to_string()))}
+            };
+            to_binary(&hydrated_vars)
+        },
+        QueryMsg::HydrateMsgs(data) => {
+            let res = hydrate_msgs(data.msgs, data.vars);
+            let hydrated_msgs = match res {
+                Ok(v) => v,
+                Err(e) => {return Err(StdError::generic_err(e.to_string()))}
+            };
+            to_binary(&hydrated_msgs)
+        }
     }
 }
 
