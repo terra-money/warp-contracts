@@ -18,6 +18,7 @@ cw-storage-plus = "0.16"
 cw2 = "0.16"
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
+json-codec-wasm = "0.1.0"
 strum = "0.24"
 strum_macros = "0.24"
 thiserror = { version = "1" }

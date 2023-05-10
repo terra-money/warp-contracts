@@ -1,12 +1,13 @@
 use crate::util::condition::{
     resolve_num_value_decimal, resolve_num_value_int, resolve_num_value_uint,
     resolve_query_expr_bool, resolve_query_expr_decimal, resolve_query_expr_int,
-    resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
+    resolve_query_expr_json, resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
 };
 use crate::ContractError;
 use cosmwasm_std::{CosmosMsg, Decimal256, Deps, Env, Uint128, Uint256};
 use std::str::FromStr;
 
+use warp_protocol::controller::condition::Json;
 use warp_protocol::controller::job::{ExternalInput, JobStatus};
 use warp_protocol::controller::variable::{UpdateFnValue, Variable, VariableKind};
 
@@ -106,6 +107,12 @@ pub fn hydrate_vars(
                                     .to_string(),
                             )
                         }
+                        VariableKind::Json => {
+                            v.value = Some(
+                                resolve_query_expr_json(deps, env.clone(), v.init_fn.clone())?
+                                    .to_string(),
+                            )
+                        }
                     }
                 }
                 if v.value.is_none() {
@@ -139,6 +146,7 @@ pub fn hydrate_msgs(
                         VariableKind::Bool => v.value.clone(),
                         VariableKind::Amount => format!("\"{}\"", v.value),
                         VariableKind::Asset => format!("\"{}\"", v.value),
+                        VariableKind::Json => v.value.clone(),
                     },
                 ),
                 Variable::External(v) => match v.value.clone() {
@@ -158,6 +166,7 @@ pub fn hydrate_msgs(
                             VariableKind::Bool => val.clone(),
                             VariableKind::Amount => format!("\"{}\"", val),
                             VariableKind::Asset => format!("\"{}\"", val),
+                            VariableKind::Json => val.clone(),
                         },
                     ),
                 },
@@ -178,6 +187,7 @@ pub fn hydrate_msgs(
                             VariableKind::Bool => val.clone(),
                             VariableKind::Amount => format!("\"{}\"", val),
                             VariableKind::Asset => format!("\"{}\"", val),
+                            VariableKind::Json => val.clone(),
                         },
                     ),
                 },
@@ -212,6 +222,8 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
+                        // TODO: check this works for arbitrary json
+                        VariableKind::Json => "true",
                     },
                 ),
                 Variable::External(v) => (
@@ -225,6 +237,8 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
+                        // TODO: check this works for arbitrary json
+                        VariableKind::Json => "true",
                     },
                 ),
                 Variable::Query(v) => (
@@ -238,6 +252,8 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
+                        // TODO: check this works for arbitrary json
+                        VariableKind::Json => "true",
                     },
                 ),
             };
@@ -880,6 +896,11 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
                         return false;
                     }
                 }
+                VariableKind::Json => {
+                    if Json::from_str(&v.value).is_err() {
+                        return false;
+                    }
+                }
             },
             Variable::External(v) => {
                 if v.reinitialize && v.update_fn.is_some() {
@@ -921,6 +942,11 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
                         }
                         VariableKind::Asset => {
                             if val.is_empty() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Json => {
+                            if Json::from_str(&val).is_err() {
                                 return false;
                             }
                         }
@@ -966,6 +992,11 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
                         }
                         VariableKind::Asset => {
                             if val.is_empty() {
+                                return false;
+                            }
+                        }
+                        VariableKind::Json => {
+                            if Json::from_str(&val).is_err() {
                                 return false;
                             }
                         }
