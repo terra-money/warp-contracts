@@ -222,8 +222,9 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
-                        // TODO: check this works for arbitrary json
-                        VariableKind::Json => "true",
+                        VariableKind::Json => {
+                            "{\"key1\":[\"value1\",123],\"key2\":{\"key3\":true}}"
+                        }
                     },
                 ),
                 Variable::External(v) => (
@@ -237,8 +238,9 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
-                        // TODO: check this works for arbitrary json
-                        VariableKind::Json => "true",
+                        VariableKind::Json => {
+                            "{\"key1\":[\"value1\",123],\"key2\":{\"key3\":true}}"
+                        }
                     },
                 ),
                 Variable::Query(v) => (
@@ -252,8 +254,9 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
-                        // TODO: check this works for arbitrary json
-                        VariableKind::Json => "true",
+                        VariableKind::Json => {
+                            "{\"key1\":[\"value1\",123],\"key2\":{\"key3\":true}}"
+                        }
                     },
                 ),
             };
