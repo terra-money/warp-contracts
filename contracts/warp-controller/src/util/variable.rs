@@ -211,9 +211,7 @@ fn replace_references(mut expr: QueryExpr, vars: &[Variable]) -> Result<QueryExp
             *key = replace_in_binary(key, vars)?;
             *contract_addr = replace_in_string(contract_addr.to_string(), vars)?;
         }
-        _ => {
-            replace_in_struct(&expr, vars)?;
-        }
+        _ => expr.query = replace_in_struct(&expr.query, vars)?,
     }
 
     Ok(expr)
@@ -229,9 +227,8 @@ fn replace_in_binary(binary_str: &Binary, vars: &[Variable]) -> Result<Binary, C
     })?;
 
     let updated_string = replace_in_string(decoded_string, vars)?;
-    let encoded = base64::encode(updated_string);
 
-    Ok(Binary(encoded.into_bytes()))
+    Ok(Binary::from(updated_string.as_bytes()))
 }
 
 fn replace_in_struct<T: Serialize + DeserializeOwned>(
@@ -273,6 +270,185 @@ fn replace_in_string(value: String, vars: &[Variable]) -> Result<String, Contrac
     }
 
     Ok(value)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::testing::mock_env;
+    use cosmwasm_std::{to_binary, BankQuery, Binary, ContractResult, OwnedDeps};
+    use warp_protocol::controller::variable::{QueryVariable, StaticVariable};
+
+    use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage};
+    use cosmwasm_std::{from_slice, Empty, Querier, QueryRequest, SystemError, SystemResult};
+    use std::marker::PhantomData;
+
+    pub fn mock_dependencies() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
+        let custom_querier: WasmMockQuerier = WasmMockQuerier::new(MockQuerier::new(&[]));
+
+        OwnedDeps {
+            api: MockApi::default(),
+            storage: MockStorage::default(),
+            querier: custom_querier,
+            custom_query_type: PhantomData,
+        }
+    }
+
+    pub struct WasmMockQuerier {
+        base: MockQuerier<Empty>,
+    }
+
+    impl Querier for WasmMockQuerier {
+        fn raw_query(&self, bin_request: &[u8]) -> SystemResult<ContractResult<Binary>> {
+            let request: QueryRequest<Empty> = match from_slice(bin_request) {
+                Ok(v) => v,
+                Err(e) => {
+                    return SystemResult::Err(SystemError::InvalidRequest {
+                        error: format!("Parsing query request: {}", e),
+                        request: bin_request.into(),
+                    });
+                }
+            };
+            self.handle_query(&request)
+        }
+    }
+
+    impl WasmMockQuerier {
+        pub fn handle_query(
+            &self,
+            request: &QueryRequest<Empty>,
+        ) -> SystemResult<ContractResult<Binary>> {
+            match &request {
+                QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr,
+                    msg: _,
+                }) => {
+                    // Mock logic for the Wasm::Smart case
+                    // Here for simplicity, we return the contract_addr and msg as is.
+                    SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&format!("{}", contract_addr)).unwrap(),
+                    ))
+                }
+                QueryRequest::Bank(BankQuery::Balance {
+                    address: contract_addr,
+                    denom: _,
+                }) => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&format!("{}", contract_addr)).unwrap(),
+                )),
+                _ => self.base.handle_query(request),
+            }
+        }
+    }
+
+    impl WasmMockQuerier {
+        pub fn new(base: MockQuerier<Empty>) -> Self {
+            WasmMockQuerier { base }
+        }
+    }
+
+    #[test]
+    fn test_hydrate_vars_nested_variables_binary() {
+        let deps = mock_dependencies();
+        let env = mock_env();
+
+        // Test Case #1
+        let var1 = Variable::Static(StaticVariable {
+            name: "var1".to_string(),
+            kind: VariableKind::String,
+            value: "static_value".to_string(),
+            update_fn: None,
+        });
+
+        let init_fn = QueryExpr {
+            selector: "$".to_string(),
+            query: QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: "$warp.variable.var1".to_string(),
+                msg: Binary::from(r#"{"test": "$warp.variable.var1"}"#.as_bytes()),
+            }),
+        };
+
+        let var2 = Variable::Query(QueryVariable {
+            name: "var2".to_string(),
+            kind: VariableKind::String,
+            init_fn,
+            value: None,
+            reinitialize: false,
+            update_fn: None,
+        });
+
+        let vars = vec![var1, var2];
+        let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+
+        assert_eq!(
+            hydrated_vars[1],
+            Variable::Query(QueryVariable {
+                name: "var2".to_string(),
+                kind: VariableKind::String,
+                init_fn: QueryExpr {
+                    selector: "$".to_string(),
+                    query: QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: "static_value".to_string(),
+                        msg: Binary::from(r#"{"test": "static_value"}"#.as_bytes()),
+                    }),
+                },
+                value: Some("static_value".to_string()),
+                reinitialize: false,
+                update_fn: None
+            })
+        );
+    }
+
+    #[test]
+    fn test_hydrate_vars_nested_variables_non_binary() {
+        let deps = mock_dependencies();
+        let env = mock_env();
+
+        // Test Case #2
+        let var1 = Variable::Static(StaticVariable {
+            name: "var1".to_string(),
+            kind: VariableKind::String,
+            value: "static_value".to_string(),
+            update_fn: None,
+        });
+
+        let init_fn = QueryExpr {
+            selector: "$".to_string(),
+            query: QueryRequest::Bank(BankQuery::Balance {
+                address: "$warp.variable.var1".to_string(),
+                denom: "denom".to_string(),
+            }),
+        };
+
+        let var2 = Variable::Query(QueryVariable {
+            name: "var2".to_string(),
+            kind: VariableKind::String,
+            init_fn,
+            value: None,
+            reinitialize: false,
+            update_fn: None,
+        });
+
+        let vars = vec![var1, var2];
+        let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+
+        assert_eq!(
+            hydrated_vars[1],
+            Variable::Query(QueryVariable {
+                name: "var2".to_string(),
+                kind: VariableKind::String,
+                init_fn: QueryExpr {
+                    selector: "$".to_string(),
+                    query: QueryRequest::Bank(BankQuery::Balance {
+                        address: "static_value".to_string(),
+                        denom: "denom".to_string(),
+                    }),
+                },
+                value: Some("static_value".to_string()),
+                reinitialize: false,
+                update_fn: None
+            })
+        );
+    }
 }
 
 pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, ContractError> {
