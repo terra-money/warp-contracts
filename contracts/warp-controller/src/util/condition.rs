@@ -684,10 +684,10 @@ pub fn resolve_query_expr_json(
     let r = Ref::new(&value);
     let resolved = resolve_path(r, expr.selector)?;
 
-    Ok(resolved
+    resolved
         .value()
         .map(|v| Json {
             value: v.to_owned(),
         })
-        .ok_or(ContractError::DecodeError {})?)
+        .ok_or(ContractError::DecodeError {})
 }
