@@ -13,6 +13,8 @@ pub struct Job {
     pub owner: Addr,
     pub last_update_time: Uint64,
     pub name: String,
+    pub description: String,
+    pub labels: Vec<String>,
     pub status: JobStatus,
     pub condition: Condition,
     pub msgs: Vec<String>,
@@ -40,6 +42,8 @@ pub enum JobStatus {
 #[cw_serde]
 pub struct CreateJobMsg {
     pub name: String,
+    pub description: String,
+    pub labels: Vec<String>,
     pub condition: Condition,
     pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
@@ -57,6 +61,8 @@ pub struct DeleteJobMsg {
 pub struct UpdateJobMsg {
     pub id: Uint64,
     pub name: Option<String>,
+    pub description: Option<String>,
+    pub labels: Option<Vec<String>>,
     pub added_reward: Option<Uint128>,
 }
 
