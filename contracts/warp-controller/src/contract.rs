@@ -1,5 +1,4 @@
 use crate::execute::{account, controller, job};
-use crate::query::condition;
 
 use crate::execute::template::{delete_template, edit_template, submit_template};
 use crate::query::template::{query_template, query_templates};
@@ -101,14 +100,8 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::QueryResolveJobCondition(data) => {
-            to_binary(&condition::query_condition_active(deps, env, data)?)
-        }
         QueryMsg::QueryJob(data) => to_binary(&query::job::query_job(deps, env, data)?),
         QueryMsg::QueryJobs(data) => to_binary(&query::job::query_jobs(deps, env, data)?),
-        QueryMsg::QueryResolveCondition(data) => {
-            to_binary(&condition::query_resolve_condition(deps, env, data)?)
-        }
 
         QueryMsg::SimulateQuery(data) => {
             to_binary(&query::controller::query_simulate_query(deps, env, data)?)

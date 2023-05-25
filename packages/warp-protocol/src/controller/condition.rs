@@ -1,6 +1,5 @@
 use std::{fmt, str};
 
-use crate::controller::variable::Variable;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, Uint256, Uint64};
 use json_codec_wasm::Decoder;
@@ -130,12 +129,6 @@ pub enum StringOp {
     Contains,
     Eq,
     Neq,
-}
-
-#[cw_serde]
-pub struct QueryResolveConditionMsg {
-    pub condition: Condition,
-    pub vars: Vec<Variable>,
 }
 
 pub struct Json {

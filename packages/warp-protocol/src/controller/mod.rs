@@ -1,10 +1,9 @@
 use crate::controller::account::{
     AccountResponse, AccountsResponse, CreateAccountMsg, QueryAccountMsg, QueryAccountsMsg,
 };
-use crate::controller::condition::QueryResolveConditionMsg;
 use crate::controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
-    QueryJobsMsg, QueryResolveJobConditionMsg, UpdateJobMsg,
+    QueryJobsMsg, UpdateJobMsg,
 };
 use crate::controller::template::{
     DeleteTemplateMsg, EditTemplateMsg, QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg,
@@ -101,10 +100,6 @@ pub enum QueryMsg {
     QueryJob(QueryJobMsg),
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
-    #[returns(bool)]
-    QueryResolveJobCondition(QueryResolveJobConditionMsg),
-    #[returns(bool)]
-    QueryResolveCondition(QueryResolveConditionMsg),
 
     #[returns(SimulateResponse)]
     SimulateQuery(SimulateQueryMsg),
