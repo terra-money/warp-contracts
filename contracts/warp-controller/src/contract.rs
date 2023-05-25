@@ -226,7 +226,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 
             state.q = state.q.checked_sub(Uint64::new(1))?;
 
-            let new_job = FINISHED_JOBS().update(deps.storage, msg.id, |j| match j {
+            let finished_job = FINISHED_JOBS().update(deps.storage, msg.id, |j| match j {
                 None => Ok(Job {
                     id: job.id,
                     owner: job.owner,
@@ -253,12 +253,12 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let mut msgs = vec![];
             let mut new_job_attrs = vec![];
 
-            let account = ACCOUNTS().load(deps.storage, new_job.owner.clone())?;
+            let account = ACCOUNTS().load(deps.storage, finished_job.owner.clone())?;
             let config = CONFIG.load(deps.storage)?;
 
             //assume reward.amount == warp token allowance
             let fee =
-                new_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+                finished_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
             let account_amount = deps
                 .querier
@@ -269,13 +269,13 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .amount
                 .amount;
 
-            if new_job.recurring {
-                if account_amount < fee + new_job.reward {
+            if finished_job.recurring {
+                if account_amount < fee + finished_job.reward {
                     new_job_attrs.push(Attribute::new("action", "recur_job"));
                     new_job_attrs
                         .push(Attribute::new("creation_status", "failed_insufficient_fee"));
-                } else if !(new_job.status == JobStatus::Executed
-                    || new_job.status == JobStatus::Failed)
+                } else if !(finished_job.status == JobStatus::Executed
+                    || finished_job.status == JobStatus::Failed)
                 {
                     new_job_attrs.push(Attribute::new("action", "recur_job"));
                     new_job_attrs.push(Attribute::new(
@@ -284,25 +284,25 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     ));
                 } else {
                     let new_vars =
-                        apply_var_fn(deps.as_ref(), env.clone(), new_job.vars, new_job.status.clone())?;
-                    let job = PENDING_JOBS().update(
+                        apply_var_fn(deps.as_ref(), env.clone(), finished_job.vars, finished_job.status.clone())?;
+                    let new_job = PENDING_JOBS().update(
                         deps.storage,
                         state.current_job_id.u64(),
                         |s| match s {
                             None => Ok(Job {
                                 id: state.current_job_id,
-                                owner: new_job.owner.clone(),
+                                owner: finished_job.owner.clone(),
                                 last_update_time: Uint64::from(env.block.time.seconds()),
-                                name: new_job.name.clone(),
-                                description: new_job.description,
-                                labels: new_job.labels,
+                                name: finished_job.name.clone(),
+                                description: finished_job.description,
+                                labels: finished_job.labels,
                                 status: JobStatus::Pending,
-                                condition: new_job.condition.clone(),
+                                condition: finished_job.condition.clone(),
                                 vars: new_vars,
-                                requeue_on_evict: new_job.requeue_on_evict,
-                                recurring: new_job.recurring,
-                                msgs: new_job.msgs.clone(),
-                                reward: new_job.reward,
+                                requeue_on_evict: finished_job.requeue_on_evict,
+                                recurring: finished_job.recurring,
+                                msgs: finished_job.msgs.clone(),
+                                reward: finished_job.reward,
                             }),
                             Some(_) => Err(ContractError::JobAlreadyExists {}),
                         },
@@ -348,7 +348,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     new_job_attrs.push(Attribute::new("job_msgs", serde_json_wasm::to_string(&new_job.msgs)?));
                     new_job_attrs.push(Attribute::new("job_reward", new_job.reward));
                     new_job_attrs.push(Attribute::new("job_creation_fee", fee));
-                    new_job_attrs.push(Attribute::new("job_last_updated_time", job.last_update_time));
+                    new_job_attrs.push(Attribute::new("job_last_updated_time", new_job.last_update_time));
                     new_job_attrs.push(Attribute::new("action", "create_job"));
 
                     new_job_attrs.push(Attribute::new("sub_action", "recur_job"));
