@@ -284,16 +284,16 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     ));
                 } else {
                     let new_vars =
-                        apply_var_fn(deps.as_ref(), env.clone(), new_job.vars, new_job.status)?;
+                        apply_var_fn(deps.as_ref(), env.clone(), new_job.vars, new_job.status.clone())?;
                     let job = PENDING_JOBS().update(
                         deps.storage,
                         state.current_job_id.u64(),
                         |s| match s {
                             None => Ok(Job {
                                 id: state.current_job_id,
-                                owner: new_job.owner,
+                                owner: new_job.owner.clone(),
                                 last_update_time: Uint64::from(env.block.time.seconds()),
-                                name: new_job.name,
+                                name: new_job.name.clone(),
                                 description: new_job.description,
                                 labels: new_job.labels,
                                 status: JobStatus::Pending,
@@ -301,7 +301,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                                 vars: new_vars,
                                 requeue_on_evict: new_job.requeue_on_evict,
                                 recurring: new_job.recurring,
-                                msgs: new_job.msgs,
+                                msgs: new_job.msgs.clone(),
                                 reward: new_job.reward,
                             }),
                             Some(_) => Err(ContractError::JobAlreadyExists {}),
@@ -339,9 +339,19 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         },
                     );
 
-                    new_job_attrs.push(Attribute::new("action", "recur_job"));
-                    new_job_attrs.push(Attribute::new("creation_status", "created"));
-                    new_job_attrs.push(Attribute::new("job_id", job.id));
+                    new_job_attrs.push(Attribute::new("action", "create_job"));
+                    new_job_attrs.push(Attribute::new("job_id", new_job.id));
+                    new_job_attrs.push(Attribute::new("job_owner", new_job.owner));
+                    new_job_attrs.push(Attribute::new("job_name", new_job.name));
+                    new_job_attrs.push(Attribute::new("job_status", serde_json_wasm::to_string(&new_job.status)?));
+                    new_job_attrs.push(Attribute::new("job_condition", serde_json_wasm::to_string(&new_job.condition)?));
+                    new_job_attrs.push(Attribute::new("job_msgs", serde_json_wasm::to_string(&new_job.msgs)?));
+                    new_job_attrs.push(Attribute::new("job_reward", new_job.reward));
+                    new_job_attrs.push(Attribute::new("job_creation_fee", fee));
+                    new_job_attrs.push(Attribute::new("job_last_updated_time", job.last_update_time));
+                    new_job_attrs.push(Attribute::new("action", "create_job"));
+
+                    new_job_attrs.push(Attribute::new("sub_action", "recur_job"));
                 }
             }
 
