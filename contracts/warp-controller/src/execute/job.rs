@@ -250,7 +250,7 @@ pub fn update_job(
         Some(job) => Ok(Job {
             id: job.id,
             owner: job.owner,
-            last_update_time: if !added_reward.is_zero() {
+            last_update_time: if added_reward > config.minimum_reward {
                 Uint64::new(env.block.time.seconds())
             } else {
                 job.last_update_time
