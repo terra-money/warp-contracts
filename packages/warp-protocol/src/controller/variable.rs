@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, QueryRequest, Uint256};
 
@@ -13,6 +15,7 @@ pub enum VariableKind {
     Bool,
     Amount,
     Asset,
+    Json,
 }
 
 #[cw_serde]
@@ -26,7 +29,7 @@ pub enum VariableValue {
 pub struct ExternalExpr {
     pub url: String,
     pub method: Option<Method>,
-    pub headers: Option<Vec<String>>,
+    pub headers: Option<HashMap<String, String>>,
     pub body: Option<String>,
     pub selector: String,
 }

@@ -3,7 +3,7 @@ use crate::query::condition;
 
 use crate::execute::template::{delete_template, edit_template, submit_template};
 use crate::query::template::{query_template, query_templates};
-use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
+use crate::state::{JobIndexes, ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::util::variable::apply_var_fn;
 use crate::{query, state::STATE, ContractError};
 use cosmwasm_std::{
@@ -12,6 +12,7 @@ use cosmwasm_std::{
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
 use warp_protocol::controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
+use cw_storage_plus::IndexedMap;
 use warp_protocol::controller::job::{Job, JobStatus};
 use warp_protocol::controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
@@ -129,8 +130,36 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(mut deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let mut pending_jobs = PENDING_JOBS();
+    let mut finished_jobs = FINISHED_JOBS();
+
+    migrate_jobs(&mut deps, &mut pending_jobs)
+        .map_err(|e| StdError::generic_err(format!("Failed to migrate pending jobs: {}", e)))?;
+
+    migrate_jobs(&mut deps, &mut finished_jobs)
+        .map_err(|e| StdError::generic_err(format!("Failed to migrate finished jobs: {}", e)))?;
+
     Ok(Response::new())
+}
+
+fn migrate_jobs(
+    deps: &mut DepsMut,
+    jobs: &mut IndexedMap<'_, u64, Job, JobIndexes<'_>>,
+) -> StdResult<()> {
+    let keys: Vec<u64> = jobs
+        .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+        .filter_map(Result::ok)
+        .collect();
+
+    for key in keys {
+        let mut job = jobs.load(deps.storage, key)?;
+        job.labels = vec![]; // default value for labels
+        job.description = String::new(); // default value for description
+        jobs.save(deps.storage, key, &job)?;
+    }
+
+    Ok(())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -252,6 +281,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     owner: job.owner,
                     last_update_time: job.last_update_time,
                     name: job.name,
+                    description: job.description,
+                    labels: job.labels,
                     status: new_status,
                     condition: job.condition,
                     msgs: job.msgs,
@@ -312,6 +343,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                                 owner: new_job.owner,
                                 last_update_time: Uint64::from(env.block.time.seconds()),
                                 name: new_job.name,
+                                description: new_job.description,
+                                labels: new_job.labels,
                                 status: JobStatus::Pending,
                                 condition: new_job.condition.clone(),
                                 vars: new_vars,

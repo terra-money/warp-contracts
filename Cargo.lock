@@ -963,6 +963,7 @@ dependencies = [
  "cw-storage-plus 0.16.0",
  "cw2 0.16.0",
  "cw20",
+ "json-codec-wasm",
  "schemars",
  "serde",
  "strum",
