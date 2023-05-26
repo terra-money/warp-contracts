@@ -121,7 +121,7 @@ fn withdraw_asset_cw20(
                 contract_addr: token.to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: account.owner.to_string(),
-                    amount: amount,
+                    amount,
                 })?,
                 funds: vec![],
             })],
