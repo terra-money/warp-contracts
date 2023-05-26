@@ -103,10 +103,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryJob(data) => to_binary(&query::job::query_job(deps, env, data)?),
         QueryMsg::QueryJobs(data) => to_binary(&query::job::query_jobs(deps, env, data)?),
 
-        QueryMsg::SimulateQuery(data) => {
-            to_binary(&query::controller::query_simulate_query(deps, env, data)?)
-        }
-
         QueryMsg::QueryAccount(data) => to_binary(&query::account::query_account(deps, env, data)?),
         QueryMsg::QueryAccounts(data) => {
             to_binary(&query::account::query_accounts(deps, env, data)?)
@@ -250,8 +246,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let config = CONFIG.load(deps.storage)?;
 
             //assume reward.amount == warp token allowance
-            let fee =
-                finished_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+            let fee = finished_job.reward * Uint128::from(config.creation_fee_percentage)
+                / Uint128::new(100);
 
             let account_amount = deps
                 .querier
@@ -276,8 +272,12 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         "failed_invalid_job_status",
                     ));
                 } else {
-                    let new_vars =
-                        apply_var_fn(deps.as_ref(), env.clone(), finished_job.vars, finished_job.status.clone())?;
+                    let new_vars = apply_var_fn(
+                        deps.as_ref(),
+                        env.clone(),
+                        finished_job.vars,
+                        finished_job.status.clone(),
+                    )?;
                     let new_job = PENDING_JOBS().update(
                         deps.storage,
                         state.current_job_id.u64(),
@@ -336,12 +336,24 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     new_job_attrs.push(Attribute::new("job_id", new_job.id));
                     new_job_attrs.push(Attribute::new("job_owner", new_job.owner));
                     new_job_attrs.push(Attribute::new("job_name", new_job.name));
-                    new_job_attrs.push(Attribute::new("job_status", serde_json_wasm::to_string(&new_job.status)?));
-                    new_job_attrs.push(Attribute::new("job_condition", serde_json_wasm::to_string(&new_job.condition)?));
-                    new_job_attrs.push(Attribute::new("job_msgs", serde_json_wasm::to_string(&new_job.msgs)?));
+                    new_job_attrs.push(Attribute::new(
+                        "job_status",
+                        serde_json_wasm::to_string(&new_job.status)?,
+                    ));
+                    new_job_attrs.push(Attribute::new(
+                        "job_condition",
+                        serde_json_wasm::to_string(&new_job.condition)?,
+                    ));
+                    new_job_attrs.push(Attribute::new(
+                        "job_msgs",
+                        serde_json_wasm::to_string(&new_job.msgs)?,
+                    ));
                     new_job_attrs.push(Attribute::new("job_reward", new_job.reward));
                     new_job_attrs.push(Attribute::new("job_creation_fee", fee));
-                    new_job_attrs.push(Attribute::new("job_last_updated_time", new_job.last_update_time));
+                    new_job_attrs.push(Attribute::new(
+                        "job_last_updated_time",
+                        new_job.last_update_time,
+                    ));
                     new_job_attrs.push(Attribute::new("action", "create_job"));
 
                     new_job_attrs.push(Attribute::new("sub_action", "recur_job"));

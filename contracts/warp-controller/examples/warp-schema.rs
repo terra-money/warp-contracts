@@ -7,7 +7,7 @@ use warp_protocol::controller::{
     account::{AccountResponse, AccountsResponse},
     job::{JobResponse, JobsResponse},
     template::{Template, TemplateResponse, TemplatesResponse},
-    QueryMsg, {Config, ConfigResponse, ExecuteMsg, InstantiateMsg, SimulateResponse},
+    QueryMsg, {Config, ConfigResponse, ExecuteMsg, InstantiateMsg},
 };
 
 fn main() {
@@ -25,7 +25,6 @@ fn main() {
     export_schema(&schema_for!(JobsResponse), &out_dir);
     export_schema(&schema_for!(AccountResponse), &out_dir);
     export_schema(&schema_for!(AccountsResponse), &out_dir);
-    export_schema(&schema_for!(SimulateResponse), &out_dir);
     export_schema(&schema_for!(TemplateResponse), &out_dir);
     export_schema(&schema_for!(TemplatesResponse), &out_dir);
     export_schema(&schema_for!(Template), &out_dir);
