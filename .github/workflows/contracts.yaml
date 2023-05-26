@@ -14,7 +14,7 @@ on:
         type: boolean
 
 env:
-  RUST_VERSION: 1.63.0
+  RUST_VERSION: 1.68.0
   RUSTC_TARGET: 'wasm32-unknown-unknown'
 
 jobs:
