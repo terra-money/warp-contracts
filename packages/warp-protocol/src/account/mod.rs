@@ -1,3 +1,4 @@
+use crate::controller::account::Fund;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, CosmosMsg};
 
@@ -10,6 +11,7 @@ pub struct Config {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
+    pub funds: Option<Vec<Fund>>,
 }
 
 #[cw_serde]

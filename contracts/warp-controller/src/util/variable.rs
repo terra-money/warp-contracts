@@ -229,7 +229,7 @@ fn replace_references(mut expr: QueryExpr, vars: &[Variable]) -> Result<QueryExp
 
 fn replace_in_binary(binary_str: &Binary, vars: &[Variable]) -> Result<Binary, ContractError> {
     let decoded =
-        base64::decode(&binary_str.to_string()).map_err(|_| ContractError::HydrationError {
+        base64::decode(binary_str.to_string()).map_err(|_| ContractError::HydrationError {
             msg: "Failed to decode Base64.".to_string(),
         })?;
     let decoded_string = String::from_utf8(decoded).map_err(|_| ContractError::HydrationError {
