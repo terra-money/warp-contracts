@@ -9,7 +9,7 @@ use cosmwasm_std::{
 fn test_create_account_success() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad", &vec![coin(100, "uluna")]);
+    let info = mock_info("vlad", &vec![]);
 
     let _instantiate_res = instantiate_warp(
         deps.as_mut(),
@@ -44,6 +44,7 @@ fn test_create_account_success() {
                     code_id: 0,
                     msg: to_binary(&warp_protocol::account::InstantiateMsg {
                         owner: info.sender.to_string(),
+                        funds: None,
                     })
                     .unwrap(),
                     funds: vec![],
@@ -63,6 +64,8 @@ fn test_create_account_success() {
                 "account_address",
                 "terra1vladvladvladvladvladvladvladvladvl2000"
             )
+            .add_attribute("funds", "[]")
+            .add_attribute("cw_funds", "[]")
     )
 }
 
@@ -70,7 +73,7 @@ fn test_create_account_success() {
 fn test_create_account_exists() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad", &vec![coin(100, "uluna")]);
+    let info = mock_info("vlad", &vec![]);
 
     let _instantiate_res = instantiate_warp(
         deps.as_mut(),
@@ -100,6 +103,7 @@ fn test_create_account_exists() {
         create_account_res.unwrap(),
         Response::new()
             .add_attribute("action", "create_account")
+
             .add_submessage(SubMsg {
                 id: 0,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
@@ -107,6 +111,7 @@ fn test_create_account_exists() {
                     code_id: 0,
                     msg: to_binary(&warp_protocol::account::InstantiateMsg {
                         owner: info.sender.to_string(),
+                        funds: None,
                     })
                     .unwrap(),
                     funds: vec![],
