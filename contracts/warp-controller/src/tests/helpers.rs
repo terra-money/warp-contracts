@@ -54,7 +54,12 @@ pub fn create_warp_account(
     Result<Response, ContractError>,
     Result<Response, ContractError>,
 ) {
-    let create_account_res = create_account(deps.as_mut(), env.clone(), info.clone(), CreateAccountMsg { funds: None });
+    let create_account_res = create_account(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        CreateAccountMsg { funds: None },
+    );
 
     let reply_msg = Reply {
         id: 0,
@@ -75,10 +80,7 @@ pub fn create_warp_account(
                         account_id + Uint64::new(2000)
                     ),
                 ),
-                Attribute::new(
-                    "funds",
-                    "[]"
-                )
+                Attribute::new("funds", "[]"),
             ])],
             data: None,
         }),

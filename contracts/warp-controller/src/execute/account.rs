@@ -6,14 +6,14 @@ use cosmwasm_std::{
 };
 use cw20::BalanceResponse;
 use cw20::Cw20ExecuteMsg;
-use warp_protocol::controller::account::{Account, AssetInfo, WithdrawAssetMsg, Cw721ExecuteMsg};
 use warp_protocol::controller::account::CreateAccountMsg;
+use warp_protocol::controller::account::{Account, AssetInfo, Cw721ExecuteMsg, WithdrawAssetMsg};
 
 pub fn create_account(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    data: CreateAccountMsg
+    data: CreateAccountMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 

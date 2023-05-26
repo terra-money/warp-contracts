@@ -103,7 +103,6 @@ fn test_create_account_exists() {
         create_account_res.unwrap(),
         Response::new()
             .add_attribute("action", "create_account")
-
             .add_submessage(SubMsg {
                 id: 0,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {

@@ -11,8 +11,10 @@ use cosmwasm_std::{
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
-use warp_protocol::controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use cw_storage_plus::IndexedMap;
+use warp_protocol::controller::account::{
+    Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg,
+};
 use warp_protocol::controller::job::{Job, JobStatus};
 use warp_protocol::controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
@@ -204,17 +206,21 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
                 .value;
 
-            let cw_funds: Option<Vec<Fund>> = serde_json_wasm::from_str(&event
-                .attributes
-                .iter()
-                .cloned()
-                .find(|attr| attr.key == "funds")
-                .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
-                .value)?;
+            let cw_funds: Option<Vec<Fund>> = serde_json_wasm::from_str(
+                &event
+                    .attributes
+                    .iter()
+                    .cloned()
+                    .find(|attr| attr.key == "funds")
+                    .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
+                    .value,
+            )?;
 
             let cw_funds_vec = match cw_funds {
-                None => {vec![]},
-                Some(funds) => {funds}
+                None => {
+                    vec![]
+                }
+                Some(funds) => funds,
             };
 
             let mut msgs_vec: Vec<CosmosMsg> = vec![];
@@ -222,7 +228,10 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             for fund in &cw_funds_vec {
                 msgs_vec.push(CosmosMsg::Wasm(match fund {
                     Fund::Cw20(cw20_fund) => WasmMsg::Execute {
-                        contract_addr: deps.api.addr_validate(&cw20_fund.contract_addr)?.to_string(),
+                        contract_addr: deps
+                            .api
+                            .addr_validate(&cw20_fund.contract_addr)?
+                            .to_string(),
                         msg: to_binary(&FundTransferMsgs::TransferFrom(TransferFromMsg {
                             owner: owner.clone(),
                             recipient: address.clone(),
@@ -231,13 +240,16 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         funds: vec![],
                     },
                     Fund::Cw721(cw721_fund) => WasmMsg::Execute {
-                        contract_addr: deps.api.addr_validate(&cw721_fund.contract_addr)?.to_string(),
+                        contract_addr: deps
+                            .api
+                            .addr_validate(&cw721_fund.contract_addr)?
+                            .to_string(),
                         msg: to_binary(&FundTransferMsgs::TransferNft(TransferNftMsg {
                             recipient: address.clone(),
                             token_id: cw721_fund.token_id.clone(),
                         }))?,
                         funds: vec![],
-                    }
+                    },
                 }))
             }
 
