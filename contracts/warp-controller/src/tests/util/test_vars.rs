@@ -39,7 +39,6 @@ fn test_vars() {
     //
     // String::insert_str(&mut test_msg, injected_idx, injected_json.as_str());
 
-    println!("{}", test_msg);
 }
 
 #[test]
