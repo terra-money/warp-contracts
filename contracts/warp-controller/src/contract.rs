@@ -1,21 +1,19 @@
-use crate::execute::{account, controller, job};
-
 use crate::execute::template::{delete_template, edit_template, submit_template};
 use crate::query::template::{query_template, query_templates};
 use crate::state::{JobIndexes, ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::util::variable::apply_var_fn;
-use crate::{query, state::STATE, ContractError};
+use crate::{query, state::STATE, ContractError, execute};
 use cosmwasm_std::{
     entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
 use cw_storage_plus::IndexedMap;
-use warp_protocol::controller::account::{
+use controller::account::{
     Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg,
 };
-use warp_protocol::controller::job::{Job, JobStatus};
-use warp_protocol::controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
+use controller::job::{Job, JobStatus};
+use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -83,16 +81,16 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateJob(data) => job::create_job(deps, env, info, data),
-        ExecuteMsg::DeleteJob(data) => job::delete_job(deps, env, info, data),
-        ExecuteMsg::UpdateJob(data) => job::update_job(deps, env, info, data),
-        ExecuteMsg::ExecuteJob(data) => job::execute_job(deps, env, info, data),
-        ExecuteMsg::EvictJob(data) => job::evict_job(deps, env, info, data),
+        ExecuteMsg::CreateJob(data) => execute::job::create_job(deps, env, info, data),
+        ExecuteMsg::DeleteJob(data) => execute::job::delete_job(deps, env, info, data),
+        ExecuteMsg::UpdateJob(data) => execute::job::update_job(deps, env, info, data),
+        ExecuteMsg::ExecuteJob(data) => execute::job::execute_job(deps, env, info, data),
+        ExecuteMsg::EvictJob(data) => execute::job::evict_job(deps, env, info, data),
 
-        ExecuteMsg::CreateAccount(data) => account::create_account(deps, env, info, data),
-        ExecuteMsg::WithdrawAsset(data) => account::withdraw_asset(deps, env, info, data),
+        ExecuteMsg::CreateAccount(data) => execute::account::create_account(deps, env, info, data),
+        ExecuteMsg::WithdrawAsset(data) => execute::account::withdraw_asset(deps, env, info, data),
 
-        ExecuteMsg::UpdateConfig(data) => controller::update_config(deps, env, info, data),
+        ExecuteMsg::UpdateConfig(data) => execute::controller::update_config(deps, env, info, data),
 
         ExecuteMsg::SubmitTemplate(data) => submit_template(deps, env, info, data),
         ExecuteMsg::EditTemplate(data) => edit_template(deps, env, info, data),
@@ -369,7 +367,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         //send reward to controller
                         WasmMsg::Execute {
                             contract_addr: account.account.to_string(),
-                            msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                            msg: to_binary(&account::ExecuteMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: config.fee_collector.to_string(),
                                     amount: vec![Coin::new((fee).u128(), "uluna")],
@@ -383,7 +381,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         //send reward to controller
                         WasmMsg::Execute {
                             contract_addr: account.account.to_string(),
-                            msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                            msg: to_binary(&account::ExecuteMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: env.contract.address.to_string(),
                                     amount: vec![Coin::new((new_job.reward).u128(), "uluna")],

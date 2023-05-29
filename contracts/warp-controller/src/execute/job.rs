@@ -10,10 +10,10 @@ use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
     MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
 };
-use warp_protocol::controller::job::{
+use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
-use warp_protocol::controller::State;
+use controller::State;
 
 pub fn create_job(
     deps: DepsMut,
@@ -115,7 +115,7 @@ pub fn create_job(
         //send reward to controller
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&warp_protocol::account::ExecuteMsg {
+            msg: to_binary(&account::ExecuteMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
                     amount: vec![Coin::new((data.reward).u128(), "uluna")],
@@ -125,7 +125,7 @@ pub fn create_job(
         },
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&warp_protocol::account::ExecuteMsg {
+            msg: to_binary(&account::ExecuteMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
                     amount: vec![Coin::new((fee).u128(), "uluna")],
@@ -283,7 +283,7 @@ pub fn update_job(
             //send reward to controller
             WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: env.contract.address.to_string(),
                         amount: vec![Coin::new((added_reward).u128(), "uluna")],
@@ -296,7 +296,7 @@ pub fn update_job(
             //send reward to controller
             WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: config.fee_collector.to_string(),
                         amount: vec![Coin::new((fee).u128(), "uluna")],
@@ -396,7 +396,7 @@ pub fn execute_job(
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg {
                     msgs: hydrate_msgs(job.msgs.clone(), vars)?,
                 })?,
                 funds: vec![],
@@ -470,7 +470,7 @@ pub fn evict_job(
             //send reward to evictor
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
                         amount: vec![Coin::new(a.u128(), "uluna")],

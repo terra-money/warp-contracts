@@ -1,7 +1,7 @@
 use crate::state::{ACCOUNTS, QUERY_PAGE_SIZE};
 use cosmwasm_std::{Deps, Env, Order, StdResult};
 use cw_storage_plus::Bound;
-use warp_protocol::controller::account::{
+use controller::account::{
     AccountResponse, AccountsResponse, QueryAccountMsg, QueryAccountsMsg,
 };
 

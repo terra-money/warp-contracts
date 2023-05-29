@@ -2,7 +2,7 @@ use crate::state::{QUERY_PAGE_SIZE, TEMPLATES};
 use cosmwasm_std::{Deps, Env, Order, StdError, StdResult};
 use cw_storage_plus::Bound;
 
-use warp_protocol::controller::template::{
+use controller::template::{
     QueryTemplateMsg, QueryTemplatesMsg, TemplateResponse, TemplatesResponse,
 };
 

@@ -1,6 +1,6 @@
-use crate::controller::account::Fund;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, CosmosMsg};
+use controller::account::Fund;
 
 #[cw_serde]
 pub struct Config {

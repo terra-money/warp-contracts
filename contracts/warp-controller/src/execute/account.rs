@@ -6,8 +6,8 @@ use cosmwasm_std::{
 };
 use cw20::BalanceResponse;
 use cw20::Cw20ExecuteMsg;
-use warp_protocol::controller::account::CreateAccountMsg;
-use warp_protocol::controller::account::{Account, AssetInfo, Cw721ExecuteMsg, WithdrawAssetMsg};
+use controller::account::CreateAccountMsg;
+use controller::account::{Account, AssetInfo, Cw721ExecuteMsg, WithdrawAssetMsg};
 
 pub fn create_account(
     deps: DepsMut,
@@ -39,7 +39,7 @@ pub fn create_account(
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
             admin: None,
             code_id: config.warp_account_code_id.u64(),
-            msg: to_binary(&warp_protocol::account::InstantiateMsg {
+            msg: to_binary(&account::InstantiateMsg {
                 owner: info.sender.to_string(),
                 funds: data.funds,
             })?,
@@ -91,7 +91,7 @@ fn withdraw_asset_native(
 
     let msgs = vec![WasmMsg::Execute {
         contract_addr: account.account.to_string(),
-        msg: to_binary(&warp_protocol::account::ExecuteMsg {
+        msg: to_binary(&account::ExecuteMsg {
             msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                 to_address: account.owner.to_string(),
                 amount: vec![Coin::new(amount.u128(), denom)],
@@ -116,7 +116,7 @@ fn withdraw_asset_cw20(
 
     let msgs = vec![WasmMsg::Execute {
         contract_addr: account.account.to_string(),
-        msg: to_binary(&warp_protocol::account::ExecuteMsg {
+        msg: to_binary(&account::ExecuteMsg {
             msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: token.to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
@@ -144,7 +144,7 @@ fn withdraw_asset_cw721(
 ) -> Result<Response, ContractError> {
     let msgs = vec![WasmMsg::Execute {
         contract_addr: account.account.to_string(),
-        msg: to_binary(&warp_protocol::account::ExecuteMsg {
+        msg: to_binary(&account::ExecuteMsg {
             msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: token.to_string(),
                 msg: to_binary(&Cw721ExecuteMsg::TransferNft {

@@ -11,9 +11,9 @@ use cosmwasm_std::{
 };
 use std::str::FromStr;
 
-use warp_protocol::controller::condition::Json;
-use warp_protocol::controller::job::{ExternalInput, JobStatus};
-use warp_protocol::controller::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
+use controller::condition::Json;
+use controller::job::{ExternalInput, JobStatus};
+use controller::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
 
 pub fn hydrate_vars(
     deps: Deps,

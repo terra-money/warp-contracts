@@ -1,4 +1,4 @@
-use crate::controller::condition::Condition;
+use crate::condition::Condition;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint128, Uint64};
 use schemars::JsonSchema;

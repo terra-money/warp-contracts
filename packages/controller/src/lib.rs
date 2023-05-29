@@ -1,11 +1,11 @@
-use crate::controller::account::{
+use crate::account::{
     AccountResponse, AccountsResponse, CreateAccountMsg, QueryAccountMsg, QueryAccountsMsg,
 };
-use crate::controller::job::{
+use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, UpdateJobMsg,
 };
-use crate::controller::template::{
+use crate::template::{
     DeleteTemplateMsg, EditTemplateMsg, QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg,
     TemplateResponse, TemplatesResponse,
 };

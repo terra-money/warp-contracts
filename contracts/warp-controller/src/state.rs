@@ -1,10 +1,10 @@
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
-use warp_protocol::controller::account::Account;
+use controller::account::Account;
 
-use warp_protocol::controller::job::Job;
-use warp_protocol::controller::template::Template;
-use warp_protocol::controller::{Config, State};
+use controller::job::Job;
+use controller::template::Template;
+use controller::{Config, State};
 
 pub struct JobIndexes<'a> {
     pub reward: UniqueIndex<'a, (u128, u64), Job>,

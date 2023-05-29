@@ -1,7 +1,7 @@
 use crate::state::CONFIG;
 use crate::ContractError;
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
-use warp_protocol::controller::UpdateConfigMsg;
+use controller::UpdateConfigMsg;
 
 pub fn update_config(
     deps: DepsMut,
