@@ -48,7 +48,6 @@ pub fn submit_template(
         id: state.current_template_id,
         owner: info.sender.clone(),
         name: data.name.clone(),
-        kind: data.kind.clone(),
         msg: data.msg.clone(),
         formatted_str: data.formatted_str.clone(),
         vars: data.vars.clone(),
@@ -76,7 +75,6 @@ pub fn submit_template(
         .add_attribute("id", state.current_template_id)
         .add_attribute("owner", info.sender)
         .add_attribute("name", data.name)
-        .add_attribute("kind", serde_json_wasm::to_string(&data.kind)?)
         .add_attribute("msg", data.msg)
         .add_attribute("formatted_str", data.formatted_str)
         .add_attribute("vars", serde_json_wasm::to_string(&data.vars)?))
@@ -108,7 +106,6 @@ pub fn edit_template(
             id: t.id,
             owner: t.owner,
             name: data.name.unwrap_or(t.name),
-            kind: t.kind,
             msg: t.msg,
             formatted_str: t.formatted_str,
             vars: t.vars,
@@ -121,7 +118,6 @@ pub fn edit_template(
         .add_attribute("id", t.id)
         .add_attribute("owner", info.sender)
         .add_attribute("name", t.name)
-        .add_attribute("kind", serde_json_wasm::to_string(&t.kind)?)
         .add_attribute("msg", t.msg)
         .add_attribute("formatted_str", t.formatted_str)
         .add_attribute("vars", serde_json_wasm::to_string(&t.vars)?))

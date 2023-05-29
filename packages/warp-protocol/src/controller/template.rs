@@ -10,22 +10,14 @@ pub struct Template {
     pub owner: Addr,
     pub name: String,
     pub vars: Vec<Variable>,
-    pub kind: TemplateKind,
     pub msg: String,
     pub condition: Option<Condition>,
     pub formatted_str: String,
 }
 
 #[cw_serde]
-pub enum TemplateKind {
-    Query,
-    Msg,
-}
-
-#[cw_serde]
 pub struct SubmitTemplateMsg {
     pub name: String,
-    pub kind: TemplateKind,
     pub msg: String,
     pub condition: Option<Condition>,
     pub formatted_str: String,
@@ -52,7 +44,6 @@ pub struct QueryTemplateMsg {
 pub struct QueryTemplatesMsg {
     pub ids: Option<Vec<Uint64>>,
     pub owner: Option<Addr>,
-    pub kind: Option<TemplateKind>,
     pub name: Option<String>,
     pub start_after: Option<Uint64>,
     pub limit: Option<u32>,
