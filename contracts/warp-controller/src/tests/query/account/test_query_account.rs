@@ -1,9 +1,9 @@
+use controller::account::{Account, AccountResponse, QueryAccountMsg};
 use cosmwasm_std::{
     coin,
     testing::{mock_dependencies, mock_env, mock_info},
     Api, StdError, Uint128, Uint64,
 };
-use controller::account::{Account, AccountResponse, QueryAccountMsg};
 
 use crate::{
     query::account::query_account,

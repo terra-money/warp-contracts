@@ -2,18 +2,17 @@ use crate::execute::template::{delete_template, edit_template, submit_template};
 use crate::query::template::{query_template, query_templates};
 use crate::state::{JobIndexes, ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::util::variable::apply_var_fn;
-use crate::{query, state::STATE, ContractError, execute};
+use crate::{execute, query, state::STATE, ContractError};
+use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
+use controller::job::{Job, JobStatus};
+use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 use cosmwasm_std::{
     entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
 use cw_storage_plus::IndexedMap;
-use controller::account::{
-    Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg,
-};
-use controller::job::{Job, JobStatus};
-use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
+use account::GenericMsg;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -88,7 +87,6 @@ pub fn execute(
         ExecuteMsg::EvictJob(data) => execute::job::evict_job(deps, env, info, data),
 
         ExecuteMsg::CreateAccount(data) => execute::account::create_account(deps, env, info, data),
-        ExecuteMsg::WithdrawAsset(data) => execute::account::withdraw_asset(deps, env, info, data),
 
         ExecuteMsg::UpdateConfig(data) => execute::controller::update_config(deps, env, info, data),
 
@@ -309,8 +307,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let config = CONFIG.load(deps.storage)?;
 
             //assume reward.amount == warp token allowance
-            let fee =
-                finished_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+            let fee = finished_job.reward * Uint128::from(config.creation_fee_percentage)
+                / Uint128::new(100);
 
             let account_amount = deps
                 .querier
@@ -335,8 +333,12 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         "failed_invalid_job_status",
                     ));
                 } else {
-                    let new_vars =
-                        apply_var_fn(deps.as_ref(), env.clone(), finished_job.vars, finished_job.status.clone())?;
+                    let new_vars = apply_var_fn(
+                        deps.as_ref(),
+                        env.clone(),
+                        finished_job.vars,
+                        finished_job.status.clone(),
+                    )?;
                     let new_job = PENDING_JOBS().update(
                         deps.storage,
                         state.current_job_id.u64(),
@@ -367,12 +369,12 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         //send reward to controller
                         WasmMsg::Execute {
                             contract_addr: account.account.to_string(),
-                            msg: to_binary(&account::ExecuteMsg {
+                            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: config.fee_collector.to_string(),
                                     amount: vec![Coin::new((fee).u128(), "uluna")],
                                 })],
-                            })?,
+                            }))?,
                             funds: vec![],
                         },
                     );
@@ -381,12 +383,12 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         //send reward to controller
                         WasmMsg::Execute {
                             contract_addr: account.account.to_string(),
-                            msg: to_binary(&account::ExecuteMsg {
+                            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: env.contract.address.to_string(),
                                     amount: vec![Coin::new((new_job.reward).u128(), "uluna")],
                                 })],
-                            })?,
+                            }))?,
                             funds: vec![],
                         },
                     );
@@ -395,12 +397,24 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     new_job_attrs.push(Attribute::new("job_id", new_job.id));
                     new_job_attrs.push(Attribute::new("job_owner", new_job.owner));
                     new_job_attrs.push(Attribute::new("job_name", new_job.name));
-                    new_job_attrs.push(Attribute::new("job_status", serde_json_wasm::to_string(&new_job.status)?));
-                    new_job_attrs.push(Attribute::new("job_condition", serde_json_wasm::to_string(&new_job.condition)?));
-                    new_job_attrs.push(Attribute::new("job_msgs", serde_json_wasm::to_string(&new_job.msgs)?));
+                    new_job_attrs.push(Attribute::new(
+                        "job_status",
+                        serde_json_wasm::to_string(&new_job.status)?,
+                    ));
+                    new_job_attrs.push(Attribute::new(
+                        "job_condition",
+                        serde_json_wasm::to_string(&new_job.condition)?,
+                    ));
+                    new_job_attrs.push(Attribute::new(
+                        "job_msgs",
+                        serde_json_wasm::to_string(&new_job.msgs)?,
+                    ));
                     new_job_attrs.push(Attribute::new("job_reward", new_job.reward));
                     new_job_attrs.push(Attribute::new("job_creation_fee", fee));
-                    new_job_attrs.push(Attribute::new("job_last_updated_time", new_job.last_update_time));
+                    new_job_attrs.push(Attribute::new(
+                        "job_last_updated_time",
+                        new_job.last_update_time,
+                    ));
                     new_job_attrs.push(Attribute::new("action", "create_job"));
 
                     new_job_attrs.push(Attribute::new("sub_action", "recur_job"));

@@ -6,14 +6,15 @@ use crate::util::variable::{
 };
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
-use cosmwasm_std::{
-    to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
-    MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
-};
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use controller::State;
+use cosmwasm_std::{
+    to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
+    MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
+};
+use account::GenericMsg;
 
 pub fn create_job(
     deps: DepsMut,
@@ -115,22 +116,22 @@ pub fn create_job(
         //send reward to controller
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&account::ExecuteMsg {
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
                     amount: vec![Coin::new((data.reward).u128(), "uluna")],
                 })],
-            })?,
+            }))?,
             funds: vec![],
         },
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&account::ExecuteMsg {
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
                     amount: vec![Coin::new((fee).u128(), "uluna")],
                 })],
-            })?,
+            }))?,
             funds: vec![],
         },
     ];
@@ -283,12 +284,12 @@ pub fn update_job(
             //send reward to controller
             WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: env.contract.address.to_string(),
                         amount: vec![Coin::new((added_reward).u128(), "uluna")],
                     })],
-                })?,
+                }))?,
                 funds: vec![],
             },
         );
@@ -296,12 +297,12 @@ pub fn update_job(
             //send reward to controller
             WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: config.fee_collector.to_string(),
                         amount: vec![Coin::new((fee).u128(), "uluna")],
                     })],
-                })?,
+                }))?,
                 funds: vec![],
             },
         );
@@ -396,9 +397,9 @@ pub fn execute_job(
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: hydrate_msgs(job.msgs.clone(), vars)?,
-                })?,
+                }))?,
                 funds: vec![],
             }),
             gas_limit: None,
@@ -470,12 +471,12 @@ pub fn evict_job(
             //send reward to evictor
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
                         amount: vec![Coin::new(a.u128(), "uluna")],
                     })],
-                })?,
+                }))?,
                 funds: vec![],
             }),
         );

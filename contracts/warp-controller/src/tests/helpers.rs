@@ -1,12 +1,12 @@
 use crate::contract::{instantiate, reply};
 use crate::execute::account::create_account;
 use crate::ContractError;
+use controller::account::CreateAccountMsg;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
     Attribute, DepsMut, Env, Event, MessageInfo, OwnedDeps, Reply, Response, SubMsgResponse,
     SubMsgResult, Uint128, Uint64,
 };
-use controller::account::CreateAccountMsg;
 
 use controller::InstantiateMsg;
 

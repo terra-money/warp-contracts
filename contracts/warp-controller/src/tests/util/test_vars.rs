@@ -5,9 +5,9 @@ use controller::{
 
 use crate::util::variable::{all_vector_vars_present, hydrate_vars};
 
+use controller::variable::QueryVariable;
 use cosmwasm_std::{testing::mock_env, WasmQuery};
 use cosmwasm_std::{to_binary, BankQuery, Binary, ContractResult, OwnedDeps};
-use controller::variable::QueryVariable;
 
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{from_slice, Empty, Querier, QueryRequest, SystemError, SystemResult};

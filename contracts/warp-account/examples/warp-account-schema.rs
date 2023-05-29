@@ -1,12 +1,12 @@
 use std::env::current_dir;
 use std::fs::create_dir_all;
 
-use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use account::{Config, ExecuteMsg, InstantiateMsg};
 use controller::{
-        account::{AccountResponse, AccountsResponse},
-        job::{JobResponse, JobsResponse},
-    };
+    account::{AccountResponse, AccountsResponse},
+    job::{JobResponse, JobsResponse},
+};
+use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

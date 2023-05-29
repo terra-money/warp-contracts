@@ -1,6 +1,6 @@
+use controller::account::{Fund};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, CosmosMsg};
-use controller::account::Fund;
 
 #[cw_serde]
 pub struct Config {
@@ -15,8 +15,26 @@ pub struct InstantiateMsg {
 }
 
 #[cw_serde]
-pub struct ExecuteMsg {
+pub enum ExecuteMsg {
+    Generic(GenericMsg),
+    WithdrawAssets(WithdrawAssetsMsg),
+}
+
+#[cw_serde]
+pub struct GenericMsg {
     pub msgs: Vec<CosmosMsg>,
+}
+
+#[cw_serde]
+pub enum AssetInfo {
+    Native(String),
+    Cw20(Addr),
+    Cw721(Addr, String),
+}
+
+#[cw_serde]
+pub struct WithdrawAssetsMsg {
+    pub asset_infos: Vec<AssetInfo>,
 }
 
 #[cw_serde]

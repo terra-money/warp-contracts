@@ -2,13 +2,6 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint128};
 
 #[cw_serde]
-pub enum AssetInfo {
-    Native(String),
-    Cw20(Addr),
-    Cw721(Addr, String),
-}
-
-#[cw_serde]
 pub struct CreateAccountMsg {
     pub funds: Option<Vec<Fund>>,
 }
@@ -48,11 +41,6 @@ pub struct TransferFromMsg {
 pub struct TransferNftMsg {
     pub recipient: String,
     pub token_id: String,
-}
-
-#[cw_serde]
-pub struct WithdrawAssetMsg {
-    pub asset_info: AssetInfo,
 }
 
 #[cw_serde]

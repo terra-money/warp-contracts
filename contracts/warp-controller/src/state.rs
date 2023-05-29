@@ -1,6 +1,6 @@
+use controller::account::Account;
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
-use controller::account::Account;
 
 use controller::job::Job;
 use controller::template::Template;

@@ -1,5 +1,5 @@
-use cosmwasm_std::{Addr, Deps, Env};
 use controller::job::{Job, JobStatus};
+use cosmwasm_std::{Addr, Deps, Env};
 
 pub fn resolve_filters(
     _deps: Deps,

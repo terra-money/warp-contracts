@@ -12,8 +12,6 @@ use crate::template::{
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, QueryRequest, Uint128, Uint64};
 
-use self::account::WithdrawAssetMsg;
-
 pub mod account;
 pub mod condition;
 pub mod job;
@@ -71,7 +69,6 @@ pub enum ExecuteMsg {
     EvictJob(EvictJobMsg),
 
     CreateAccount(CreateAccountMsg),
-    WithdrawAsset(WithdrawAssetMsg),
 
     UpdateConfig(UpdateConfigMsg),
 

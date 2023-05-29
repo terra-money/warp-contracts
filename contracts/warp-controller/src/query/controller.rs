@@ -1,10 +1,8 @@
 use crate::state::CONFIG;
 use crate::util::condition::resolve_query_expr;
-use cosmwasm_std::{Deps, Env, StdError, StdResult};
 use controller::variable::QueryExpr;
-use controller::{
-    ConfigResponse, QueryConfigMsg, SimulateQueryMsg, SimulateResponse,
-};
+use controller::{ConfigResponse, QueryConfigMsg, SimulateQueryMsg, SimulateResponse};
+use cosmwasm_std::{Deps, Env, StdError, StdResult};
 
 pub fn query_config(deps: Deps, _env: Env, _data: QueryConfigMsg) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;

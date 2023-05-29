@@ -1,10 +1,8 @@
 use crate::state::{FINISHED_JOBS, PENDING_JOBS, QUERY_PAGE_SIZE};
 use crate::util::filter::resolve_filters;
+use controller::job::{JobResponse, JobStatus, JobsResponse, QueryJobMsg, QueryJobsMsg};
 use cosmwasm_std::{Addr, Deps, Env, Order, StdError, StdResult, Uint64};
 use cw_storage_plus::Bound;
-use controller::job::{
-    JobResponse, JobStatus, JobsResponse, QueryJobMsg, QueryJobsMsg,
-};
 
 pub fn query_job(deps: Deps, _env: Env, data: QueryJobMsg) -> StdResult<JobResponse> {
     let job = if FINISHED_JOBS().has(deps.storage, data.id.u64()) {
