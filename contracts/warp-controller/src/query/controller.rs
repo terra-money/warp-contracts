@@ -1,8 +1,8 @@
 use crate::state::CONFIG;
 use crate::util::condition::resolve_query_expr;
 use cosmwasm_std::{Deps, Env, StdError, StdResult};
-use warp_protocol::controller::variable::QueryExpr;
-use warp_protocol::controller::{
+use controller::variable::QueryExpr;
+use controller::{
     ConfigResponse, QueryConfigMsg, SimulateQueryMsg, SimulateResponse,
 };
 
