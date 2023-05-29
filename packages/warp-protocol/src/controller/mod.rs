@@ -10,7 +10,7 @@ use crate::controller::template::{
     TemplateResponse, TemplatesResponse,
 };
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Uint128, Uint64};
+use cosmwasm_std::{Addr, QueryRequest, Uint128, Uint64};
 
 use self::account::WithdrawAssetMsg;
 
@@ -104,6 +104,9 @@ pub enum QueryMsg {
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
 
+    #[returns(SimulateResponse)]
+    SimulateQuery(SimulateQueryMsg),
+
     #[returns(AccountResponse)]
     QueryAccount(QueryAccountMsg),
     #[returns(AccountsResponse)]
@@ -116,6 +119,16 @@ pub enum QueryMsg {
     QueryTemplate(QueryTemplateMsg),
     #[returns(TemplatesResponse)]
     QueryTemplates(QueryTemplatesMsg),
+}
+
+#[cw_serde]
+pub struct SimulateQueryMsg {
+    pub query: QueryRequest<String>,
+}
+
+#[cw_serde]
+pub struct SimulateResponse {
+    pub response: String,
 }
 
 #[cw_serde]
