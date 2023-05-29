@@ -6,9 +6,9 @@ use cosmwasm_std::{
     Attribute, DepsMut, Env, Event, MessageInfo, OwnedDeps, Reply, Response, SubMsgResponse,
     SubMsgResult, Uint128, Uint64,
 };
-use warp_protocol::controller::account::CreateAccountMsg;
+use controller::account::CreateAccountMsg;
 
-use warp_protocol::controller::InstantiateMsg;
+use controller::InstantiateMsg;
 
 pub fn instantiate_warp(
     deps: DepsMut,

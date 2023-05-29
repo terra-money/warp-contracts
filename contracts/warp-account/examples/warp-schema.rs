@@ -2,13 +2,11 @@ use std::env::current_dir;
 use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
-use warp_protocol::{
-    account::{Config, ExecuteMsg, InstantiateMsg},
-    controller::{
+use account::{Config, ExecuteMsg, InstantiateMsg};
+use controller::{
         account::{AccountResponse, AccountsResponse},
         job::{JobResponse, JobsResponse},
-    },
-};
+    };
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

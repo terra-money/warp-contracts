@@ -1,4 +1,4 @@
-use warp_protocol::controller::{
+use controller::{
     condition::{Condition, Expr, GenExpr, NumOp, NumValue},
     variable::{QueryExpr, StaticVariable, Variable, VariableKind},
 };
@@ -7,7 +7,7 @@ use crate::util::variable::{all_vector_vars_present, hydrate_vars};
 
 use cosmwasm_std::{testing::mock_env, WasmQuery};
 use cosmwasm_std::{to_binary, BankQuery, Binary, ContractResult, OwnedDeps};
-use warp_protocol::controller::variable::QueryVariable;
+use controller::variable::QueryVariable;
 
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{from_slice, Empty, Querier, QueryRequest, SystemError, SystemResult};
@@ -45,7 +45,7 @@ fn test_vars() {
 #[test]
 fn test_all_vector_vars_present() {
     let condition = Condition::Expr(Box::new(Expr::Uint(GenExpr {
-        left: NumValue::Env(warp_protocol::controller::condition::NumEnvValue::Time),
+        left: NumValue::Env(controller::condition::NumEnvValue::Time),
         op: NumOp::Gt,
         right: NumValue::Ref("$warp.variable.next_execution".to_string()),
     })));

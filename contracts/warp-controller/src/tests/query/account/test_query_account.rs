@@ -3,7 +3,7 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Api, StdError, Uint128, Uint64,
 };
-use warp_protocol::controller::account::{Account, AccountResponse, QueryAccountMsg};
+use controller::account::{Account, AccountResponse, QueryAccountMsg};
 
 use crate::{
     query::account::query_account,
@@ -111,7 +111,7 @@ fn test_query_account_does_not_exist() {
     assert_eq!(
         query_account_res.unwrap_err(),
         StdError::NotFound {
-            kind: "warp_protocol::controller::account::Account".to_string()
+            kind: "controller::account::Account".to_string()
         }
     )
 }

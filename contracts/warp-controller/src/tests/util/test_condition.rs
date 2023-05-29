@@ -1,5 +1,5 @@
 use json_codec_wasm::Json as CodecJson;
-use warp_protocol::controller::condition::Json;
+use controller::condition::Json;
 
 use std::str::FromStr;
 
