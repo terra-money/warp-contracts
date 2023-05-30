@@ -77,7 +77,9 @@ fn test_execute_controller() {
 
     assert_eq!(
         execute_res,
-        Response::new().add_messages(vec![
+        Response::new()
+            .add_attribute("action", "generic")
+            .add_messages(vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
                 msg: to_binary("test").unwrap(),
@@ -199,7 +201,9 @@ fn test_execute_owner() {
 
     assert_eq!(
         execute_res,
-        Response::new().add_messages(vec![
+        Response::new()
+            .add_attribute("action", "generic")
+            .add_messages(vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
                 msg: to_binary("test").unwrap(),
