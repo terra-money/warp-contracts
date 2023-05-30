@@ -85,19 +85,19 @@ pub fn withdraw_assets(
                 deps.as_ref(),
                 env.clone(),
                 &owner,
-                &denom,
+                denom,
             )?),
             AssetInfo::Cw20(addr) => withdraw_msgs.push(withdraw_asset_cw20(
                 deps.as_ref(),
                 env.clone(),
                 &owner,
-                &addr,
+                addr,
             )?),
             AssetInfo::Cw721(addr, token_id) => withdraw_msgs.push(withdraw_asset_cw721(
                 deps.as_ref(),
-                &addr,
                 &owner,
-                &token_id,
+                addr,
+                token_id,
             )?),
         }
     }
@@ -108,7 +108,7 @@ pub fn withdraw_assets(
         .add_attribute("assets", serde_json_wasm::to_string(&data.asset_infos)?))
 }
 
-fn withdraw_asset_native(deps: Deps, env: Env, owner: &Addr, denom: &str) -> StdResult<CosmosMsg> {
+fn withdraw_asset_native(deps: Deps, env: Env, owner: &Addr, denom: &String) -> StdResult<CosmosMsg> {
     let amount = deps.querier.query_balance(env.contract.address, denom)?;
 
     Ok(CosmosMsg::Bank(BankMsg::Send {
@@ -142,7 +142,7 @@ fn withdraw_asset_cw721(
     _deps: Deps,
     owner: &Addr,
     token: &Addr,
-    token_id: &str,
+    token_id: &String,
 ) -> StdResult<CosmosMsg> {
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: token.to_string(),

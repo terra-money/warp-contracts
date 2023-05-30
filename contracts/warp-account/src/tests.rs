@@ -1,6 +1,6 @@
 use crate::contract::{execute, instantiate};
 use crate::ContractError;
-use account::{ExecuteMsg, InstantiateMsg};
+use account::{ExecuteMsg, GenericMsg, InstantiateMsg};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DistributionMsg, GovMsg, IbcMsg, IbcTimeout,
@@ -23,7 +23,7 @@ fn test_execute_controller() {
         },
     );
 
-    let execute_msg = ExecuteMsg {
+    let execute_msg = ExecuteMsg::Generic(GenericMsg {
         msgs: vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
@@ -71,7 +71,7 @@ fn test_execute_controller() {
                 value: Default::default(),
             },
         ],
-    };
+    });
 
     let execute_res = execute(deps.as_mut(), env, info, execute_msg).unwrap();
 
@@ -143,7 +143,7 @@ fn test_execute_owner() {
         },
     );
 
-    let execute_msg = ExecuteMsg {
+    let execute_msg = ExecuteMsg::Generic(GenericMsg {
         msgs: vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
@@ -191,7 +191,7 @@ fn test_execute_owner() {
                 value: Default::default(),
             },
         ],
-    };
+    });
 
     let info2 = mock_info("vlad", &vec![]);
 
@@ -265,7 +265,7 @@ fn test_execute_unauth() {
         },
     );
 
-    let execute_msg = ExecuteMsg {
+    let execute_msg = ExecuteMsg::Generic(GenericMsg {
         msgs: vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
@@ -313,7 +313,7 @@ fn test_execute_unauth() {
                 value: Default::default(),
             },
         ],
-    };
+    });
 
     let info2 = mock_info("vlad2", &vec![]);
 
