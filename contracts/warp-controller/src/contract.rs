@@ -13,6 +13,7 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::IndexedMap;
 use account::GenericMsg;
+use crate::error::map_contract_error;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -296,7 +297,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             })?;
 
             let res_attrs = match msg.result {
-                SubMsgResult::Err(e) => vec![Attribute::new("transaction_error", e)],
+                SubMsgResult::Err(e) => vec![Attribute::new("transaction_error", format!("{}. {}", &e, map_contract_error(&e)))],
                 _ => vec![],
             };
 

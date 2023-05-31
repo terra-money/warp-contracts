@@ -181,7 +181,7 @@ impl From<OverflowError> for ContractError {
     }
 }
 
-pub fn map_contract_error(e: String) -> String {
+pub fn map_contract_error(e: &String) -> String {
     if e.contains("wasm") {
         if e.contains("code: 28") {
             "No such code ID."
@@ -229,6 +229,8 @@ pub fn map_contract_error(e: String) -> String {
             "Contract account already exists."
         } else if e.contains("code: 2") {
             "Create wasm contract failed."
+        } else {
+            "Undefined error."
         }
     } else if e.contains("sdk") {
         if e.contains("code: 41") {
@@ -311,6 +313,8 @@ pub fn map_contract_error(e: String) -> String {
             "Invalid sequence."
         } else if e.contains("code: 2") {
             "Tx parse error."
+        } else {
+            "Undefined error."
         }
     } else {
         "Undefined error."
