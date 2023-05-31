@@ -426,7 +426,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             Ok(Response::new()
                 .add_attribute("action", "execute_reply")
                 .add_attribute("job_id", job.id)
-                .add_attribute("job_status", serde_json_wasm::to_string(&job.status)?)
                 .add_attributes(res_attrs)
                 .add_attributes(new_job_attrs)
                 .add_messages(msgs))
