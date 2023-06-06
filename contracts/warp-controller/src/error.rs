@@ -181,7 +181,7 @@ impl From<OverflowError> for ContractError {
     }
 }
 
-pub fn map_contract_error(e: &String) -> String {
+pub fn map_contract_error(e: &str) -> String {
     if e.contains("wasm") {
         if e.contains("code: 28") {
             "No such code ID."

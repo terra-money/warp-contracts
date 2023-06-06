@@ -184,7 +184,7 @@ fn withdraw_asset_cw721(
         },
     )?;
 
-    let res = if owner_query.owner == owner.to_string() {
+    let res = if owner_query.owner == *owner {
         Some(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: token.to_string(),
             msg: to_binary(&Cw721ExecuteMsg::TransferNft {
