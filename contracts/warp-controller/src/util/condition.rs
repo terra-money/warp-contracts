@@ -1,3 +1,4 @@
+use crate::cron::Crontab;
 use crate::util::path::resolve_path;
 use crate::util::variable::get_var;
 use crate::ContractError;
@@ -290,6 +291,9 @@ pub fn resolve_num_env_uint(
     match expr {
         NumEnvValue::Time => Ok(env.block.time.seconds().into()),
         NumEnvValue::BlockHeight => Ok(env.block.height.into()),
+        NumEnvValue::NextTimeFromCron(crontab_schedule) => Ok(Crontab::parse(&crontab_schedule)?
+            .find_event_after(env.block.time.seconds())
+            .into()),
     }
 }
 
