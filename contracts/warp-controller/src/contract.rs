@@ -124,7 +124,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-
     let pending_keys: Vec<u64> = beta::PENDING_JOBS()
         .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
         .filter_map(Result::ok)
