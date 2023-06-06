@@ -1,12 +1,10 @@
 use crate::state::CONFIG;
 use crate::ContractError;
-use account::{AssetInfo, Config, ExecuteMsg, InstantiateMsg, QueryMsg, WithdrawAssetsMsg};
-use controller::account::{Cw721ExecuteMsg};
-use cosmwasm_std::{
-    entry_point, to_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Response, StdResult, WasmMsg,
-};
+use account::{Config, ExecuteMsg, InstantiateMsg, QueryMsg, WithdrawAssetsMsg};
+use controller::account::{AssetInfo, Cw721ExecuteMsg};
+use cosmwasm_std::{Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, entry_point, Env, MessageInfo, Response, StdResult, to_binary, Uint128, WasmMsg};
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
+use cw721::{Cw721QueryMsg, OwnerOfResponse};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -73,32 +71,56 @@ pub fn migrate(
 pub fn withdraw_assets(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     data: WithdrawAssetsMsg,
 ) -> Result<Response, ContractError> {
-    let owner = CONFIG.load(deps.storage)?.owner;
-    let mut withdraw_msgs = vec![];
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.owner && info.sender != config.warp_addr {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let mut withdraw_msgs: Vec<CosmosMsg> = vec![];
 
     for asset_info in &data.asset_infos {
         match asset_info {
-            AssetInfo::Native(denom) => withdraw_msgs.push(withdraw_asset_native(
-                deps.as_ref(),
-                env.clone(),
-                &owner,
-                denom,
-            )?),
-            AssetInfo::Cw20(addr) => withdraw_msgs.push(withdraw_asset_cw20(
-                deps.as_ref(),
-                env.clone(),
-                &owner,
-                addr,
-            )?),
-            AssetInfo::Cw721(addr, token_id) => withdraw_msgs.push(withdraw_asset_cw721(
-                deps.as_ref(),
-                &owner,
-                addr,
-                token_id,
-            )?),
+            AssetInfo::Native(denom) => {
+                let withdraw_native_msg = withdraw_asset_native(
+                    deps.as_ref(),
+                    env.clone(),
+                    &config.owner,
+                    denom,
+                )?;
+
+                match withdraw_native_msg {
+                    None => {}
+                    Some(msg) => withdraw_msgs.push(msg)
+                }
+            },
+            AssetInfo::Cw20(addr) => {
+                let withdraw_cw20_msg = withdraw_asset_cw20(
+                    deps.as_ref(),
+                    env.clone(),
+                    &config.owner,
+                    addr,
+                )?;
+
+                match withdraw_cw20_msg {
+                    None => {}
+                    Some(msg) => withdraw_msgs.push(msg),
+                }
+            },
+            AssetInfo::Cw721(addr, token_id) => {
+                let withdraw_cw721_msg = withdraw_asset_cw721(
+                    deps.as_ref(),
+                    &config.owner,
+                    addr,
+                    token_id,
+                )?;
+                match withdraw_cw721_msg {
+                    None => {}
+                    Some(msg) => {withdraw_msgs.push(msg)}
+                }
+            },
         }
     }
 
@@ -108,16 +130,24 @@ pub fn withdraw_assets(
         .add_attribute("assets", serde_json_wasm::to_string(&data.asset_infos)?))
 }
 
-fn withdraw_asset_native(deps: Deps, env: Env, owner: &Addr, denom: &String) -> StdResult<CosmosMsg> {
+fn withdraw_asset_native(deps: Deps, env: Env, owner: &Addr, denom: &String) -> StdResult<Option<CosmosMsg>> {
     let amount = deps.querier.query_balance(env.contract.address, denom)?;
 
-    Ok(CosmosMsg::Bank(BankMsg::Send {
-        to_address: owner.to_string(),
-        amount: vec![amount],
-    }))
+    let res = if amount.amount > Uint128::zero() {
+        Some(
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address: owner.to_string(),
+                amount: vec![amount],
+            })
+        )
+    } else {
+        None
+    };
+
+    Ok(res)
 }
 
-fn withdraw_asset_cw20(deps: Deps, env: Env, owner: &Addr, token: &Addr) -> StdResult<CosmosMsg> {
+fn withdraw_asset_cw20(deps: Deps, env: Env, owner: &Addr, token: &Addr) -> StdResult<Option<CosmosMsg>> {
     let amount = deps
         .querier
         .query_wasm_smart::<BalanceResponse>(
@@ -128,28 +158,52 @@ fn withdraw_asset_cw20(deps: Deps, env: Env, owner: &Addr, token: &Addr) -> StdR
         )?
         .balance;
 
-    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: token.to_string(),
-        msg: to_binary(&Cw20ExecuteMsg::Transfer {
-            recipient: owner.to_string(),
-            amount,
-        })?,
-        funds: vec![],
-    }))
+    let res = if amount > Uint128::zero() {
+        Some(
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: token.to_string(),
+                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                    recipient: owner.to_string(),
+                    amount,
+                })?,
+                funds: vec![],
+            })
+        )
+    } else {
+        None
+    };
+
+    Ok(res)
 }
 
 fn withdraw_asset_cw721(
-    _deps: Deps,
+    deps: Deps,
     owner: &Addr,
     token: &Addr,
     token_id: &String,
-) -> StdResult<CosmosMsg> {
-    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: token.to_string(),
-        msg: to_binary(&Cw721ExecuteMsg::TransferNft {
-            recipient: owner.to_string(),
+) -> StdResult<Option<CosmosMsg>> {
+    let owner_query = deps.querier.query_wasm_smart::<OwnerOfResponse>(
+        token.to_string(),
+        &Cw721QueryMsg::OwnerOf {
             token_id: token_id.to_string(),
-        })?,
-        funds: vec![],
-    }))
+            include_expired: None,
+        }
+    )?;
+
+    let res = if owner_query.owner == owner.to_string() {
+        Some(
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: token.to_string(),
+                msg: to_binary(&Cw721ExecuteMsg::TransferNft {
+                    recipient: owner.to_string(),
+                    token_id: token_id.to_string(),
+                })?,
+                funds: vec![],
+            })
+        )
+    } else {
+        None
+    };
+
+    Ok(res)
 }

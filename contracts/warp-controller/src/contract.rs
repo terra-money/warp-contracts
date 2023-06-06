@@ -12,7 +12,7 @@ use cosmwasm_std::{
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
 use cw_storage_plus::IndexedMap;
-use account::GenericMsg;
+use account::{GenericMsg, WithdrawAssetsMsg};
 use crate::error::map_contract_error;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -292,6 +292,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     recurring: job.recurring,
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
+                    assets_to_withdraw: job.assets_to_withdraw,
                 }),
                 Some(_) => Err(ContractError::JobAlreadyFinished {}),
             })?;
@@ -324,7 +325,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 if account_amount < fee + finished_job.reward {
                     new_job_attrs.push(Attribute::new("action", "recur_job"));
                     new_job_attrs
-                        .push(Attribute::new("creation_status", "failed_insufficient_fee"));
+                        .push(Attribute::new("creation_status", "failed_insufficient_fee"))
                 } else if !(finished_job.status == JobStatus::Executed
                     || finished_job.status == JobStatus::Failed)
                 {
@@ -358,6 +359,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                                 recurring: finished_job.recurring,
                                 msgs: finished_job.msgs.clone(),
                                 reward: finished_job.reward,
+                                assets_to_withdraw: finished_job.assets_to_withdraw,
                             }),
                             Some(_) => Err(ContractError::JobAlreadyExists {}),
                         },
@@ -392,6 +394,17 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             }))?,
                             funds: vec![],
                         },
+                    );
+
+                    msgs.push(
+                        //withdraw all assets that are listed
+                        WasmMsg::Execute {
+                            contract_addr: account.account.to_string(),
+                            msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
+                                asset_infos: new_job.assets_to_withdraw,
+                            }))?,
+                            funds: vec![],
+                        }
                     );
 
                     new_job_attrs.push(Attribute::new("action", "create_job"));

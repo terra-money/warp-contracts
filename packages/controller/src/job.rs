@@ -4,6 +4,7 @@ use cosmwasm_std::{Addr, Uint128, Uint64};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
+use crate::account::AssetInfo;
 
 use super::variable::Variable;
 
@@ -36,6 +37,7 @@ pub struct Job {
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,
+    pub assets_to_withdraw: Vec<AssetInfo>,
 }
 
 #[cw_serde]
@@ -64,6 +66,7 @@ pub struct CreateJobMsg {
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,
+    pub assets_to_withdraw: Option<Vec<AssetInfo>>,
 }
 
 #[cw_serde]

@@ -74,3 +74,10 @@ pub struct AccountResponse {
 pub struct AccountsResponse {
     pub accounts: Vec<Account>,
 }
+
+#[cw_serde]
+pub enum AssetInfo {
+    Native(String),
+    Cw20(Addr),
+    Cw721(Addr, String),
+}

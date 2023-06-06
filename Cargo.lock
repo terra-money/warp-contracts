@@ -383,6 +383,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw721"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94a1ea6e6277bdd6dfc043a9b1380697fe29d6e24b072597439523658d21d791"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-utils 0.16.0",
+ "schemars",
+ "serde",
+]
+
+[[package]]
 name = "der"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -966,6 +979,7 @@ dependencies = [
  "cw-storage-plus 0.16.0",
  "cw2 0.16.0",
  "cw20",
+ "cw721",
  "json-codec-wasm",
  "schemars",
  "serde-json-wasm 0.4.1",
