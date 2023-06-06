@@ -5,6 +5,7 @@ pub mod state;
 pub use crate::error::ContractError;
 
 mod execute;
+mod migrations;
 mod query;
 #[cfg(test)]
 mod tests;
