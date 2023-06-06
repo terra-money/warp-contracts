@@ -6,6 +6,7 @@ use crate::util::variable::{
 };
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
+use account::GenericMsg;
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
@@ -14,7 +15,6 @@ use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
     MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
 };
-use account::GenericMsg;
 
 pub fn create_job(
     deps: DepsMut,

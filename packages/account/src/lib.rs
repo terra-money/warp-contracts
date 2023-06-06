@@ -38,4 +38,3 @@ pub enum QueryMsg {}
 
 #[cw_serde]
 pub struct MigrateMsg {}
-

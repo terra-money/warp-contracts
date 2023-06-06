@@ -1,8 +1,10 @@
+use crate::error::map_contract_error;
 use crate::execute::template::{delete_template, edit_template, submit_template};
 use crate::query::template::{query_template, query_templates};
 use crate::state::{JobIndexes, ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::util::variable::apply_var_fn;
 use crate::{execute, query, state::STATE, ContractError};
+use account::{GenericMsg, WithdrawAssetsMsg};
 use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use controller::job::{Job, JobStatus};
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
@@ -12,8 +14,6 @@ use cosmwasm_std::{
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
 use cw_storage_plus::IndexedMap;
-use account::{GenericMsg, WithdrawAssetsMsg};
-use crate::error::map_contract_error;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -298,7 +298,10 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             })?;
 
             let res_attrs = match msg.result {
-                SubMsgResult::Err(e) => vec![Attribute::new("transaction_error", format!("{}. {}", &e, map_contract_error(&e)))],
+                SubMsgResult::Err(e) => vec![Attribute::new(
+                    "transaction_error",
+                    format!("{}. {}", &e, map_contract_error(&e)),
+                )],
                 _ => vec![],
             };
 
@@ -324,8 +327,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             if finished_job.recurring {
                 if account_amount < fee + finished_job.reward {
                     new_job_attrs.push(Attribute::new("action", "recur_job"));
-                    new_job_attrs
-                        .push(Attribute::new("creation_status", "failed_insufficient_fee"))
+                    new_job_attrs.push(Attribute::new("creation_status", "failed_insufficient_fee"))
                 } else if !(finished_job.status == JobStatus::Executed
                     || finished_job.status == JobStatus::Failed)
                 {
@@ -400,11 +402,13 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         //withdraw all assets that are listed
                         WasmMsg::Execute {
                             contract_addr: account.account.to_string(),
-                            msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
-                                asset_infos: new_job.assets_to_withdraw,
-                            }))?,
+                            msg: to_binary(&account::ExecuteMsg::WithdrawAssets(
+                                WithdrawAssetsMsg {
+                                    asset_infos: new_job.assets_to_withdraw,
+                                },
+                            ))?,
                             funds: vec![],
-                        }
+                        },
                     );
 
                     new_job_attrs.push(Attribute::new("action", "create_job"));

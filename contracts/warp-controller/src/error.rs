@@ -319,5 +319,4 @@ pub fn map_contract_error(e: &String) -> String {
     } else {
         "Undefined error."
     }.to_string()
-
 }
