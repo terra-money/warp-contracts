@@ -1,9 +1,8 @@
 use controller::account::Account;
 use cosmwasm_std::Addr;
-use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
 
 use controller::job::Job;
-use controller::template::Template;
 use controller::{Config, State};
 
 pub struct JobIndexes<'a> {
@@ -68,8 +67,6 @@ pub fn ACCOUNTS<'a>() -> IndexedMap<'a, Addr, Account, AccountIndexes<'a>> {
     };
     IndexedMap::new("accounts", indexes)
 }
-
-pub const TEMPLATES: Map<u64, Template> = Map::new("msg_templates");
 
 pub const QUERY_PAGE_SIZE: u32 = 50;
 pub const CONFIG: Item<Config> = Item::new("config");
