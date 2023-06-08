@@ -144,14 +144,12 @@ fn withdraw_asset_cw20(
     owner: &Addr,
     token: &Addr,
 ) -> StdResult<Option<CosmosMsg>> {
-    let amount: BalanceResponse = deps
-        .querier
-        .query_wasm_smart(
-            token.to_string(),
-            &cw20::Cw20QueryMsg::Balance {
-                address: env.contract.address.to_string(),
-            },
-        )?;
+    let amount: BalanceResponse = deps.querier.query_wasm_smart(
+        token.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
 
     let res = if amount.balance > Uint128::zero() {
         Some(CosmosMsg::Wasm(WasmMsg::Execute {
