@@ -181,13 +181,13 @@ fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), Contrac
                 match v.kind {
                     VariableKind::String => format!("\"{}\"", val),
                     VariableKind::Uint => format!("\"{}\"", val),
-                    VariableKind::Int => val.clone(),
+                    VariableKind::Int => val,
                     VariableKind::Decimal => format!("\"{}\"", val),
-                    VariableKind::Timestamp => val.clone(),
-                    VariableKind::Bool => val.clone(),
+                    VariableKind::Timestamp => val,
+                    VariableKind::Bool => val,
                     VariableKind::Amount => format!("\"{}\"", val),
                     VariableKind::Asset => format!("\"{}\"", val),
-                    VariableKind::Json => val.clone(),
+                    VariableKind::Json => val,
                 },
             ),
         },
@@ -202,13 +202,13 @@ fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), Contrac
                 match v.kind {
                     VariableKind::String => format!("\"{}\"", val),
                     VariableKind::Uint => format!("\"{}\"", val),
-                    VariableKind::Int => val.clone(),
+                    VariableKind::Int => val,
                     VariableKind::Decimal => format!("\"{}\"", val),
-                    VariableKind::Timestamp => val.clone(),
-                    VariableKind::Bool => val.clone(),
+                    VariableKind::Timestamp => val,
+                    VariableKind::Bool => val,
                     VariableKind::Amount => format!("\"{}\"", val),
                     VariableKind::Asset => format!("\"{}\"", val),
-                    VariableKind::Json => val.clone(),
+                    VariableKind::Json => val,
                 },
             ),
         },
@@ -226,7 +226,7 @@ fn get_replacement_in_string(var: &Variable) -> Result<(String, String), Contrac
                     msg: "External msg value is none.".to_string(),
                 });
             }
-            Some(val) => (v.name.clone(), val.clone()),
+            Some(val) => (v.name.clone(), val),
         },
         Variable::Query(v) => match v.value.clone() {
             None => {
@@ -234,7 +234,7 @@ fn get_replacement_in_string(var: &Variable) -> Result<(String, String), Contrac
                     msg: "Query msg value is none.".to_string(),
                 });
             }
-            Some(val) => (v.name.clone(), val.clone()),
+            Some(val) => (v.name.clone(), val),
         },
     };
 
