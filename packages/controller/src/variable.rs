@@ -15,7 +15,6 @@ pub enum VariableKind {
     Bool,
     Amount,
     Asset,
-    Json,
 }
 
 #[cw_serde]
