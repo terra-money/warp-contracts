@@ -2,7 +2,7 @@ use crate::util::path::resolve_path;
 use crate::util::variable::get_var;
 use crate::ContractError;
 use controller::condition::{
-    BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
+    BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, Json, NumEnvValue, NumExprOp,
     NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
 };
 use controller::variable::{QueryExpr, Variable};
@@ -672,4 +672,22 @@ pub fn resolve_query_expr_string(
         .string()
         .ok_or(ContractError::DecodeError {})?
         .to_string())
+}
+
+pub fn resolve_query_expr_json(
+    deps: Deps,
+    env: Env,
+    expr: QueryExpr,
+) -> Result<Json, ContractError> {
+    let query_result_str = resolve_query_expr(deps, env, expr.clone())?;
+    let value = Decoder::default(query_result_str.chars()).decode()?;
+    let r = Ref::new(&value);
+    let resolved = resolve_path(r, expr.selector)?;
+
+    resolved
+        .value()
+        .map(|v| Json {
+            value: v.to_owned(),
+        })
+        .ok_or(ContractError::DecodeError {})
 }

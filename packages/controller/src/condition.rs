@@ -1,7 +1,9 @@
-use std::{str};
+use std::{fmt, str};
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, Uint256, Uint64};
+use json_codec_wasm::Decoder;
+use json_codec_wasm::Json as CodecJson;
 
 #[cw_serde]
 pub enum Condition {
@@ -127,4 +129,58 @@ pub enum StringOp {
     Contains,
     Eq,
     Neq,
+}
+
+pub struct Json {
+    pub value: CodecJson,
+}
+
+impl fmt::Display for Json {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self.value {
+            CodecJson::Bool(b) => write!(f, "{}", b),
+            CodecJson::I128(i) => write!(f, "{}", i),
+            CodecJson::U128(u) => write!(f, "{}", u),
+            CodecJson::String(s) => write!(f, "\"{}\"", s),
+            CodecJson::Array(a) => {
+                write!(f, "[")?;
+                for (i, item) in a.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, ",")?;
+                    }
+                    write!(
+                        f,
+                        "{}",
+                        Json {
+                            value: item.clone()
+                        }
+                    )?;
+                }
+                write!(f, "]")
+            }
+            CodecJson::Object(o) => {
+                write!(f, "{{")?;
+                for (i, (k, v)) in o.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, ",")?;
+                    }
+                    write!(f, "\"{}\":{}", k, Json { value: v.clone() })?;
+                }
+                write!(f, "}}")
+            }
+            CodecJson::Null => write!(f, "null"),
+        }
+    }
+}
+
+impl str::FromStr for Json {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let value = Decoder::default(s.chars())
+            .decode()
+            .map_err(|e| e.to_string())?;
+
+        Ok(Json { value })
+    }
 }
