@@ -1,7 +1,5 @@
 use crate::error::map_contract_error;
-use crate::execute::template::{delete_template, edit_template, submit_template};
 use crate::migrations::beta;
-use crate::query::template::{query_template, query_templates};
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::util::variable::apply_var_fn;
 use crate::{execute, query, state::STATE, ContractError};
@@ -91,10 +89,6 @@ pub fn execute(
         ExecuteMsg::CreateAccount(data) => execute::account::create_account(deps, env, info, data),
 
         ExecuteMsg::UpdateConfig(data) => execute::controller::update_config(deps, env, info, data),
-
-        ExecuteMsg::SubmitTemplate(data) => submit_template(deps, env, info, data),
-        ExecuteMsg::EditTemplate(data) => edit_template(deps, env, info, data),
-        ExecuteMsg::DeleteTemplate(data) => delete_template(deps, env, info, data),
     }
 }
 
@@ -116,9 +110,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryConfig(data) => {
             to_binary(&query::controller::query_config(deps, env, data)?)
         }
-
-        QueryMsg::QueryTemplate(data) => to_binary(&query_template(deps, env, data)?),
-        QueryMsg::QueryTemplates(data) => to_binary(&query_templates(deps, env, data)?),
     }
 }
 

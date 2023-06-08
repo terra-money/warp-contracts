@@ -5,17 +5,12 @@ use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, UpdateJobMsg,
 };
-use crate::template::{
-    DeleteTemplateMsg, EditTemplateMsg, QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg,
-    TemplateResponse, TemplatesResponse,
-};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, QueryRequest, Uint128, Uint64};
 
 pub mod account;
 pub mod condition;
 pub mod job;
-pub mod template;
 pub mod variable;
 
 //objects
@@ -71,10 +66,6 @@ pub enum ExecuteMsg {
     CreateAccount(CreateAccountMsg),
 
     UpdateConfig(UpdateConfigMsg),
-
-    SubmitTemplate(SubmitTemplateMsg),
-    EditTemplate(EditTemplateMsg),
-    DeleteTemplate(DeleteTemplateMsg),
 }
 
 #[cw_serde]
@@ -111,11 +102,6 @@ pub enum QueryMsg {
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
-
-    #[returns(TemplateResponse)]
-    QueryTemplate(QueryTemplateMsg),
-    #[returns(TemplatesResponse)]
-    QueryTemplates(QueryTemplatesMsg),
 }
 
 #[cw_serde]
