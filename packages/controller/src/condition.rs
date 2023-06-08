@@ -1,4 +1,4 @@
-use std::{str};
+use std::str;
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, Uint256, Uint64};

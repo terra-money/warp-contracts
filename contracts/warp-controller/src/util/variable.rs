@@ -1,4 +1,8 @@
-use crate::util::condition::{resolve_num_value_decimal, resolve_num_value_int, resolve_num_value_uint, resolve_query_expr_bool, resolve_query_expr_decimal, resolve_query_expr_int, resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool};
+use crate::util::condition::{
+    resolve_num_value_decimal, resolve_num_value_int, resolve_num_value_uint,
+    resolve_query_expr_bool, resolve_query_expr_decimal, resolve_query_expr_int,
+    resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
+};
 use crate::ContractError;
 use cosmwasm_schema::serde::de::DeserializeOwned;
 use cosmwasm_schema::serde::Serialize;

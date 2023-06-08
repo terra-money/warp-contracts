@@ -105,7 +105,6 @@ pub fn create_job(
         deps.storage,
         &State {
             current_job_id: state.current_job_id.checked_add(Uint64::new(1))?,
-            current_template_id: state.current_template_id,
             q: state.q.checked_add(Uint64::new(1))?,
         },
     )?;
@@ -196,7 +195,6 @@ pub fn delete_job(
         deps.storage,
         &State {
             current_job_id: state.current_job_id,
-            current_template_id: state.current_template_id,
             q: state.q.checked_sub(Uint64::new(1))?,
         },
     )?;
@@ -387,7 +385,6 @@ pub fn execute_job(
             deps.storage,
             &State {
                 current_job_id: state.current_job_id,
-                current_template_id: state.current_template_id,
                 q: state.q.checked_sub(Uint64::new(1))?,
             },
         )?;

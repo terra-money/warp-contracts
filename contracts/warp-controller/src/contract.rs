@@ -23,7 +23,6 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let state = State {
         current_job_id: Uint64::one(),
-        current_template_id: Uint64::zero(),
         q: Uint64::zero(),
     };
 
@@ -38,7 +37,6 @@ pub fn instantiate(
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
         cancellation_fee_percentage: msg.cancellation_fee,
-        template_fee: msg.template_fee,
         t_max: msg.t_max,
         t_min: msg.t_min,
         a_max: msg.a_max,
@@ -115,6 +113,34 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let old_config: beta::Config = beta::CONFIG.load(deps.storage)?;
+
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            owner: old_config.owner,
+            fee_collector: old_config.fee_collector,
+            warp_account_code_id: old_config.warp_account_code_id,
+            minimum_reward: old_config.minimum_reward,
+            creation_fee_percentage: old_config.creation_fee_percentage,
+            cancellation_fee_percentage: old_config.cancellation_fee_percentage,
+            t_max: old_config.t_max,
+            t_min: old_config.t_min,
+            a_max: old_config.a_max,
+            a_min: old_config.a_min,
+            q_max: old_config.q_max,
+        },
+    )?;
+
+    let old_state: beta::State = beta::STATE.load(deps.storage)?;
+    STATE.save(
+        deps.storage,
+        &State {
+            current_job_id: old_state.current_job_id,
+            q: old_state.q,
+        },
+    )?;
+
     let pending_keys: Vec<u64> = beta::PENDING_JOBS()
         .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
         .filter_map(Result::ok)

@@ -22,7 +22,6 @@ pub struct Config {
     pub minimum_reward: Uint128,
     pub creation_fee_percentage: Uint64,
     pub cancellation_fee_percentage: Uint64,
-    pub template_fee: Uint128,
     pub t_max: Uint64,
     pub t_min: Uint64,
     pub a_max: Uint128,
@@ -33,7 +32,6 @@ pub struct Config {
 #[cw_serde]
 pub struct State {
     pub current_job_id: Uint64,
-    pub current_template_id: Uint64,
     pub q: Uint64,
 }
 
@@ -46,7 +44,6 @@ pub struct InstantiateMsg {
     pub minimum_reward: Uint128,
     pub creation_fee: Uint64,
     pub cancellation_fee: Uint64,
-    pub template_fee: Uint128,
     pub t_max: Uint64,
     pub t_min: Uint64,
     pub a_max: Uint128,
@@ -75,7 +72,6 @@ pub struct UpdateConfigMsg {
     pub minimum_reward: Option<Uint128>,
     pub creation_fee_percentage: Option<Uint64>,
     pub cancellation_fee_percentage: Option<Uint64>,
-    pub template_fee: Option<Uint128>,
     pub t_max: Option<Uint64>,
     pub t_min: Option<Uint64>,
     pub a_max: Option<Uint128>,

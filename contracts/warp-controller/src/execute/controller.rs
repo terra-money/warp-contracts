@@ -31,8 +31,6 @@ pub fn update_config(
         .cancellation_fee_percentage
         .unwrap_or(config.cancellation_fee_percentage);
 
-    config.template_fee = data.template_fee.unwrap_or(config.template_fee);
-
     config.a_max = data.a_max.unwrap_or(config.a_max);
     config.a_min = data.a_min.unwrap_or(config.a_min);
     config.t_max = data.t_max.unwrap_or(config.t_max);
@@ -73,7 +71,6 @@ pub fn update_config(
             "config_cancellation_fee_percentage",
             config.cancellation_fee_percentage,
         )
-        .add_attribute("config_template_fee", config.template_fee)
         .add_attribute("config_a_max", config.a_max)
         .add_attribute("config_a_min", config.a_min)
         .add_attribute("config_t_max", config.t_max)

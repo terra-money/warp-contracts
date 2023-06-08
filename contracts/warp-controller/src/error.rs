@@ -57,9 +57,6 @@ pub enum ContractError {
     #[error("Creation fee too high")]
     CreationFeeTooHigh {},
 
-    #[error("Template does not exist")]
-    TemplateDoesNotExist {},
-
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
     // Add any other custom errors you like here.
@@ -108,9 +105,6 @@ pub enum ContractError {
 
     #[error("Eviction period not elapsed.")]
     EvictionPeriodNotElapsed {},
-
-    #[error("Template fee not found.")]
-    TemplateFeeNotFound {},
 
     #[error("Variables in condition or msgs missing from variables vector.")]
     VariablesMissingFromVector {},

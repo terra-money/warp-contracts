@@ -4,7 +4,34 @@ pub mod beta {
     use controller::variable::{Method, QueryVariable, StaticVariable, UpdateFn, VariableKind};
     use cosmwasm_schema::cw_serde;
     use cosmwasm_std::{Addr, Uint128, Uint64};
-    use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex, UniqueIndex};
+    use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
+
+    #[cw_serde]
+    pub struct State {
+        pub current_job_id: Uint64,
+        pub current_template_id: Uint64,
+        pub q: Uint64,
+    }
+
+    pub const STATE: Item<State> = Item::new("state");
+
+    #[cw_serde]
+    pub struct Config {
+        pub owner: Addr,
+        pub fee_collector: Addr,
+        pub warp_account_code_id: Uint64,
+        pub minimum_reward: Uint128,
+        pub creation_fee_percentage: Uint64,
+        pub cancellation_fee_percentage: Uint64,
+        pub template_fee: Uint128,
+        pub t_max: Uint64,
+        pub t_min: Uint64,
+        pub a_max: Uint128,
+        pub a_min: Uint128,
+        pub q_max: Uint64,
+    }
+
+    pub const CONFIG: Item<Config> = Item::new("config");
 
     #[cw_serde]
     pub struct Job {

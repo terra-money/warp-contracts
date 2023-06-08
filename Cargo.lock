@@ -691,6 +691,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "resolver"
+version = "0.1.0"
+dependencies = [
+ "controller",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-asset",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw2 0.16.0",
+ "cw20",
+ "json-codec-wasm",
+ "schemars",
+ "serde",
+ "strum",
+ "strum_macros",
+ "thiserror",
+]
+
+[[package]]
 name = "rfc6979"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1003,6 +1024,29 @@ dependencies = [
  "cw2 0.16.0",
  "cw20",
  "json-codec-wasm",
+ "schemars",
+ "serde-json-wasm 0.4.1",
+ "thiserror",
+]
+
+[[package]]
+name = "warp-resolver"
+version = "0.1.0"
+dependencies = [
+ "account",
+ "base64",
+ "controller",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-asset",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw2 0.16.0",
+ "cw20",
+ "cw721",
+ "json-codec-wasm",
+ "resolver",
  "schemars",
  "serde-json-wasm 0.4.1",
  "thiserror",
