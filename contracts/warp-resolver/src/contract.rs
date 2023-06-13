@@ -18,15 +18,31 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            owner: deps.api.addr_validate(&msg.owner)?,
-            template_fee: Default::default(),
-            fee_collector: deps.api.addr_validate(&msg.owner)?,
-        },
-    )?;
-    Ok(Response::new()) //todo:
+    let config = Config {
+        owner: deps.api.addr_validate(&msg.owner)?,
+        template_fee: Default::default(),
+        fee_collector: deps.api.addr_validate(&msg.owner)?,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
+
+    let mut state = State {
+        current_template_id: Default::default(),
+    };
+
+    for template in msg.templates {
+        TEMPLATES.save(deps.storage, state.current_template_id.u64(), &template)?;
+        state.current_template_id = state.current_template_id.checked_add(Uint64::one())?;
+    }
+
+    STATE.save(deps.storage, &state)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "instantiate")
+        .add_attribute("owner", config.owner)
+        .add_attribute("template_fee", config.template_fee)
+        .add_attribute("fee_collector", config.fee_collector)
+        .add_attribute("current_template_id", state.current_template_id))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

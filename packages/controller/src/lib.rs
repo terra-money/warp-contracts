@@ -32,6 +32,7 @@ pub struct Config {
 #[cw_serde]
 pub struct State {
     pub current_job_id: Uint64,
+    pub current_template_id: Uint64,
     pub q: Uint64,
 }
 

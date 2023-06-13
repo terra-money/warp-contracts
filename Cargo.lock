@@ -1024,6 +1024,7 @@ dependencies = [
  "cw2 0.16.0",
  "cw20",
  "json-codec-wasm",
+ "resolver",
  "schemars",
  "serde-json-wasm 0.4.1",
  "thiserror",

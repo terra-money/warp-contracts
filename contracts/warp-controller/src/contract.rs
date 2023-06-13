@@ -23,6 +23,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let state = State {
         current_job_id: Uint64::one(),
+        current_template_id: Default::default(),
         q: Uint64::zero(),
     };
 
@@ -112,34 +113,38 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    let old_config: beta::Config = beta::CONFIG.load(deps.storage)?;
+pub fn migrate(
+    deps: DepsMut,
+    _env: Env,
+    _msg: MigrateMsg,
+) -> Result<Response, ContractError> {
+    // let old_config: beta::Config = beta::CONFIG.load(deps.storage)?;
+    //
+    // CONFIG.save(
+    //     deps.storage,
+    //     &Config {
+    //         owner: old_config.owner.clone(),
+    //         fee_collector: old_config.fee_collector.clone(),
+    //         warp_account_code_id: old_config.warp_account_code_id,
+    //         minimum_reward: old_config.minimum_reward,
+    //         creation_fee_percentage: old_config.creation_fee_percentage,
+    //         cancellation_fee_percentage: old_config.cancellation_fee_percentage,
+    //         t_max: old_config.t_max,
+    //         t_min: old_config.t_min,
+    //         a_max: old_config.a_max,
+    //         a_min: old_config.a_min,
+    //         q_max: old_config.q_max,
+    //     },
+    // )?;
 
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            owner: old_config.owner,
-            fee_collector: old_config.fee_collector,
-            warp_account_code_id: old_config.warp_account_code_id,
-            minimum_reward: old_config.minimum_reward,
-            creation_fee_percentage: old_config.creation_fee_percentage,
-            cancellation_fee_percentage: old_config.cancellation_fee_percentage,
-            t_max: old_config.t_max,
-            t_min: old_config.t_min,
-            a_max: old_config.a_max,
-            a_min: old_config.a_min,
-            q_max: old_config.q_max,
-        },
-    )?;
-
-    let old_state: beta::State = beta::STATE.load(deps.storage)?;
-    STATE.save(
-        deps.storage,
-        &State {
-            current_job_id: old_state.current_job_id,
-            q: old_state.q,
-        },
-    )?;
+    // let old_state: beta::State = beta::STATE.load(deps.storage)?;
+    // STATE.save(
+    //     deps.storage,
+    //     &State {
+    //         current_job_id: old_state.current_job_id,
+    //         q: old_state.q,
+    //     },
+    // )?;
 
     let pending_keys: Vec<u64> = beta::PENDING_JOBS()
         .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
@@ -192,7 +197,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
         PENDING_JOBS().save(deps.storage, pending_key, &new_job)?;
     }
 
-    let finished_keys: Vec<u64> = FINISHED_JOBS()
+    let finished_keys: Vec<u64> = beta::FINISHED_JOBS()
         .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
         .filter_map(Result::ok)
         .collect();

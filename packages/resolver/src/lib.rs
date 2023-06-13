@@ -19,6 +19,7 @@ pub struct State {
 pub struct InstantiateMsg {
     pub owner: String,
     pub fee_collector: String,
+    pub templates: Vec<Template>,
 }
 
 #[cw_serde]

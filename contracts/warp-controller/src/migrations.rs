@@ -6,14 +6,14 @@ pub mod beta {
     use cosmwasm_std::{Addr, Uint128, Uint64};
     use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
 
-    #[cw_serde]
-    pub struct State {
-        pub current_job_id: Uint64,
-        pub current_template_id: Uint64,
-        pub q: Uint64,
-    }
-
-    pub const STATE: Item<State> = Item::new("state");
+    // #[cw_serde]
+    // pub struct State {
+    //     pub current_job_id: Uint64,
+    //     pub current_template_id: Uint64,
+    //     pub q: Uint64,
+    // }
+    //
+    // pub const STATE: Item<State> = Item::new("state");
 
     #[cw_serde]
     pub struct Config {

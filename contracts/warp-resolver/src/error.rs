@@ -1,5 +1,5 @@
-use crate::ContractError::{DecodeError, DeserializationError, SerializationError};
-use cosmwasm_std::StdError;
+use crate::ContractError::{CustomError, DecodeError, DeserializationError, SerializationError};
+use cosmwasm_std::{OverflowError, StdError};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -72,5 +72,13 @@ impl From<json_codec_wasm::DecodeError> for ContractError {
 impl From<base64::DecodeError> for ContractError {
     fn from(_: base64::DecodeError) -> Self {
         DecodeError {}
+    }
+}
+
+impl From<OverflowError> for ContractError {
+    fn from(_: OverflowError) -> Self {
+        CustomError {
+            val: "ERROR: Overflow error".to_string(),
+        }
     }
 }
