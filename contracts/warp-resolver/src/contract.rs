@@ -6,9 +6,9 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::Bound;
 use resolver::{
-    Config, DeleteTemplateMsg, EditTemplateMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
-    QueryTemplateMsg, QueryTemplatesMsg, State, SubmitTemplateMsg, Template, TemplateResponse,
-    TemplatesResponse,
+    Config, ConfigResponse, DeleteTemplateMsg, EditTemplateMsg, ExecuteMsg, InstantiateMsg,
+    QueryConfigMsg, QueryMsg, QueryTemplateMsg, QueryTemplatesMsg, State, SubmitTemplateMsg,
+    Template, TemplateResponse, TemplatesResponse,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -64,6 +64,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryTemplate(data) => to_binary(&query_template(deps, env, data)?),
         QueryMsg::QueryTemplates(data) => to_binary(&query_templates(deps, env, data)?),
+        QueryMsg::QueryConfig(data) => to_binary(&query_config(deps, env, data)?),
     }
 }
 
@@ -288,4 +289,9 @@ pub fn query_templates(
             })
         }
     }
+}
+
+pub fn query_config(deps: Deps, _env: Env, _data: QueryConfigMsg) -> StdResult<ConfigResponse> {
+    let config = CONFIG.load(deps.storage)?;
+    Ok(ConfigResponse { config })
 }

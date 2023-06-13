@@ -4,7 +4,6 @@ use std::fs::create_dir_all;
 use controller::{
     account::{AccountResponse, AccountsResponse},
     job::{JobResponse, JobsResponse},
-    template::{Template, TemplateResponse, TemplatesResponse},
     QueryMsg, {Config, ConfigResponse, ExecuteMsg, InstantiateMsg, SimulateResponse},
 };
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
@@ -26,9 +25,6 @@ fn main() {
     export_schema(&schema_for!(AccountResponse), &out_dir);
     export_schema(&schema_for!(AccountsResponse), &out_dir);
     export_schema(&schema_for!(SimulateResponse), &out_dir);
-    export_schema(&schema_for!(TemplateResponse), &out_dir);
-    export_schema(&schema_for!(TemplatesResponse), &out_dir);
-    export_schema(&schema_for!(Template), &out_dir);
     export_schema(&schema_for!(CosmosMsg), &out_dir);
     export_schema(&schema_for!(QueryRequest<String>), &out_dir);
 }
