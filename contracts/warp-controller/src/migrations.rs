@@ -4,7 +4,7 @@ pub mod beta {
     use controller::variable::{Method, QueryVariable, StaticVariable, UpdateFn, VariableKind};
     use cosmwasm_schema::cw_serde;
     use cosmwasm_std::{Addr, Uint128, Uint64};
-    use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
+    use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex, UniqueIndex};
 
     // #[cw_serde]
     // pub struct State {
@@ -30,8 +30,6 @@ pub mod beta {
         pub a_min: Uint128,
         pub q_max: Uint64,
     }
-
-    pub const CONFIG: Item<Config> = Item::new("config");
 
     #[cw_serde]
     pub struct Job {
