@@ -36,6 +36,9 @@ pub enum QueryMsg {
     QueryTemplate(QueryTemplateMsg),
     #[returns(TemplatesResponse)]
     QueryTemplates(QueryTemplatesMsg),
+
+    #[returns(ConfigResponse)]
+    QueryConfig(QueryConfigMsg),
 }
 
 #[cw_serde]
@@ -101,4 +104,13 @@ pub struct TemplateResponse {
 #[cw_serde]
 pub struct TemplatesResponse {
     pub templates: Vec<Template>,
+}
+
+#[cw_serde]
+pub struct QueryConfigMsg {}
+
+//responses
+#[cw_serde]
+pub struct ConfigResponse {
+    pub config: Config,
 }
