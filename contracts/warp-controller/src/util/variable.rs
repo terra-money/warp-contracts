@@ -112,6 +112,12 @@ pub fn hydrate_vars(
                                     .to_string(),
                             )
                         }
+                        VariableKind::Json => {
+                            v.value = Some(
+                                resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
+                                    .to_string(),
+                            )
+                        }
                     }
                 }
                 if v.value.is_none() {
@@ -133,62 +139,9 @@ pub fn hydrate_msgs(
     for msg in msgs {
         let mut replaced_msg = msg.clone();
         for var in &vars {
-            let (name, replacement) = match var {
-                Variable::Static(v) => (
-                    v.name.clone(),
-                    match v.kind {
-                        VariableKind::String => format!("\"{}\"", v.value),
-                        VariableKind::Uint => format!("\"{}\"", v.value),
-                        VariableKind::Int => v.value.clone(),
-                        VariableKind::Decimal => format!("\"{}\"", v.value),
-                        VariableKind::Timestamp => v.value.clone(),
-                        VariableKind::Bool => v.value.clone(),
-                        VariableKind::Amount => format!("\"{}\"", v.value),
-                        VariableKind::Asset => format!("\"{}\"", v.value),
-                    },
-                ),
-                Variable::External(v) => match v.value.clone() {
-                    None => {
-                        return Err(ContractError::HydrationError {
-                            msg: "External msg value is none.".to_string(),
-                        });
-                    }
-                    Some(val) => (
-                        v.name.clone(),
-                        match v.kind {
-                            VariableKind::String => format!("\"{}\"", val),
-                            VariableKind::Uint => format!("\"{}\"", val),
-                            VariableKind::Int => val.clone(),
-                            VariableKind::Decimal => format!("\"{}\"", val),
-                            VariableKind::Timestamp => val.clone(),
-                            VariableKind::Bool => val.clone(),
-                            VariableKind::Amount => format!("\"{}\"", val),
-                            VariableKind::Asset => format!("\"{}\"", val),
-                        },
-                    ),
-                },
-                Variable::Query(v) => match v.value.clone() {
-                    None => {
-                        return Err(ContractError::HydrationError {
-                            msg: "Query msg value is none.".to_string(),
-                        });
-                    }
-                    Some(val) => (
-                        v.name.clone(),
-                        match v.kind {
-                            VariableKind::String => format!("\"{}\"", val),
-                            VariableKind::Uint => format!("\"{}\"", val),
-                            VariableKind::Int => val.clone(),
-                            VariableKind::Decimal => format!("\"{}\"", val),
-                            VariableKind::Timestamp => val.clone(),
-                            VariableKind::Bool => val.clone(),
-                            VariableKind::Amount => format!("\"{}\"", val),
-                            VariableKind::Asset => format!("\"{}\"", val),
-                        },
-                    ),
-                },
-            };
-            replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
+            let (name, replacement) = get_replacement_in_struct(var)?;
+            replaced_msg =
+                replaced_msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
             if replacement.contains("$warp.variable") {
                 return Err(ContractError::HydrationError {
                     msg: "Attempt to inject warp variable.".to_string(),
@@ -199,6 +152,93 @@ pub fn hydrate_msgs(
     }
 
     Ok(parsed_msgs)
+}
+
+fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), ContractError> {
+    let (name, replacement) = match var {
+        Variable::Static(v) => (
+            v.name.clone(),
+            match v.kind {
+                VariableKind::String => format!("\"{}\"", v.value),
+                VariableKind::Uint => format!("\"{}\"", v.value),
+                VariableKind::Int => v.value.clone(),
+                VariableKind::Decimal => format!("\"{}\"", v.value),
+                VariableKind::Timestamp => v.value.clone(),
+                VariableKind::Bool => v.value.clone(),
+                VariableKind::Amount => format!("\"{}\"", v.value),
+                VariableKind::Asset => format!("\"{}\"", v.value),
+                VariableKind::Json => v.value.clone(),
+            },
+        ),
+        Variable::External(v) => match v.value.clone() {
+            None => {
+                return Err(ContractError::HydrationError {
+                    msg: "External msg value is none.".to_string(),
+                });
+            }
+            Some(val) => (
+                v.name.clone(),
+                match v.kind {
+                    VariableKind::String => format!("\"{}\"", val),
+                    VariableKind::Uint => format!("\"{}\"", val),
+                    VariableKind::Int => val,
+                    VariableKind::Decimal => format!("\"{}\"", val),
+                    VariableKind::Timestamp => val,
+                    VariableKind::Bool => val,
+                    VariableKind::Amount => format!("\"{}\"", val),
+                    VariableKind::Asset => format!("\"{}\"", val),
+                    VariableKind::Json => val,
+                },
+            ),
+        },
+        Variable::Query(v) => match v.value.clone() {
+            None => {
+                return Err(ContractError::HydrationError {
+                    msg: "Query msg value is none.".to_string(),
+                });
+            }
+            Some(val) => (
+                v.name.clone(),
+                match v.kind {
+                    VariableKind::String => format!("\"{}\"", val),
+                    VariableKind::Uint => format!("\"{}\"", val),
+                    VariableKind::Int => val,
+                    VariableKind::Decimal => format!("\"{}\"", val),
+                    VariableKind::Timestamp => val,
+                    VariableKind::Bool => val,
+                    VariableKind::Amount => format!("\"{}\"", val),
+                    VariableKind::Asset => format!("\"{}\"", val),
+                    VariableKind::Json => val,
+                },
+            ),
+        },
+    };
+
+    Ok((name, replacement))
+}
+
+fn get_replacement_in_string(var: &Variable) -> Result<(String, String), ContractError> {
+    let (name, replacement) = match var {
+        Variable::Static(v) => (v.name.clone(), v.value.clone()),
+        Variable::External(v) => match v.value.clone() {
+            None => {
+                return Err(ContractError::HydrationError {
+                    msg: "External msg value is none.".to_string(),
+                });
+            }
+            Some(val) => (v.name.clone(), val),
+        },
+        Variable::Query(v) => match v.value.clone() {
+            None => {
+                return Err(ContractError::HydrationError {
+                    msg: "Query msg value is none.".to_string(),
+                });
+            }
+            Some(val) => (v.name.clone(), val),
+        },
+    };
+
+    Ok((name, replacement))
 }
 
 fn replace_references(mut expr: QueryExpr, vars: &[Variable]) -> Result<QueryExpr, ContractError> {
@@ -226,7 +266,7 @@ fn replace_in_binary(binary_str: &Binary, vars: &[Variable]) -> Result<Binary, C
         msg: "Failed to convert from UTF8.".to_string(),
     })?;
 
-    let updated_string = replace_in_string(decoded_string, vars)?;
+    let updated_string = replace_in_struct_string(decoded_string, vars)?;
 
     Ok(Binary::from(updated_string.as_bytes()))
 }
@@ -239,37 +279,33 @@ fn replace_in_struct<T: Serialize + DeserializeOwned>(
         serde_json_wasm::to_string(&struct_val).map_err(|_| ContractError::HydrationError {
             msg: "Failed to convert struct to JSON.".to_string(),
         })?;
-    let updated_struct_as_json = replace_in_string(struct_as_json, vars)?;
+    let updated_struct_as_json = replace_in_struct_string(struct_as_json, vars)?;
     serde_json_wasm::from_str(&updated_struct_as_json).map_err(|_| ContractError::HydrationError {
         msg: "Failed to convert JSON back to struct.".to_string(),
     })
 }
 
-fn replace_in_string(value: String, vars: &[Variable]) -> Result<String, ContractError> {
-    let mut value = value;
+fn replace_in_struct_string(value: String, vars: &[Variable]) -> Result<String, ContractError> {
+    let mut replaced_value = value;
 
     for var in vars {
-        let var_name = match var {
-            Variable::Static(v) => &v.name,
-            Variable::External(v) => &v.name,
-            Variable::Query(v) => &v.name,
-        };
-
-        let var_value = match var {
-            Variable::Static(v) => &v.value,
-            Variable::External(v) => v.value.as_ref().ok_or(ContractError::HydrationError {
-                msg: "External variable value is none.".to_string(),
-            })?,
-            Variable::Query(v) => v.value.as_ref().ok_or(ContractError::HydrationError {
-                msg: "Query variable value is none.".to_string(),
-            })?,
-        };
-
-        let reference = format!("$warp.variable.{}", var_name);
-        value = value.replace(&reference, var_value);
+        let (name, replacement) = get_replacement_in_struct(var)?;
+        replaced_value =
+            replaced_value.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
     }
 
-    Ok(value)
+    Ok(replaced_value)
+}
+
+fn replace_in_string(value: String, vars: &[Variable]) -> Result<String, ContractError> {
+    let mut replaced_value = value;
+
+    for var in vars {
+        let (name, replacement) = get_replacement_in_string(var)?;
+        replaced_value = replaced_value.replace(&format!("$warp.variable.{}", name), &replacement);
+    }
+
+    Ok(replaced_value)
 }
 
 pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, ContractError> {
@@ -289,6 +325,7 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
+                        VariableKind::Json => "true",
                     },
                 ),
                 Variable::External(v) => (
@@ -302,6 +339,7 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
+                        VariableKind::Json => "true",
                     },
                 ),
                 Variable::Query(v) => (
@@ -315,6 +353,7 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
+                        VariableKind::Json => "true",
                     },
                 ),
             };
@@ -326,7 +365,7 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
             }
         }
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
-    }
+    } //todo: check if msgs valid
 
     Ok(true)
 }
@@ -957,6 +996,7 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
                         return false;
                     }
                 }
+                VariableKind::Json => {}
             },
             Variable::External(v) => {
                 if v.reinitialize && v.update_fn.is_some() {
@@ -1001,6 +1041,7 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
                                 return false;
                             }
                         }
+                        VariableKind::Json => {}
                     }
                 }
             }
@@ -1046,6 +1087,7 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
                                 return false;
                             }
                         }
+                        VariableKind::Json => {}
                     }
                 }
             }
