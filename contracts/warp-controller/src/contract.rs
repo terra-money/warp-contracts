@@ -1,12 +1,10 @@
 use crate::error::map_contract_error;
-use crate::migrations::beta;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::util::variable::apply_var_fn;
 use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
 use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use controller::job::{Job, JobStatus};
-use controller::variable::{ExternalExpr, ExternalVariable, Variable};
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 use cosmwasm_std::{
     entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
@@ -113,137 +111,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    // let old_config: beta::Config = beta::CONFIG.load(deps.storage)?;
-    //
-    // CONFIG.save(
-    //     deps.storage,
-    //     &Config {
-    //         owner: old_config.owner.clone(),
-    //         fee_collector: old_config.fee_collector.clone(),
-    //         warp_account_code_id: old_config.warp_account_code_id,
-    //         minimum_reward: old_config.minimum_reward,
-    //         creation_fee_percentage: old_config.creation_fee_percentage,
-    //         cancellation_fee_percentage: old_config.cancellation_fee_percentage,
-    //         t_max: old_config.t_max,
-    //         t_min: old_config.t_min,
-    //         a_max: old_config.a_max,
-    //         a_min: old_config.a_min,
-    //         q_max: old_config.q_max,
-    //     },
-    // )?;
-
-    // let old_state: beta::State = beta::STATE.load(deps.storage)?;
-    // STATE.save(
-    //     deps.storage,
-    //     &State {
-    //         current_job_id: old_state.current_job_id,
-    //         q: old_state.q,
-    //     },
-    // )?;
-
-    let pending_keys: Vec<u64> = beta::PENDING_JOBS()
-        .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-        .filter_map(Result::ok)
-        .collect();
-
-    for pending_key in pending_keys {
-        let job = beta::PENDING_JOBS().load(deps.storage, pending_key)?;
-        let new_job = Job {
-            id: job.id,
-            owner: job.owner,
-            last_update_time: job.last_update_time,
-            name: job.name,
-            description: String::default(),
-            labels: Vec::default(),
-            status: job.status,
-            condition: job.condition,
-            msgs: job.msgs,
-            vars: {
-                let mut var_vec = vec![];
-                for var in job.vars {
-                    match var {
-                        beta::Variable::Static(v) => var_vec.push(Variable::Static(v)),
-                        beta::Variable::External(v) => {
-                            var_vec.push(Variable::External(ExternalVariable {
-                                kind: v.kind,
-                                name: v.name,
-                                init_fn: ExternalExpr {
-                                    url: v.init_fn.url,
-                                    method: v.init_fn.method,
-                                    headers: Option::default(), //insert default value into field
-                                    body: v.init_fn.body,
-                                    selector: v.init_fn.selector,
-                                },
-                                reinitialize: v.reinitialize,
-                                value: v.value,
-                                update_fn: v.update_fn,
-                            }))
-                        }
-                        beta::Variable::Query(v) => var_vec.push(Variable::Query(v)),
-                    }
-                }
-                var_vec
-            },
-            recurring: job.recurring,
-            requeue_on_evict: job.requeue_on_evict,
-            reward: job.reward,
-            assets_to_withdraw: Vec::default(),
-        };
-        PENDING_JOBS().save(deps.storage, pending_key, &new_job)?;
-    }
-
-    let finished_keys: Vec<u64> = beta::FINISHED_JOBS()
-        .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-        .filter_map(Result::ok)
-        .collect();
-
-    for finished_key in finished_keys {
-        let job = beta::FINISHED_JOBS().load(deps.storage, finished_key)?;
-        let new_job = Job {
-            id: job.id,
-            owner: job.owner,
-            last_update_time: job.last_update_time,
-            name: job.name,
-            description: String::default(),
-            labels: Vec::default(),
-            status: job.status,
-            condition: job.condition,
-            msgs: job.msgs,
-            vars: {
-                let mut var_vec = vec![];
-                for var in job.vars {
-                    match var {
-                        beta::Variable::Static(v) => var_vec.push(Variable::Static(v)),
-                        beta::Variable::External(v) => {
-                            var_vec.push(Variable::External(ExternalVariable {
-                                kind: v.kind,
-                                name: v.name,
-                                init_fn: ExternalExpr {
-                                    url: v.init_fn.url,
-                                    method: v.init_fn.method,
-                                    headers: Option::default(), //insert default value into field
-                                    body: v.init_fn.body,
-                                    selector: v.init_fn.selector,
-                                },
-                                reinitialize: v.reinitialize,
-                                value: v.value,
-                                update_fn: v.update_fn,
-                            }))
-                        }
-                        beta::Variable::Query(v) => var_vec.push(Variable::Query(v)),
-                    }
-                }
-                var_vec
-            },
-            recurring: job.recurring,
-            requeue_on_evict: job.requeue_on_evict,
-            reward: job.reward,
-            assets_to_withdraw: Vec::default(),
-        };
-        FINISHED_JOBS().save(deps.storage, finished_key, &new_job)?;
-    }
-
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::new())
 }
 

@@ -9,14 +9,14 @@
   },
   "testnet": {
     "warp-account": {
-      "codeId": "7647"
+      "codeId": "9262"
     },
     "warp-controller": {
-      "codeId": "9325",
-      "address": "terra1f7lz4gp04lqku97exrmpcvrqr5xvz0mc94lfy7a67clg6sur9tcq80pgk8"
+      "codeId": "9264",
+      "address": "terra1fqcfh8vpqsl7l5yjjtq5wwu6sv989txncq5fa756tv7lywqexraq5vnjvt"
     },
     "warp-resolver": {
-      "codeId": "9236",
+      "codeId": "9263",
       "address": "terra1lxfx6n792aw3hg47tchmyuhv5t30f334gus67pc250qx5zljadws65elnf"
     }
   },
