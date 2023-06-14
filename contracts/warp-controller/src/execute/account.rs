@@ -8,7 +8,7 @@ use cosmwasm_std::{
 
 pub fn create_account(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     data: CreateAccountMsg,
 ) -> Result<Response, ContractError> {
@@ -34,7 +34,7 @@ pub fn create_account(
     let submsg = SubMsg {
         id: 0,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            admin: None,
+            admin: Some(env.contract.address.to_string()),
             code_id: config.warp_account_code_id.u64(),
             msg: to_binary(&account::InstantiateMsg {
                 owner: info.sender.to_string(),
