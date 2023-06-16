@@ -1,9 +1,9 @@
 use crate::execute::controller::update_config;
 use crate::tests::helpers::instantiate_warp;
 use crate::ContractError;
+use controller::UpdateConfigMsg;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coin, Response, Uint128, Uint64};
-use warp_protocol::controller::UpdateConfigMsg;
 
 #[test]
 fn test_modify_config_success() {
@@ -26,7 +26,6 @@ fn test_modify_config_success() {
         Default::default(),
         Default::default(),
         Default::default(),
-        Default::default(),
     )
     .unwrap();
 
@@ -36,7 +35,6 @@ fn test_modify_config_success() {
         minimum_reward: Some(Uint128::new(7)),
         creation_fee_percentage: Some(Uint64::new(2)),
         cancellation_fee_percentage: Some(Uint64::new(3)),
-        template_fee: Some(Uint128::new(4)),
         t_max: Some(Uint64::new(6)),
         t_min: Some(Uint64::new(5)),
         a_max: Some(Uint128::new(8)),
@@ -55,7 +53,6 @@ fn test_modify_config_success() {
             .add_attribute("config_minimum_reward", Uint128::new(7))
             .add_attribute("config_creation_fee_percentage", Uint64::new(2),)
             .add_attribute("config_cancellation_fee_percentage", Uint64::new(3))
-            .add_attribute("config_template_fee", Uint128::new(4))
             .add_attribute("config_a_max", Uint128::new(8))
             .add_attribute("config_a_min", Uint128::new(7))
             .add_attribute("config_t_max", Uint64::new(6))
@@ -85,7 +82,6 @@ fn test_modify_config_unauthorized() {
         Default::default(),
         Default::default(),
         Default::default(),
-        Default::default(),
     )
     .unwrap();
 
@@ -95,7 +91,6 @@ fn test_modify_config_unauthorized() {
         minimum_reward: Some(Uint128::new(1)),
         creation_fee_percentage: Some(Uint64::new(2)),
         cancellation_fee_percentage: Some(Uint64::new(3)),
-        template_fee: Some(Uint128::new(4)),
         t_max: Some(Uint64::new(5)),
         t_min: Some(Uint64::new(6)),
         a_max: Some(Uint128::new(7)),
@@ -132,7 +127,6 @@ fn test_modify_config_bad_percentages() {
         Default::default(),
         Default::default(),
         Default::default(),
-        Default::default(),
     )
     .unwrap();
 
@@ -142,7 +136,6 @@ fn test_modify_config_bad_percentages() {
         minimum_reward: Some(Uint128::new(7)),
         creation_fee_percentage: Some(Uint64::new(101)),
         cancellation_fee_percentage: Some(Uint64::new(3)),
-        template_fee: Some(Uint128::new(4)),
         t_max: Some(Uint64::new(6)),
         t_min: Some(Uint64::new(5)),
         a_max: Some(Uint128::new(8)),
@@ -161,7 +154,6 @@ fn test_modify_config_bad_percentages() {
         minimum_reward: Some(Uint128::new(100)),
         creation_fee_percentage: Some(Uint64::new(2)),
         cancellation_fee_percentage: Some(Uint64::new(101)),
-        template_fee: Some(Uint128::new(4)),
         t_max: Some(Uint64::new(6)),
         t_min: Some(Uint64::new(5)),
         a_max: Some(Uint128::new(8)),

@@ -9,7 +9,7 @@ use cosmwasm_std::{
 fn test_create_account_success() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad", &vec![coin(100, "uluna")]);
+    let info = mock_info("vlad", &vec![]);
 
     let _instantiate_res = instantiate_warp(
         deps.as_mut(),
@@ -21,7 +21,6 @@ fn test_create_account_success() {
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
-        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),
@@ -40,10 +39,11 @@ fn test_create_account_success() {
             .add_submessage(SubMsg {
                 id: 0,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    admin: None,
+                    admin: Some("cosmos2contract".to_string()),
                     code_id: 0,
-                    msg: to_binary(&warp_protocol::account::InstantiateMsg {
+                    msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
+                        funds: None,
                     })
                     .unwrap(),
                     funds: vec![],
@@ -63,6 +63,8 @@ fn test_create_account_success() {
                 "account_address",
                 "terra1vladvladvladvladvladvladvladvladvl2000"
             )
+            .add_attribute("funds", "[]")
+            .add_attribute("cw_funds", "[]")
     )
 }
 
@@ -70,7 +72,7 @@ fn test_create_account_success() {
 fn test_create_account_exists() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad", &vec![coin(100, "uluna")]);
+    let info = mock_info("vlad", &vec![]);
 
     let _instantiate_res = instantiate_warp(
         deps.as_mut(),
@@ -82,7 +84,6 @@ fn test_create_account_exists() {
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
-        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),
@@ -103,10 +104,11 @@ fn test_create_account_exists() {
             .add_submessage(SubMsg {
                 id: 0,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    admin: None,
+                    admin: Some("cosmos2contract".to_string()),
                     code_id: 0,
-                    msg: to_binary(&warp_protocol::account::InstantiateMsg {
+                    msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
+                        funds: None,
                     })
                     .unwrap(),
                     funds: vec![],
@@ -139,7 +141,6 @@ fn test_create_account_by_account() {
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
-        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),

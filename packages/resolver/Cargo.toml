@@ -1,0 +1,28 @@
+[package]
+name = "resolver"
+version = "0.1.0"
+authors = ["Terra Money <core@terra.money>"]
+edition = "2021"
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+
+[dependencies]
+cosmwasm-std = "1.1"
+cosmwasm-storage = "1.1"
+cosmwasm-schema = "1.1"
+cw-asset = "2.2"
+cw20 = "0.16"
+cw-storage-plus = "0.16"
+cw2 = "0.16"
+schemars = "0.8"
+serde = { version = "1", default-features = false, features = ["derive"] }
+json-codec-wasm = "0.1.0"
+strum = "0.24"
+strum_macros = "0.24"
+thiserror = { version = "1" }
+controller = {path = "../controller"}
+
+[dev-dependencies]
+cw-multi-test = "0.16"

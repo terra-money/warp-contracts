@@ -6,14 +6,15 @@ use crate::util::variable::{
 };
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
+use account::GenericMsg;
+use controller::job::{
+    CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
+};
+use controller::State;
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
     MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
 };
-use warp_protocol::controller::job::{
-    CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
-};
-use warp_protocol::controller::State;
 
 pub fn create_job(
     deps: DepsMut,
@@ -93,6 +94,9 @@ pub fn create_job(
             vars: data.vars,
             msgs: data.msgs,
             reward: data.reward,
+            description: data.description,
+            labels: data.labels,
+            assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
@@ -113,22 +117,22 @@ pub fn create_job(
         //send reward to controller
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&warp_protocol::account::ExecuteMsg {
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
                     amount: vec![Coin::new((data.reward).u128(), "uluna")],
                 })],
-            })?,
+            }))?,
             funds: vec![],
         },
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&warp_protocol::account::ExecuteMsg {
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
                     amount: vec![Coin::new((fee).u128(), "uluna")],
                 })],
-            })?,
+            }))?,
             funds: vec![],
         },
     ];
@@ -181,6 +185,9 @@ pub fn delete_job(
             recurring: job.recurring,
             requeue_on_evict: job.requeue_on_evict,
             reward: job.reward,
+            description: job.description,
+            labels: job.labels,
+            assets_to_withdraw: job.assets_to_withdraw,
         }),
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
     })?;
@@ -246,12 +253,14 @@ pub fn update_job(
         Some(job) => Ok(Job {
             id: job.id,
             owner: job.owner,
-            last_update_time: if !added_reward.is_zero() {
+            last_update_time: if added_reward > config.minimum_reward {
                 Uint64::new(env.block.time.seconds())
             } else {
                 job.last_update_time
             },
             name: data.name.unwrap_or(job.name),
+            description: data.description.unwrap_or(job.description),
+            labels: data.labels.unwrap_or(job.labels),
             status: job.status,
             condition: job.condition,
             msgs: job.msgs,
@@ -259,6 +268,7 @@ pub fn update_job(
             recurring: job.recurring,
             requeue_on_evict: job.requeue_on_evict,
             reward: job.reward + added_reward,
+            assets_to_withdraw: job.assets_to_withdraw,
         }),
     })?;
 
@@ -277,12 +287,12 @@ pub fn update_job(
             //send reward to controller
             WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: env.contract.address.to_string(),
                         amount: vec![Coin::new((added_reward).u128(), "uluna")],
                     })],
-                })?,
+                }))?,
                 funds: vec![],
             },
         );
@@ -290,12 +300,12 @@ pub fn update_job(
             //send reward to controller
             WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: config.fee_collector.to_string(),
                         amount: vec![Coin::new((fee).u128(), "uluna")],
                     })],
-                })?,
+                }))?,
                 funds: vec![],
             },
         );
@@ -360,6 +370,8 @@ pub fn execute_job(
                 owner: job.owner,
                 last_update_time: job.last_update_time,
                 name: job.name,
+                description: job.description,
+                labels: job.labels,
                 status: JobStatus::Failed,
                 condition: job.condition,
                 msgs: job.msgs,
@@ -367,6 +379,7 @@ pub fn execute_job(
                 recurring: job.recurring,
                 requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
+                assets_to_withdraw: job.assets_to_withdraw,
             },
         )?;
         PENDING_JOBS().remove(deps.storage, data.id.u64())?;
@@ -388,9 +401,9 @@ pub fn execute_job(
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: hydrate_msgs(job.msgs.clone(), vars)?,
-                })?,
+                }))?,
                 funds: vec![],
             }),
             gas_limit: None,
@@ -462,12 +475,12 @@ pub fn evict_job(
             //send reward to evictor
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&warp_protocol::account::ExecuteMsg {
+                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
                         amount: vec![Coin::new(a.u128(), "uluna")],
                     })],
-                })?,
+                }))?,
                 funds: vec![],
             }),
         );
@@ -479,6 +492,8 @@ pub fn evict_job(
                     owner: job.owner,
                     last_update_time: Uint64::new(env.block.time.seconds()),
                     name: job.name,
+                    description: job.description,
+                    labels: job.labels,
                     status: JobStatus::Pending,
                     condition: job.condition,
                     msgs: job.msgs,
@@ -486,6 +501,7 @@ pub fn evict_job(
                     recurring: job.recurring,
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
+                    assets_to_withdraw: job.assets_to_withdraw,
                 }),
             })?
             .status;
@@ -498,6 +514,8 @@ pub fn evict_job(
                     owner: job.owner,
                     last_update_time: Uint64::new(env.block.time.seconds()),
                     name: job.name,
+                    description: job.description,
+                    labels: job.labels,
                     status: JobStatus::Evicted,
                     condition: job.condition,
                     msgs: job.msgs,
@@ -505,6 +523,7 @@ pub fn evict_job(
                     recurring: job.recurring,
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
+                    assets_to_withdraw: job.assets_to_withdraw,
                 }),
                 Some(_) => Err(ContractError::JobAlreadyExists {}),
             })?

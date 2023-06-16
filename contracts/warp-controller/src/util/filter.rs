@@ -1,5 +1,5 @@
+use controller::job::{Job, JobStatus};
 use cosmwasm_std::{Addr, Deps, Env};
-use warp_protocol::controller::job::{Job, JobStatus};
 
 pub fn resolve_filters(
     _deps: Deps,

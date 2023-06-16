@@ -1,13 +1,14 @@
 use crate::contract::{instantiate, reply};
 use crate::execute::account::create_account;
 use crate::ContractError;
+use controller::account::CreateAccountMsg;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
     Attribute, DepsMut, Env, Event, MessageInfo, OwnedDeps, Reply, Response, SubMsgResponse,
     SubMsgResult, Uint128, Uint64,
 };
 
-use warp_protocol::controller::InstantiateMsg;
+use controller::InstantiateMsg;
 
 pub fn instantiate_warp(
     deps: DepsMut,
@@ -19,7 +20,6 @@ pub fn instantiate_warp(
     minimum_reward: Uint128,
     creation_fee: Uint64,
     cancellation_fee: Uint64,
-    template_fee: Uint128,
     t_max: Uint64,
     t_min: Uint64,
     a_max: Uint128,
@@ -33,7 +33,6 @@ pub fn instantiate_warp(
         minimum_reward,
         creation_fee,
         cancellation_fee,
-        template_fee,
         t_max,
         t_min,
         a_max,
@@ -53,7 +52,12 @@ pub fn create_warp_account(
     Result<Response, ContractError>,
     Result<Response, ContractError>,
 ) {
-    let create_account_res = create_account(deps.as_mut(), env.clone(), info.clone());
+    let create_account_res = create_account(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        CreateAccountMsg { funds: None },
+    );
 
     let reply_msg = Reply {
         id: 0,
@@ -74,6 +78,7 @@ pub fn create_warp_account(
                         account_id + Uint64::new(2000)
                     ),
                 ),
+                Attribute::new("funds", "[]"),
             ])],
             data: None,
         }),

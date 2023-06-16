@@ -1,6 +1,11 @@
 use crate::util::path::resolve_path;
 use crate::util::variable::get_var;
 use crate::ContractError;
+use controller::condition::{
+    BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
+    NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
+};
+use controller::variable::{QueryExpr, Variable};
 use cosmwasm_std::{
     to_vec, ContractResult, Decimal256, Deps, Env, StdError, SystemResult, Uint256,
 };
@@ -8,11 +13,6 @@ use cw_storage_plus::KeyDeserialize;
 use json_codec_wasm::ast::Ref;
 use json_codec_wasm::Decoder;
 use std::str::FromStr;
-use warp_protocol::controller::condition::{
-    BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
-    NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
-};
-use warp_protocol::controller::variable::{QueryExpr, Variable};
 
 pub fn resolve_cond(
     deps: Deps,

@@ -1,9 +1,9 @@
+use controller::account::{Account, AccountResponse, QueryAccountMsg};
 use cosmwasm_std::{
     coin,
     testing::{mock_dependencies, mock_env, mock_info},
     Api, StdError, Uint128, Uint64,
 };
-use warp_protocol::controller::account::{Account, AccountResponse, QueryAccountMsg};
 
 use crate::{
     query::account::query_account,
@@ -26,7 +26,6 @@ fn test_query_account_successful() {
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
-        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),
@@ -96,7 +95,6 @@ fn test_query_account_does_not_exist() {
         Default::default(),
         Default::default(),
         Default::default(),
-        Default::default(),
     )
     .unwrap();
 
@@ -111,7 +109,7 @@ fn test_query_account_does_not_exist() {
     assert_eq!(
         query_account_res.unwrap_err(),
         StdError::NotFound {
-            kind: "warp_protocol::controller::account::Account".to_string()
+            kind: "controller::account::Account".to_string()
         }
     )
 }

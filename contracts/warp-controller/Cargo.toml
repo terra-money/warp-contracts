@@ -39,7 +39,9 @@ cw-storage-plus = "0.16"
 cw-utils = "0.16"
 cw2 = "0.16"
 cw20 = "0.16"
-warp-protocol = { path = "../../packages/warp-protocol", default-features = false, version = "*" }
+account = { path = "../../packages/account", default-features = false, version = "*" }
+controller = { path = "../../packages/controller", default-features = false, version = "*" }
+resolver = { path = "../../packages/resolver", default-features = false, version = "*" }
 schemars = "0.8"
 thiserror = "1"
 serde-json-wasm = "0.4.1"
