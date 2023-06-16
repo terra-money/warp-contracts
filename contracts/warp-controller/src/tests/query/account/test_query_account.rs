@@ -31,7 +31,6 @@ fn test_query_account_successful() {
         Default::default(),
         Default::default(),
         Default::default(),
-        Default::default(),
     )
     .unwrap();
 
@@ -91,7 +90,6 @@ fn test_query_account_does_not_exist() {
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
-        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),

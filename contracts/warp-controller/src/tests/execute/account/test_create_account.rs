@@ -26,7 +26,6 @@ fn test_create_account_success() {
         Default::default(),
         Default::default(),
         Default::default(),
-        Default::default(),
     )
     .unwrap();
 
@@ -40,7 +39,7 @@ fn test_create_account_success() {
             .add_submessage(SubMsg {
                 id: 0,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    admin: None,
+                    admin: Some("cosmos2contract".to_string()),
                     code_id: 0,
                     msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
@@ -90,7 +89,6 @@ fn test_create_account_exists() {
         Default::default(),
         Default::default(),
         Default::default(),
-        Default::default(),
     )
     .unwrap();
 
@@ -106,7 +104,7 @@ fn test_create_account_exists() {
             .add_submessage(SubMsg {
                 id: 0,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    admin: None,
+                    admin: Some("cosmos2contract".to_string()),
                     code_id: 0,
                     msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
@@ -143,7 +141,6 @@ fn test_create_account_by_account() {
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
-        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),
