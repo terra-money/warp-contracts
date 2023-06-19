@@ -8,7 +8,7 @@ use cw_storage_plus::Bound;
 use resolver::{
     Config, ConfigResponse, DeleteTemplateMsg, EditTemplateMsg, ExecuteMsg, InstantiateMsg,
     QueryConfigMsg, QueryMsg, QueryTemplateMsg, QueryTemplatesMsg, State, SubmitTemplateMsg,
-    Template, TemplateResponse, TemplatesResponse,
+    Template, TemplateResponse, TemplatesResponse, UpdateConfigMsg,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -56,6 +56,8 @@ pub fn execute(
         ExecuteMsg::SubmitTemplate(data) => submit_template(deps, env, info, data),
         ExecuteMsg::EditTemplate(data) => edit_template(deps, env, info, data),
         ExecuteMsg::DeleteTemplate(data) => delete_template(deps, env, info, data),
+
+        ExecuteMsg::UpdateConfig(data) => update_config(deps, env, info, data),
     }
 }
 
@@ -212,6 +214,37 @@ pub fn delete_template(
     Ok(Response::new()
         .add_attribute("action", "delete_template")
         .add_attribute("id", data.id))
+}
+
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    data: UpdateConfigMsg,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.owner = match data.owner {
+        None => config.owner,
+        Some(data) => deps.api.addr_validate(data.as_str())?,
+    };
+
+    config.fee_collector = match data.fee_collector {
+        None => config.fee_collector,
+        Some(data) => deps.api.addr_validate(data.as_str())?,
+    };
+    config.template_fee = data.template_fee.unwrap_or(config.template_fee);
+
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "update_config")
+        .add_attribute("owner", config.owner)
+        .add_attribute("template_fee", config.template_fee)
+        .add_attribute("fee_collector", config.fee_collector))
 }
 
 pub fn query_template(
