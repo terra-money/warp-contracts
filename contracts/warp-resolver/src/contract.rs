@@ -1,5 +1,6 @@
 use crate::state::{CONFIG, QUERY_PAGE_SIZE, STATE, TEMPLATES};
 use crate::ContractError;
+use controller::MigrateMsg;
 use cosmwasm_std::{
     entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Order, Response, StdError, StdResult, Uint64,
@@ -70,16 +71,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-pub fn migrate(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    _msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::new())
 }
 

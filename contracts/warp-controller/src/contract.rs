@@ -149,21 +149,23 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .ok_or_else(|| StdError::generic_err("cannot find `contract_addr` attribute"))?
                 .value;
 
-            let funds = event
-                .attributes
-                .iter()
-                .cloned()
-                .find(|attr| attr.key == "funds")
-                .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
-                .value;
-
-            let cw_funds: Option<Vec<Fund>> = serde_json_wasm::from_str(
+            let funds: Vec<Coin> = serde_json_wasm::from_str(
                 &event
                     .attributes
                     .iter()
                     .cloned()
                     .find(|attr| attr.key == "funds")
                     .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
+                    .value,
+            )?;
+
+            let cw_funds: Option<Vec<Fund>> = serde_json_wasm::from_str(
+                &event
+                    .attributes
+                    .iter()
+                    .cloned()
+                    .find(|attr| attr.key == "cw_funds")
+                    .ok_or_else(|| StdError::generic_err("cannot find `cw_funds` attribute"))?
                     .value,
             )?;
 
@@ -176,8 +178,13 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 
             let mut msgs_vec: Vec<CosmosMsg> = vec![];
 
-            for fund in &cw_funds_vec {
-                msgs_vec.push(CosmosMsg::Wasm(match fund {
+            msgs_vec.push(CosmosMsg::Bank(BankMsg::Send {
+                to_address: address.clone(),
+                amount: funds.clone(),
+            }));
+
+            for cw_fund in &cw_funds_vec {
+                msgs_vec.push(CosmosMsg::Wasm(match cw_fund {
                     Fund::Cw20(cw20_fund) => WasmMsg::Execute {
                         contract_addr: deps
                             .api
@@ -220,7 +227,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .add_attribute("action", "save_account")
                 .add_attribute("owner", owner)
                 .add_attribute("account_address", address)
-                .add_attribute("funds", funds)
+                .add_attribute("funds", serde_json_wasm::to_string(&funds)?)
                 .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?)
                 .add_messages(msgs_vec))
         }
