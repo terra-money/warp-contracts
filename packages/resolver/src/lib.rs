@@ -27,6 +27,8 @@ pub enum ExecuteMsg {
     SubmitTemplate(SubmitTemplateMsg),
     EditTemplate(EditTemplateMsg),
     DeleteTemplate(DeleteTemplateMsg),
+
+    UpdateConfig(UpdateConfigMsg),
 }
 
 #[derive(QueryResponses)]
@@ -104,6 +106,13 @@ pub struct TemplateResponse {
 #[cw_serde]
 pub struct TemplatesResponse {
     pub templates: Vec<Template>,
+}
+
+#[cw_serde]
+pub struct UpdateConfigMsg {
+    pub owner: Option<String>,
+    pub template_fee: Option<Uint128>,
+    pub fee_collector: Option<String>,
 }
 
 #[cw_serde]
