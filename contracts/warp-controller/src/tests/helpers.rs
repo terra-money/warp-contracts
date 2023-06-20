@@ -79,6 +79,7 @@ pub fn create_warp_account(
                     ),
                 ),
                 Attribute::new("funds", "[]"),
+                Attribute::new("cw_funds", "[]"),
             ])],
             data: None,
         }),

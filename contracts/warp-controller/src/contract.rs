@@ -178,11 +178,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 
             let mut msgs_vec: Vec<CosmosMsg> = vec![];
 
-            msgs_vec.push(CosmosMsg::Bank(BankMsg::Send {
-                to_address: address.clone(),
-                amount: funds.clone(),
-            }));
-
             for cw_fund in &cw_funds_vec {
                 msgs_vec.push(CosmosMsg::Wasm(match cw_fund {
                     Fund::Cw20(cw20_fund) => WasmMsg::Execute {
