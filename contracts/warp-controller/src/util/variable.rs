@@ -154,66 +154,38 @@ pub fn hydrate_msgs(
     Ok(parsed_msgs)
 }
 
+fn replace_var_in_struct(var_kind: &VariableKind, var_value: String) -> String {
+    match var_kind {
+        VariableKind::String
+        | VariableKind::Uint
+        | VariableKind::Decimal
+        | VariableKind::Amount
+        | VariableKind::Asset => format!("\"{}\"", var_value),
+        VariableKind::Int | VariableKind::Timestamp | VariableKind::Bool | VariableKind::Json => {
+            var_value
+        }
+    }
+}
+
 fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), ContractError> {
     let (name, replacement) = match var {
         Variable::Static(v) => (
             v.name.clone(),
-            match v.kind {
-                VariableKind::String => format!("\"{}\"", v.value),
-                VariableKind::Uint => format!("\"{}\"", v.value),
-                VariableKind::Int => v.value.clone(),
-                VariableKind::Decimal => format!("\"{}\"", v.value),
-                VariableKind::Timestamp => v.value.clone(),
-                VariableKind::Bool => v.value.clone(),
-                VariableKind::Amount => format!("\"{}\"", v.value),
-                VariableKind::Asset => format!("\"{}\"", v.value),
-                VariableKind::Json => v.value.clone(),
-            },
+            replace_var_in_struct(&v.kind, v.value.clone()),
         ),
-        Variable::External(v) => match v.value.clone() {
-            None => {
-                return Err(ContractError::HydrationError {
-                    msg: "External msg value is none.".to_string(),
-                });
-            }
-            Some(val) => (
-                v.name.clone(),
-                match v.kind {
-                    VariableKind::String => format!("\"{}\"", val),
-                    VariableKind::Uint => format!("\"{}\"", val),
-                    VariableKind::Int => val,
-                    VariableKind::Decimal => format!("\"{}\"", val),
-                    VariableKind::Timestamp => val,
-                    VariableKind::Bool => val,
-                    VariableKind::Amount => format!("\"{}\"", val),
-                    VariableKind::Asset => format!("\"{}\"", val),
-                    VariableKind::Json => val,
-                },
-            ),
-        },
-        Variable::Query(v) => match v.value.clone() {
-            None => {
-                return Err(ContractError::HydrationError {
-                    msg: "Query msg value is none.".to_string(),
-                });
-            }
-            Some(val) => (
-                v.name.clone(),
-                match v.kind {
-                    VariableKind::String => format!("\"{}\"", val),
-                    VariableKind::Uint => format!("\"{}\"", val),
-                    VariableKind::Int => val,
-                    VariableKind::Decimal => format!("\"{}\"", val),
-                    VariableKind::Timestamp => val,
-                    VariableKind::Bool => val,
-                    VariableKind::Amount => format!("\"{}\"", val),
-                    VariableKind::Asset => format!("\"{}\"", val),
-                    VariableKind::Json => val,
-                },
-            ),
-        },
+        Variable::External(v) => v.value.clone().map_or(
+            Err(ContractError::HydrationError {
+                msg: "External msg value is none.".to_string(),
+            }),
+            |val| Ok((v.name.clone(), replace_var_in_struct(&v.kind, val))),
+        )?,
+        Variable::Query(v) => v.value.clone().map_or(
+            Err(ContractError::HydrationError {
+                msg: "Query msg value is none.".to_string(),
+            }),
+            |val| Ok((v.name.clone(), replace_var_in_struct(&v.kind, val))),
+        )?,
     };
-
     Ok((name, replacement))
 }
 
@@ -308,54 +280,29 @@ fn replace_in_string(value: String, vars: &[Variable]) -> Result<String, Contrac
     Ok(replaced_value)
 }
 
+fn replace_var_in_msg(var_kind: &VariableKind) -> &str {
+    match var_kind {
+        VariableKind::String => "\"test\"",
+        VariableKind::Uint => "\"0\"",
+        VariableKind::Int => "0",
+        VariableKind::Decimal => "\"0.0\"",
+        VariableKind::Timestamp => "0",
+        VariableKind::Bool => "true",
+        VariableKind::Amount => "\"0\"",
+        VariableKind::Asset => "\"test\"",
+        VariableKind::Json => "true",
+    }
+}
+
 pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, ContractError> {
     let mut parsed_msgs: Vec<CosmosMsg> = vec![];
     for msg in msgs {
         let mut replaced_msg = msg.clone();
         for var in vars {
             let (name, replacement) = match var {
-                Variable::Static(v) => (
-                    v.name.clone(),
-                    match v.kind {
-                        VariableKind::String => "\"test\"",
-                        VariableKind::Uint => "\"0\"",
-                        VariableKind::Int => "0",
-                        VariableKind::Decimal => "\"0.0\"",
-                        VariableKind::Timestamp => "0",
-                        VariableKind::Bool => "true",
-                        VariableKind::Amount => "\"0\"",
-                        VariableKind::Asset => "\"test\"",
-                        VariableKind::Json => "true",
-                    },
-                ),
-                Variable::External(v) => (
-                    v.name.clone(),
-                    match v.kind {
-                        VariableKind::String => "\"test\"",
-                        VariableKind::Uint => "\"0\"",
-                        VariableKind::Int => "0",
-                        VariableKind::Decimal => "\"0.0\"",
-                        VariableKind::Timestamp => "0",
-                        VariableKind::Bool => "true",
-                        VariableKind::Amount => "\"0\"",
-                        VariableKind::Asset => "\"test\"",
-                        VariableKind::Json => "true",
-                    },
-                ),
-                Variable::Query(v) => (
-                    v.name.clone(),
-                    match v.kind {
-                        VariableKind::String => "\"test\"",
-                        VariableKind::Uint => "\"0\"",
-                        VariableKind::Int => "0",
-                        VariableKind::Decimal => "\"0.0\"",
-                        VariableKind::Timestamp => "0",
-                        VariableKind::Bool => "true",
-                        VariableKind::Amount => "\"0\"",
-                        VariableKind::Asset => "\"test\"",
-                        VariableKind::Json => "true",
-                    },
-                ),
+                Variable::Static(v) => (v.name.clone(), replace_var_in_msg(&v.kind)),
+                Variable::External(v) => (v.name.clone(), replace_var_in_msg(&v.kind)),
+                Variable::Query(v) => (v.name.clone(), replace_var_in_msg(&v.kind)),
             };
             replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), replacement);
             if replacement.contains("$warp.variable") {
@@ -366,7 +313,6 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
         }
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
     } //todo: check if msgs valid
-
     Ok(true)
 }
 
@@ -956,142 +902,59 @@ fn get_var_name(var: &Variable) -> String {
     }
 }
 
-pub fn vars_valid(vars: &Vec<Variable>) -> bool {
-    for var in vars {
-        match var {
-            Variable::Static(v) => match v.kind {
-                VariableKind::String => {}
-                VariableKind::Uint => {
-                    if Uint256::from_str(&v.value).is_err() {
-                        return false;
-                    }
-                }
-                VariableKind::Int => {
-                    if i128::from_str(&v.value).is_err() {
-                        return false;
-                    }
-                }
-                VariableKind::Decimal => {
-                    if Decimal256::from_str(&v.value).is_err() {
-                        return false;
-                    }
-                }
-                VariableKind::Timestamp => {
-                    if i128::from_str(&v.value).is_err() {
-                        return false;
-                    }
-                }
-                VariableKind::Bool => {
-                    if bool::from_str(&v.value).is_err() {
-                        return false;
-                    }
-                }
-                VariableKind::Amount => {
-                    if Uint128::from_str(&v.value).is_err() {
-                        return false;
-                    }
-                }
-                VariableKind::Asset => {
-                    if v.value.is_empty() {
-                        return false;
-                    }
-                }
-                VariableKind::Json => {}
-            },
-            Variable::External(v) => {
-                if v.reinitialize && v.update_fn.is_some() {
-                    return false;
-                }
-
-                if let Some(val) = v.value.clone() {
-                    match v.kind {
-                        VariableKind::String => {}
-                        VariableKind::Uint => {
-                            if Uint256::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Int => {
-                            if i128::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Decimal => {
-                            if Decimal256::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Timestamp => {
-                            if i128::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Bool => {
-                            if bool::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Amount => {
-                            if Uint128::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Asset => {
-                            if val.is_empty() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Json => {}
-                    }
-                }
-            }
-            Variable::Query(v) => {
-                if v.reinitialize && v.update_fn.is_some() {
-                    return false;
-                }
-                if let Some(val) = v.value.clone() {
-                    match v.kind {
-                        VariableKind::String => {}
-                        VariableKind::Uint => {
-                            if Uint256::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Int => {
-                            if i128::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Decimal => {
-                            if Decimal256::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Timestamp => {
-                            if i128::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Bool => {
-                            if bool::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Amount => {
-                            if Uint128::from_str(&val).is_err() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Asset => {
-                            if val.is_empty() {
-                                return false;
-                            }
-                        }
-                        VariableKind::Json => {}
-                    }
-                }
+fn var_valid(var_kind: &VariableKind, var_value: &str) -> bool {
+    match var_kind {
+        VariableKind::String => {}
+        VariableKind::Uint => {
+            if Uint256::from_str(var_value).is_err() {
+                return false;
             }
         }
+        VariableKind::Int => {
+            if i128::from_str(var_value).is_err() {
+                return false;
+            }
+        }
+        VariableKind::Decimal => {
+            if Decimal256::from_str(var_value).is_err() {
+                return false;
+            }
+        }
+        VariableKind::Timestamp => {
+            if i128::from_str(var_value).is_err() {
+                return false;
+            }
+        }
+        VariableKind::Bool => {
+            if bool::from_str(var_value).is_err() {
+                return false;
+            }
+        }
+        VariableKind::Amount => {
+            if Uint128::from_str(var_value).is_err() {
+                return false;
+            }
+        }
+        VariableKind::Asset => {
+            if var_value.is_empty() {
+                return false;
+            }
+        }
+        VariableKind::Json => {}
     }
     true
+}
+
+pub fn vars_valid(vars: &Vec<Variable>) -> bool {
+    vars.iter().all(|var| {
+        match var {
+            Variable::Static(v) => var_valid(&v.kind, &v.value),
+            Variable::External(v) => {
+                !(v.reinitialize && v.update_fn.is_some()) && v.value.as_ref().map_or(true, |val| var_valid(&v.kind, val))
+            }
+            Variable::Query(v) => {
+                !(v.reinitialize && v.update_fn.is_some()) && v.value.as_ref().map_or(true, |val| var_valid(&v.kind, val))
+            }
+        }
+    })
 }
