@@ -111,6 +111,9 @@ pub enum ContractError {
 
     #[error("Variable vector contains unused variables.")]
     ExcessVariablesInVector {},
+
+    #[error("Account balance smaller than job reward.")]
+    AccountBalanceSmallerThanJobReward {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {
