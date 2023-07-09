@@ -24,3 +24,6 @@ fn test_create_job_name_too_short() {}
 
 #[test]
 fn test_create_job_name_too_long() {}
+
+#[test]
+fn test_create_job_with_terminate_condition() {}

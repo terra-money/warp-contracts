@@ -31,7 +31,10 @@ pub struct Job {
     pub description: String,
     pub labels: Vec<String>,
     pub status: JobStatus,
+    // job becomes executable when condition resolves to true or fail to resolve
     pub condition: Condition,
+    // recurring job will be terminated when terminate_condition resolves to true or fail to resolve
+    pub terminate_condition: Option<Condition>,
     pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
     pub recurring: bool,
@@ -61,6 +64,7 @@ pub struct CreateJobMsg {
     pub description: String,
     pub labels: Vec<String>,
     pub condition: Condition,
+    pub terminate_condition: Option<Condition>,
     pub msgs: Vec<String>,
     pub vars: Vec<Variable>,
     pub recurring: bool,

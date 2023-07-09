@@ -89,6 +89,7 @@ pub fn create_job(
             name: data.name,
             status: JobStatus::Pending,
             condition: data.condition.clone(),
+            terminate_condition: data.terminate_condition,
             recurring: data.recurring,
             requeue_on_evict: data.requeue_on_evict,
             vars: data.vars,
@@ -180,6 +181,7 @@ pub fn delete_job(
             name: job.name,
             status: JobStatus::Cancelled,
             condition: job.condition,
+            terminate_condition: job.terminate_condition,
             msgs: job.msgs,
             vars: job.vars,
             recurring: job.recurring,
@@ -263,6 +265,7 @@ pub fn update_job(
             labels: data.labels.unwrap_or(job.labels),
             status: job.status,
             condition: job.condition,
+            terminate_condition: job.terminate_condition,
             msgs: job.msgs,
             vars: job.vars,
             recurring: job.recurring,
@@ -352,7 +355,7 @@ pub fn execute_job(
         data.external_inputs,
     )?;
 
-    let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
+    let resolution: Result<bool, ContractError> = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
 
     let mut attrs = vec![];
 
@@ -374,6 +377,7 @@ pub fn execute_job(
                 labels: job.labels,
                 status: JobStatus::Failed,
                 condition: job.condition,
+                terminate_condition: job.terminate_condition,
                 msgs: job.msgs,
                 vars,
                 recurring: job.recurring,
@@ -496,6 +500,7 @@ pub fn evict_job(
                     labels: job.labels,
                     status: JobStatus::Pending,
                     condition: job.condition,
+                    terminate_condition: job.terminate_condition,
                     msgs: job.msgs,
                     vars: job.vars,
                     recurring: job.recurring,
@@ -518,6 +523,7 @@ pub fn evict_job(
                     labels: job.labels,
                     status: JobStatus::Evicted,
                     condition: job.condition,
+                    terminate_condition: job.terminate_condition,
                     msgs: job.msgs,
                     vars: job.vars,
                     recurring: job.recurring,
