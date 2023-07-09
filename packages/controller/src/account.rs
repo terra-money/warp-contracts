@@ -81,3 +81,13 @@ pub enum AssetInfo {
     Cw20(Addr),
     Cw721(Addr, String),
 }
+
+#[cw_serde]
+pub enum AssetInfoWithAmount {
+    // (native denom, amount)
+    Native(String, Uint128),
+    // (cw20 contract, amount)
+    Cw20(Addr, Uint128),
+    // amount doesn't apply to cw721
+    Cw721(Addr, String),
+}

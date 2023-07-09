@@ -1,4 +1,4 @@
-use crate::account::AssetInfo;
+use crate::account::{AssetInfo, AssetInfoWithAmount};
 use crate::condition::Condition;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint128, Uint64};
@@ -38,6 +38,7 @@ pub struct Job {
     pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Vec<AssetInfo>,
+    pub assets_to_lock: Vec<AssetInfoWithAmount>,
 }
 
 #[cw_serde]
@@ -67,6 +68,7 @@ pub struct CreateJobMsg {
     pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
+    pub assets_to_lock: Option<Vec<AssetInfoWithAmount>>,
 }
 
 #[cw_serde]

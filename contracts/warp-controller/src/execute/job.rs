@@ -97,6 +97,7 @@ pub fn create_job(
             description: data.description,
             labels: data.labels,
             assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
+            assets_to_lock: data.assets_to_lock.unwrap_or(vec![]),
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
@@ -188,6 +189,7 @@ pub fn delete_job(
             description: job.description,
             labels: job.labels,
             assets_to_withdraw: job.assets_to_withdraw,
+            assets_to_lock: job.assets_to_lock,
         }),
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
     })?;
@@ -269,6 +271,7 @@ pub fn update_job(
             requeue_on_evict: job.requeue_on_evict,
             reward: job.reward + added_reward,
             assets_to_withdraw: job.assets_to_withdraw,
+            assets_to_lock: job.assets_to_lock,
         }),
     })?;
 
@@ -380,6 +383,7 @@ pub fn execute_job(
                 requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
                 assets_to_withdraw: job.assets_to_withdraw,
+                assets_to_lock: job.assets_to_lock,
             },
         )?;
         PENDING_JOBS().remove(deps.storage, data.id.u64())?;
@@ -502,6 +506,7 @@ pub fn evict_job(
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                     assets_to_withdraw: job.assets_to_withdraw,
+                    assets_to_lock: job.assets_to_lock,
                 }),
             })?
             .status;
@@ -524,6 +529,7 @@ pub fn evict_job(
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                     assets_to_withdraw: job.assets_to_withdraw,
+                    assets_to_lock: job.assets_to_lock,
                 }),
                 Some(_) => Err(ContractError::JobAlreadyExists {}),
             })?

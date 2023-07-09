@@ -256,6 +256,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                     assets_to_withdraw: job.assets_to_withdraw,
+                    assets_to_lock: job.assets_to_lock,
                 }),
                 Some(_) => Err(ContractError::JobAlreadyFinished {}),
             })?;
@@ -325,6 +326,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                                 msgs: finished_job.msgs.clone(),
                                 reward: finished_job.reward,
                                 assets_to_withdraw: finished_job.assets_to_withdraw,
+                                assets_to_lock: finished_job.assets_to_lock,
                             }),
                             Some(_) => Err(ContractError::JobAlreadyExists {}),
                         },
