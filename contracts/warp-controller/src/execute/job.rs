@@ -25,7 +25,7 @@ pub fn create_job(
     let state = STATE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
 
-    if data.name.len() > 140 {
+    if data.name.len() > 280 {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -240,7 +240,7 @@ pub fn update_job(
 
     let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
 
-    if data.name.is_some() && data.name.clone().unwrap().len() > 140 {
+    if data.name.is_some() && data.name.clone().unwrap().len() > 280 {
         return Err(ContractError::NameTooLong {});
     }
 
