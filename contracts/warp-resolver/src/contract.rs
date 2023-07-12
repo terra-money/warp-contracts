@@ -91,7 +91,7 @@ pub fn submit_template(
         return Err(ContractError::TemplateFeeNotFound {});
     }
 
-    if data.name.len() > 140 {
+    if data.name.len() > 280 {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -159,7 +159,7 @@ pub fn edit_template(
         return Err(ContractError::Unauthorized {});
     }
 
-    if data.name.is_some() && data.clone().name.unwrap().len() > 140 {
+    if data.name.is_some() && data.clone().name.unwrap().len() > 280 {
         return Err(ContractError::NameTooLong {});
     }
 

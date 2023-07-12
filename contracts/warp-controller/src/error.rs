@@ -21,7 +21,7 @@ pub enum ContractError {
     #[error("Name must be at least 1 character long")]
     NameTooShort {},
 
-    #[error("Name cannot exceed 140 characters")]
+    #[error("Name cannot exceed 280 characters")]
     NameTooLong {},
 
     #[error("Attempting to distribute more rewards than received from the action")]

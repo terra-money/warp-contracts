@@ -396,8 +396,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         "job_last_updated_time",
                         new_job.last_update_time,
                     ));
-                    new_job_attrs.push(Attribute::new("action", "create_job"));
-
                     new_job_attrs.push(Attribute::new("sub_action", "recur_job"));
                 }
             }
