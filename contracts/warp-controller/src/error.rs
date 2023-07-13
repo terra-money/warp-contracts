@@ -70,9 +70,6 @@ pub enum ContractError {
     #[error("Error decoding JSON result")]
     DecodeError {},
 
-    #[error("Msg error: {msg:?}")]
-    MsgError { msg: String },
-
     #[error("Max eviction fee smaller than minimum eviction fee.")]
     MaxFeeUnderMinFee {},
 
@@ -82,20 +79,8 @@ pub enum ContractError {
     #[error("Job reward smaller than eviction fee.")]
     RewardSmallerThanFee {},
 
-    #[error("Invalid variables.")]
-    InvalidVariables {},
-
-    #[error("Variables list contains duplicates.")]
-    VariablesContainDuplicates {},
-
     #[error("Eviction period not elapsed.")]
     EvictionPeriodNotElapsed {},
-
-    #[error("Variables in condition or msgs missing from variables vector.")]
-    VariablesMissingFromVector {},
-
-    #[error("Variable vector contains unused variables.")]
-    ExcessVariablesInVector {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {

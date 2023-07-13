@@ -6,7 +6,10 @@ use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
 use controller::State;
-use cosmwasm_std::{to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg, StdResult};
+use cosmwasm_std::{
+    to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
+    MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
+};
 
 pub fn create_job(
     deps: DepsMut,
@@ -29,34 +32,8 @@ pub fn create_job(
         return Err(ContractError::RewardTooSmall {});
     }
 
-    // if !vars_valid(&data.vars) {
-    //     return Err(ContractError::InvalidVariables {});
-    // }
-    //
-    // if has_duplicates(&data.vars) {
-    //     return Err(ContractError::VariablesContainDuplicates {});
-    // }
-    //
-    // let cond_string = serde_json_wasm::to_string(&data.condition)?;
-    // let msg_string = serde_json_wasm::to_string(&data.msgs)?;
-    // 
-    // if !(string_vars_in_vector(&data.vars, &cond_string)
-    //     && string_vars_in_vector(&data.vars, &msg_string))
-    // {
-    //     return Err(ContractError::VariablesMissingFromVector {});
-    // }
-    // 
-    // if !all_vector_vars_present(&data.vars, format!("{}{}", cond_string, msg_string)) {
-    //     return Err(ContractError::ExcessVariablesInVector {});
-    // }
-    // 
-    // if !msgs_valid(&data.msgs, &data.vars)? {
-    //     return Err(ContractError::MsgError {
-    //         msg: "msgs are invalid".to_string(),
-    //     });
-    // }
-    
-    let validate_conditions_and_variables: Option<String> = deps.querier.query_wasm_smart("contract_addr", &"")?; //todo: proper query
+    let _validate_conditions_and_variables: Option<String> =
+        deps.querier.query_wasm_smart("contract_addr", &"")?; //todo: proper query
 
     let q = ACCOUNTS()
         .idx
@@ -403,7 +380,7 @@ pub fn execute_job(
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     // msgs: hydrate_msgs(job.msgs.clone(), vars)?,
-                    msgs: deps.querier.query_wasm_smart("contract_addr", &"")?
+                    msgs: deps.querier.query_wasm_smart("contract_addr", &"")?,
                 }))?,
                 funds: vec![],
             }),
