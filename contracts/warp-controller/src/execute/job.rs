@@ -32,8 +32,14 @@ pub fn create_job(
         return Err(ContractError::RewardTooSmall {});
     }
 
-    let _validate_conditions_and_variables: Option<String> =
-        deps.querier.query_wasm_smart("contract_addr", &"")?; //todo: proper query
+    let _validate_conditions_and_variables: Option<String> = deps.querier.query_wasm_smart(
+        config.resolver_address,
+        &resolver::QueryMsg::QueryValidateJobCreation(resolver::QueryValidateJobCreationMsg {
+            condition: data.condition.clone(),
+            vars: data.vars.clone(),
+            msgs: data.msgs.clone(),
+        }),
+    )?; //todo: TEST THIS
 
     let q = ACCOUNTS()
         .idx
@@ -303,6 +309,7 @@ pub fn execute_job(
     data: ExecuteJobMsg,
 ) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
     let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
@@ -323,12 +330,24 @@ pub fn execute_job(
     //     data.external_inputs,
     // )?;
 
-    let vars: Vec<String> = deps.querier.query_wasm_smart("contract_addr", &"")?; //todo: proper query here (hydrate vars)
+    let vars: String = deps.querier.query_wasm_smart(
+        config.resolver_address.clone(),
+        &resolver::QueryMsg::QueryHydrateVars(resolver::QueryHydrateVarsMsg {
+            vars: job.vars,
+            external_inputs: data.external_inputs,
+        }),
+    )?; //todo: TEST THIS
 
     //
     // let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
 
-    let resolution: StdResult<bool> = deps.querier.query_wasm_smart("contract_addr", &""); //todo: proper query here (resolve)
+    let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
+        config.resolver_address,
+        &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
+            condition: job.condition,
+            vars: vars.clone(),
+        }),
+    ); //todo: TEST THIS
 
     let mut attrs = vec![];
 

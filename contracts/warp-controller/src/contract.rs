@@ -2,9 +2,7 @@ use crate::error::map_contract_error;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
-use controller::account::{
-    Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg,
-};
+use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use controller::job::{Job, JobStatus};
 
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
@@ -38,6 +36,7 @@ pub fn instantiate(
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
         cancellation_fee_percentage: msg.cancellation_fee,
+        resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
         t_max: msg.t_max,
         t_min: msg.t_min,
         a_max: msg.a_max,
@@ -305,8 +304,13 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     //     finished_job.status.clone(),
                     // )?;
 
-                    let new_vars: Vec<String> =
-                        deps.querier.query_wasm_smart("contract_addr", &"")?; //todo: correct query
+                    let new_vars: String = deps.querier.query_wasm_smart(
+                        config.resolver_address,
+                        &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
+                            vars: finished_job.vars,
+                            status: finished_job.status.clone(),
+                        }),
+                    )?; //todo: TEST THIS
                     let new_job = PENDING_JOBS().update(
                         deps.storage,
                         state.current_job_id.u64(),

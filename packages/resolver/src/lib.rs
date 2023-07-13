@@ -3,7 +3,7 @@ pub mod variable;
 
 use controller::job::{ExternalInput, JobStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{QueryRequest};
+use cosmwasm_std::QueryRequest;
 #[cw_serde]
 pub struct InstantiateMsg {}
 

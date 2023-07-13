@@ -14,7 +14,6 @@ use resolver::{
     ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, SimulateQueryMsg, SimulateResponse,
 };
 
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     _deps: DepsMut,
