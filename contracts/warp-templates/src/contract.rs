@@ -6,7 +6,6 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::Bound;
 
-
 use templates::template::{
     DeleteTemplateMsg, EditTemplateMsg, QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg,
     Template, TemplateResponse, TemplatesResponse,
