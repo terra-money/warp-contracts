@@ -1,11 +1,11 @@
 use crate::util::path::resolve_path;
 use crate::util::variable::get_var;
 use crate::ContractError;
-use controller::condition::{
+use resolver::condition::{
     BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
     NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
 };
-use controller::variable::{QueryExpr, Variable};
+use resolver::variable::{QueryExpr, Variable};
 use cosmwasm_std::{
     to_vec, ContractResult, Decimal256, Deps, Env, StdError, SystemResult, Uint256,
 };

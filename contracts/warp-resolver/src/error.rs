@@ -1,3 +1,5 @@
+use std::num::ParseIntError;
+use std::str::ParseBoolError;
 use crate::ContractError::{CustomError, DecodeError, DeserializationError, SerializationError};
 use cosmwasm_std::{OverflowError, StdError};
 use thiserror::Error;
@@ -49,6 +51,34 @@ pub enum ContractError {
 
     #[error("Name cannot exceed 280 characters")]
     NameTooLong {},
+
+    #[error("Condition error: {msg:?}")]
+    ConditionError { msg: String },
+
+    #[error("Hydration error: {msg:?}")]
+    HydrationError { msg: String },
+
+    #[error("Function error: {msg:?}")]
+    FunctionError { msg: String },
+
+    #[error("Variable not found: {name:?}.")]
+    VariableNotFound { name: String },
+}
+
+impl From<ParseIntError> for ContractError {
+    fn from(_: ParseIntError) -> Self {
+        CustomError {
+            val: "Parse int error".to_string(),
+        }
+    }
+}
+
+impl From<ParseBoolError> for ContractError {
+    fn from(_: ParseBoolError) -> Self {
+        CustomError {
+            val: "Parse bool error".to_string(),
+        }
+    }
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {

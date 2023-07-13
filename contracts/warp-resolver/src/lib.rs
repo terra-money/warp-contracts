@@ -1,4 +1,5 @@
 pub mod contract;
+pub mod util;
 mod error;
 pub mod state;
 

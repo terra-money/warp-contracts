@@ -12,7 +12,7 @@ use cosmwasm_std::{
 use std::str::FromStr;
 
 use controller::job::{ExternalInput, JobStatus};
-use controller::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
+use resolver::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
 
 pub fn hydrate_vars(
     deps: Deps,

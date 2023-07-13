@@ -1,7 +1,7 @@
 import task from "@terra-money/terrariums";
 
 task(async ({ deployer, signer, refs }) => {
-  // account
+  //account
   deployer.buildContract("warp-account");
   deployer.optimizeContract("warp-account");
   //
@@ -45,6 +45,6 @@ task(async ({ deployer, signer, refs }) => {
   //   admin: signer.key.accAddress,
   // });
   // await new Promise((resolve) => setTimeout(resolve, 10000));
-
-  refs.saveRefs();
+  //
+  // refs.saveRefs();
 });
