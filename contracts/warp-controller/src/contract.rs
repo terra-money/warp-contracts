@@ -2,15 +2,17 @@ use crate::error::map_contract_error;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
-use controller::account::{Account, Fund, FundTransferMsgs, QueryAccountMsg, TransferFromMsg, TransferNftMsg};
+use controller::account::{
+    Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg,
+};
 use controller::job::{Job, JobStatus};
+
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 use cosmwasm_std::{
     entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
-use controller::QueryMsg::QueryAccount;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -303,7 +305,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     //     finished_job.status.clone(),
                     // )?;
 
-                    let new_vars: Vec<String> = deps.querier.query_wasm_smart("contract_addr", &"")?; //todo: correct query
+                    let new_vars: Vec<String> =
+                        deps.querier.query_wasm_smart("contract_addr", &"")?; //todo: correct query
                     let new_job = PENDING_JOBS().update(
                         deps.storage,
                         state.current_job_id.u64(),

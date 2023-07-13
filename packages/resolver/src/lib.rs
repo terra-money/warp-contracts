@@ -1,71 +1,56 @@
-pub mod template;
-pub mod variable;
 pub mod condition;
+pub mod variable;
 
+use controller::job::{ExternalInput, JobStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, QueryRequest, Uint128, Uint64};
-use crate::template::{DeleteTemplateMsg, EditTemplateMsg, QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg, Template, TemplateResponse, TemplatesResponse};
+use cosmwasm_std::{QueryRequest};
+#[cw_serde]
+pub struct InstantiateMsg {}
 
 #[cw_serde]
-pub struct Config {
-    pub owner: Addr,
-    pub template_fee: Uint128,
-    pub fee_collector: Addr,
-}
-
-#[cw_serde]
-pub struct State {
-    pub current_template_id: Uint64,
-}
-
-#[cw_serde]
-pub struct InstantiateMsg {
-    pub owner: String,
-    pub fee_collector: String,
-    pub templates: Vec<Template>,
-}
-
-#[cw_serde]
-pub enum ExecuteMsg {
-    SubmitTemplate(SubmitTemplateMsg),
-    EditTemplate(EditTemplateMsg),
-    DeleteTemplate(DeleteTemplateMsg),
-
-    UpdateConfig(UpdateConfigMsg),
-}
+pub enum ExecuteMsg {}
 
 #[derive(QueryResponses)]
 #[cw_serde]
 pub enum QueryMsg {
-    #[returns(TemplateResponse)]
-    QueryTemplate(QueryTemplateMsg),
-    #[returns(TemplatesResponse)]
-    QueryTemplates(QueryTemplatesMsg),
-
     #[returns(SimulateResponse)]
     SimulateQuery(SimulateQueryMsg),
-
-    #[returns(ConfigResponse)]
-    QueryConfig(QueryConfigMsg),
+    #[returns(SimulateResponse)]
+    QueryValidateJobCreation(QueryValidateJobCreationMsg),
+    #[returns(SimulateResponse)]
+    QueryHydrateVars(QueryHydrateVarsMsg),
+    #[returns(SimulateResponse)]
+    QueryResolveCondition(QueryResolveConditionMsg),
+    #[returns(SimulateResponse)]
+    QueryApplyVarFn(QueryApplyVarFnMsg),
 }
 
 #[cw_serde]
 pub struct MigrateMsg {}
 
 #[cw_serde]
-pub struct UpdateConfigMsg {
-    pub owner: Option<String>,
-    pub template_fee: Option<Uint128>,
-    pub fee_collector: Option<String>,
+pub struct QueryValidateJobCreationMsg {
+    pub condition: String,
+    pub vars: String,
+    pub msgs: String,
 }
 
 #[cw_serde]
-pub struct QueryConfigMsg {}
+pub struct QueryHydrateVarsMsg {
+    pub vars: String,
+    pub external_inputs: Option<Vec<ExternalInput>>,
+}
 
-//responses
 #[cw_serde]
-pub struct ConfigResponse {
-    pub config: Config,
+pub struct QueryResolveConditionMsg {
+    pub condition: String,
+    pub vars: String,
+}
+
+#[cw_serde]
+pub struct QueryApplyVarFnMsg {
+    pub vars: String,
+    pub status: JobStatus,
 }
 
 #[cw_serde]
