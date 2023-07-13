@@ -1,16 +1,14 @@
 use crate::state::{CONFIG, QUERY_PAGE_SIZE, STATE, TEMPLATES};
 use crate::ContractError;
-use controller::MigrateMsg;
 use cosmwasm_std::{
     entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Order, Response, StdError, StdResult, Uint64,
 };
 use cw_storage_plus::Bound;
-use resolver::{
-    Config, ConfigResponse, DeleteTemplateMsg, EditTemplateMsg, ExecuteMsg, InstantiateMsg,
-    QueryConfigMsg, QueryMsg, QueryTemplateMsg, QueryTemplatesMsg, State, SubmitTemplateMsg,
-    Template, TemplateResponse, TemplatesResponse, UpdateConfigMsg,
-};
+use resolver::{Config, ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryConfigMsg, QueryMsg, SimulateQueryMsg, SimulateResponse, State, UpdateConfigMsg};
+use resolver::template::{DeleteTemplateMsg, EditTemplateMsg, QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg, Template, TemplateResponse, TemplatesResponse};
+use resolver::variable::QueryExpr;
+use crate::util::condition::resolve_query_expr;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -68,6 +66,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryTemplate(data) => to_binary(&query_template(deps, env, data)?),
         QueryMsg::QueryTemplates(data) => to_binary(&query_templates(deps, env, data)?),
         QueryMsg::QueryConfig(data) => to_binary(&query_config(deps, env, data)?),
+
+        QueryMsg::SimulateQuery(data) => {
+            to_binary(&query_simulate_query(deps, env, data)?)
+        }
     }
 }
 
@@ -321,3 +323,22 @@ pub fn query_config(deps: Deps, _env: Env, _data: QueryConfigMsg) -> StdResult<C
     let config = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse { config })
 }
+
+pub fn query_simulate_query(
+    deps: Deps,
+    env: Env,
+    data: SimulateQueryMsg,
+) -> StdResult<SimulateResponse> {
+    Ok(SimulateResponse {
+        response: resolve_query_expr(
+            deps,
+            env,
+            QueryExpr {
+                selector: "".to_string(),
+                query: data.query,
+            },
+        )
+            .map_err(|e| StdError::generic_err(e.to_string()))?,
+    })
+}
+

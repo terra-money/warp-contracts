@@ -1024,7 +1024,6 @@ dependencies = [
  "cw2 0.16.0",
  "cw20",
  "json-codec-wasm",
- "resolver",
  "schemars",
  "serde-json-wasm 0.4.1",
  "thiserror",
@@ -1034,7 +1033,6 @@ dependencies = [
 name = "warp-resolver"
 version = "0.1.0"
 dependencies = [
- "account",
  "base64",
  "controller",
  "cosmwasm-schema",

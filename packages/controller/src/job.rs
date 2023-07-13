@@ -1,12 +1,9 @@
 use crate::account::AssetInfo;
-use crate::condition::Condition;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint128, Uint64};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
-
-use super::variable::Variable;
 
 // pub enum JobFund {
 //     Cw20(...),
@@ -31,9 +28,9 @@ pub struct Job {
     pub description: String,
     pub labels: Vec<String>,
     pub status: JobStatus,
-    pub condition: Condition,
+    pub condition: String,
     pub msgs: Vec<String>,
-    pub vars: Vec<Variable>,
+    pub vars: Vec<String>,
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,
@@ -60,9 +57,9 @@ pub struct CreateJobMsg {
     pub name: String,
     pub description: String,
     pub labels: Vec<String>,
-    pub condition: Condition,
+    pub condition: String,
     pub msgs: Vec<String>,
-    pub vars: Vec<Variable>,
+    pub vars: Vec<String>,
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,

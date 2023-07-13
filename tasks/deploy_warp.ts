@@ -2,8 +2,8 @@ import task from "@terra-money/terrariums";
 
 task(async ({ deployer, signer, refs }) => {
   //account
-  // deployer.buildContract("warp-account");
-  // deployer.optimizeContract("warp-account");
+  deployer.buildContract("warp-account");
+  deployer.optimizeContract("warp-account");
   //
   // const id = await deployer.storeCode("warp-account");
   // await new Promise((resolve) => setTimeout(resolve, 10000));
@@ -35,16 +35,16 @@ task(async ({ deployer, signer, refs }) => {
   // });
   // await new Promise((resolve) => setTimeout(resolve, 10000));
   //
-  const instantiateResolverMsg = {
-    owner: signer.key.accAddress,
-    fee_collector: signer.key.accAddress,
-    templates: [],
-  }
-
-  await deployer.instantiate("warp-resolver", instantiateResolverMsg, {
-    admin: signer.key.accAddress,
-  });
-  await new Promise((resolve) => setTimeout(resolve, 10000));
-
-  refs.saveRefs();
+  // const instantiateResolverMsg = {
+  //   owner: signer.key.accAddress,
+  //   fee_collector: signer.key.accAddress,
+  //   templates: [],
+  // }
+  //
+  // await deployer.instantiate("warp-resolver", instantiateResolverMsg, {
+  //   admin: signer.key.accAddress,
+  // });
+  // await new Promise((resolve) => setTimeout(resolve, 10000));
+  //
+  // refs.saveRefs();
 });

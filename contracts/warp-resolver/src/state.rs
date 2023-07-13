@@ -1,5 +1,6 @@
 use cw_storage_plus::{Item, Map};
-use resolver::{Config, State, Template};
+use resolver::{Config, State};
+use resolver::template::Template;
 
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const TEMPLATES: Map<u64, Template> = Map::new("templates");

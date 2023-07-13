@@ -70,21 +70,6 @@ pub enum ContractError {
     #[error("Error decoding JSON result")]
     DecodeError {},
 
-    #[error("Error resolving JSON path")]
-    ResolveError {},
-
-    #[error("Hydration error: {msg:?}")]
-    HydrationError { msg: String },
-
-    #[error("Function error: {msg:?}")]
-    FunctionError { msg: String },
-
-    #[error("Variable not found: {name:?}.")]
-    VariableNotFound { name: String },
-
-    #[error("Condition error: {msg:?}")]
-    ConditionError { msg: String },
-
     #[error("Msg error: {msg:?}")]
     MsgError { msg: String },
 

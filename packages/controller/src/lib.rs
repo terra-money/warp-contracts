@@ -6,12 +6,10 @@ use crate::job::{
     QueryJobsMsg, UpdateJobMsg,
 };
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, QueryRequest, Uint128, Uint64};
+use cosmwasm_std::{Addr, Uint128, Uint64};
 
 pub mod account;
-pub mod condition;
 pub mod job;
-pub mod variable;
 
 //objects
 #[cw_serde]
@@ -89,9 +87,6 @@ pub enum QueryMsg {
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
 
-    #[returns(SimulateResponse)]
-    SimulateQuery(SimulateQueryMsg),
-
     #[returns(AccountResponse)]
     QueryAccount(QueryAccountMsg),
     #[returns(AccountsResponse)]
@@ -99,16 +94,6 @@ pub enum QueryMsg {
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
-}
-
-#[cw_serde]
-pub struct SimulateQueryMsg {
-    pub query: QueryRequest<String>,
-}
-
-#[cw_serde]
-pub struct SimulateResponse {
-    pub response: String,
 }
 
 #[cw_serde]

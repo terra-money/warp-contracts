@@ -1,9 +1,8 @@
 use crate::error::map_contract_error;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
-use crate::util::variable::apply_var_fn;
 use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
-use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
+use controller::account::{Account, Fund, FundTransferMsgs, QueryAccountMsg, TransferFromMsg, TransferNftMsg};
 use controller::job::{Job, JobStatus};
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 use cosmwasm_std::{
@@ -11,6 +10,7 @@ use cosmwasm_std::{
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
+use controller::QueryMsg::QueryAccount;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -94,10 +94,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryJob(data) => to_binary(&query::job::query_job(deps, env, data)?),
         QueryMsg::QueryJobs(data) => to_binary(&query::job::query_jobs(deps, env, data)?),
-
-        QueryMsg::SimulateQuery(data) => {
-            to_binary(&query::controller::query_simulate_query(deps, env, data)?)
-        }
 
         QueryMsg::QueryAccount(data) => to_binary(&query::account::query_account(deps, env, data)?),
         QueryMsg::QueryAccounts(data) => {
@@ -300,12 +296,14 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         "failed_invalid_job_status",
                     ));
                 } else {
-                    let new_vars = apply_var_fn(
-                        deps.as_ref(),
-                        env.clone(),
-                        finished_job.vars,
-                        finished_job.status.clone(),
-                    )?;
+                    // let new_vars = apply_var_fn(
+                    //     deps.as_ref(),
+                    //     env.clone(),
+                    //     finished_job.vars,
+                    //     finished_job.status.clone(),
+                    // )?;
+
+                    let new_vars: Vec<String> = deps.querier.query_wasm_smart("contract_addr", &"")?; //todo: correct query
                     let new_job = PENDING_JOBS().update(
                         deps.storage,
                         state.current_job_id.u64(),
