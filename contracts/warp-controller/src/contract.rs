@@ -21,7 +21,6 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let state = State {
         current_job_id: Uint64::one(),
-        current_template_id: Default::default(),
         q: Uint64::zero(),
     };
 
@@ -109,6 +108,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    //todo: migrate state
     Ok(Response::new())
 }
 
