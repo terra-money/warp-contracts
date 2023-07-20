@@ -41,11 +41,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
         QueryMsg::QueryValidateJobCreation(data) => {
             let _condition: Condition = serde_json_wasm::from_str(&data.condition)
-                .map_err(|e| StdError::generic_err(e.to_string()))?;
+                .map_err(|e| StdError::generic_err(format!("Condition input invalid: {}", e.to_string())))?;
             let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
-                .map_err(|e| StdError::generic_err(e.to_string()))?;
+                .map_err(|e| StdError::generic_err(format!("Vars input invalid: {}", e.to_string())))?;
             let msgs: Vec<String> = serde_json_wasm::from_str(&data.msgs)
-                .map_err(|e| StdError::generic_err(e.to_string()))?;
+                .map_err(|e| StdError::generic_err(format!("Msgs input invalid: {}", e.to_string())))?;
 
             if !vars_valid(&vars) {
                 return Err(StdError::generic_err(
