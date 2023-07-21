@@ -10,6 +10,7 @@ use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
     MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
 };
+use resolver::QueryHydrateMsgsMsg;
 
 pub fn create_job(
     deps: DepsMut,
@@ -340,7 +341,7 @@ pub fn execute_job(
     // let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
 
     let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
-        config.resolver_address,
+        config.resolver_address.clone(),
         &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
             condition: job.condition,
             vars: vars.clone(),
@@ -394,8 +395,13 @@ pub fn execute_job(
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                    // msgs: hydrate_msgs(job.msgs.clone(), vars)?,
-                    msgs: deps.querier.query_wasm_smart("contract_addr", &"")?,
+                    msgs: deps.querier.query_wasm_smart(
+                        config.resolver_address,
+                        &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                            msgs: job.msgs,
+                            vars,
+                        }),
+                    )?,
                 }))?,
                 funds: vec![],
             }),
