@@ -23,6 +23,8 @@ pub enum QueryMsg {
     QueryResolveCondition(QueryResolveConditionMsg),
     #[returns(SimulateResponse)]
     QueryApplyVarFn(QueryApplyVarFnMsg),
+    #[returns(SimulateResponse)]
+    QueryHydrateMsgs(QueryHydrateMsgsMsg),
 }
 
 #[cw_serde]
@@ -33,6 +35,12 @@ pub struct QueryValidateJobCreationMsg {
     pub condition: String,
     pub vars: String,
     pub msgs: String,
+}
+
+#[cw_serde]
+pub struct QueryHydrateMsgsMsg {
+    pub msgs: String,
+    pub vars: String,
 }
 
 #[cw_serde]
@@ -62,3 +70,6 @@ pub struct SimulateQueryMsg {
 pub struct SimulateResponse {
     pub response: String,
 }
+
+#[cw_serde]
+pub struct ResolveResponse {}
