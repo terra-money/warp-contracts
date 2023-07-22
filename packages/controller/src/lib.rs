@@ -61,7 +61,8 @@ pub enum ExecuteMsg {
     ExecuteJob(ExecuteJobMsg),
     EvictJob(EvictJobMsg),
 
-    CreateAccount(CreateAccountMsg),
+    CreateFeeAccount(CreateAccountMsg),
+    CreateAssetAccount(CreateAccountMsg),
 
     UpdateConfig(UpdateConfigMsg),
 }
@@ -93,9 +94,14 @@ pub enum QueryMsg {
     SimulateQuery(SimulateQueryMsg),
 
     #[returns(AccountResponse)]
-    QueryAccount(QueryAccountMsg),
+    QueryFeeAccount(QueryAccountMsg),
+    #[returns(AccountResponse)]
+    QueryAssetAccount(QueryAccountMsg),
+
     #[returns(AccountsResponse)]
-    QueryAccounts(QueryAccountsMsg),
+    QueryFeeAssetAccounts(QueryAccountsMsg),
+    #[returns(AccountsResponse)]
+    QueryExecutionAssetAccounts(QueryAccountsMsg),
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),

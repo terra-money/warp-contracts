@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint128};
 
@@ -82,12 +84,23 @@ pub enum AssetInfo {
     Cw721(Addr, String),
 }
 
+// #[cw_serde]
+// pub enum AssetInfoWithAmount {
+//     // (native denom, amount)
+//     Native(String, Uint128),
+//     // (cw20 contract, amount)
+//     Cw20(Addr, Uint128),
+//     // amount doesn't apply to cw721
+//     Cw721(Addr, String),
+// }
+
+// any downside of using hashmap vs array? hashmap makes it easier to lookup
 #[cw_serde]
-pub enum AssetInfoWithAmount {
-    // (native denom, amount)
-    Native(String, Uint128),
-    // (cw20 contract, amount)
-    Cw20(Addr, Uint128),
-    // amount doesn't apply to cw721
-    Cw721(Addr, String),
+pub struct AssetInfoWithAmount {
+    // key is denom, value is amount
+    pub native: HashMap<String, Uint128>,
+    // key is cw20 contract, value is amount
+    pub cw20: HashMap<Addr, Uint128>,
+    // key is cw721 contract, value is set of token_id
+    pub cw721: HashMap<Addr, HashSet<String>>,
 }

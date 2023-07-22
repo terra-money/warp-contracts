@@ -33,11 +33,29 @@ pub enum ContractError {
     #[error("Account does not exist")]
     AccountDoesNotExist {},
 
+    #[error("Fee Account does not exist")]
+    FeeAccountDoesNotExist {},
+
+    #[error("Asset Account does not exist")]
+    AssetAccountDoesNotExist {},
+
     #[error("Account already exists")]
     AccountAlreadyExists {},
 
+    #[error("Fee Account already exists")]
+    FeeAccountAlreadyExists {},
+
+    #[error("Asset Account already exists")]
+    AssetAccountAlreadyExists {},
+
     #[error("Account cannot create an account")]
     AccountCannotCreateAccount {},
+
+    #[error("Fee Account cannot create an account")]
+    FeeAccountCannotCreateAccount {},
+
+    #[error("Asset Account cannot create an account")]
+    AssetAccountCannotCreateAccount {},
 
     #[error("Job already finished")]
     JobAlreadyFinished {},
@@ -111,6 +129,9 @@ pub enum ContractError {
 
     #[error("Variable vector contains unused variables.")]
     ExcessVariablesInVector {},
+
+    #[error("Invalid reply id: {0}")]
+    InvalidReplyId(u64),
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {

@@ -1,5 +1,5 @@
-use crate::contract::{instantiate, reply};
-use crate::execute::account::create_account;
+use crate::contract::{instantiate, reply, REPLY_ID_FEE_ASSET_ACCOUNT_CREATION};
+use crate::execute::account::create_fee_asset_account;
 use crate::ContractError;
 use controller::account::CreateAccountMsg;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage};
@@ -52,7 +52,7 @@ pub fn create_warp_account(
     Result<Response, ContractError>,
     Result<Response, ContractError>,
 ) {
-    let create_account_res = create_account(
+    let create_account_res = create_fee_asset_account(
         deps.as_mut(),
         env.clone(),
         info.clone(),
@@ -60,7 +60,7 @@ pub fn create_warp_account(
     );
 
     let reply_msg = Reply {
-        id: 0,
+        id: REPLY_ID_FEE_ASSET_ACCOUNT_CREATION,
         result: SubMsgResult::Ok(SubMsgResponse {
             events: vec![Event::new("wasm").add_attributes(vec![
                 Attribute::new("action", "instantiate"),

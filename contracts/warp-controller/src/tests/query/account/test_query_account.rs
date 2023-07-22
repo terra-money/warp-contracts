@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 
 use crate::{
-    query::account::query_account,
+    query::account::query_fee_asset_account,
     tests::helpers::{create_warp_account, instantiate_warp},
 };
 
@@ -52,7 +52,7 @@ fn test_query_account_successful() {
         .ok_or_else(|| StdError::generic_err("cannot find `account_address` attribute"))
         .unwrap();
 
-    let query_account_res = query_account(
+    let query_account_res = query_fee_asset_account(
         deps.as_ref(),
         env,
         QueryAccountMsg {
@@ -98,7 +98,7 @@ fn test_query_account_does_not_exist() {
     )
     .unwrap();
 
-    let query_account_res = query_account(
+    let query_account_res = query_fee_asset_account(
         deps.as_ref(),
         env,
         QueryAccountMsg {

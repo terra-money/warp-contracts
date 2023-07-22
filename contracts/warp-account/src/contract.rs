@@ -1,13 +1,16 @@
-use crate::state::CONFIG;
+use crate::state::{CONFIG, TOTAL_PENDING_JOBS_LOCKED_ASSETS};
 use crate::ContractError;
-use account::{Config, ExecuteMsg, InstantiateMsg, QueryMsg, WithdrawAssetsMsg};
-use controller::account::{AssetInfo, Cw721ExecuteMsg};
+use account::{
+    Config, ExecuteMsg, InstantiateMsg, QueryMsg, UpdateLockedAssetsMsg, WithdrawAssetsMsg,
+};
+use controller::account::{AssetInfo, AssetInfoWithAmount, Cw721ExecuteMsg};
 use cosmwasm_std::{
     entry_point, to_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Response, StdResult, Uint128, WasmMsg,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
+use std::collections::HashMap;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -21,6 +24,14 @@ pub fn instantiate(
         &Config {
             owner: deps.api.addr_validate(&msg.owner)?,
             warp_addr: info.sender,
+        },
+    )?;
+    TOTAL_PENDING_JOBS_LOCKED_ASSETS.save(
+        deps.storage,
+        &AssetInfoWithAmount {
+            native: HashMap::new(),
+            cw20: HashMap::new(),
+            cw721: HashMap::new(),
         },
     )?;
     Ok(Response::new()
@@ -47,6 +58,7 @@ pub fn execute(
             .add_messages(data.msgs)
             .add_attribute("action", "generic")),
         ExecuteMsg::WithdrawAssets(data) => withdraw_assets(deps, env, info, data),
+        ExecuteMsg::UpdateLockedAssets(data) => update_locked_assets(deps, env, info, data),
     }
 }
 
@@ -116,6 +128,59 @@ pub fn withdraw_assets(
         .add_messages(withdraw_msgs)
         .add_attribute("action", "withdraw_assets")
         .add_attribute("assets", serde_json_wasm::to_string(&data.asset_infos)?))
+}
+
+pub fn update_locked_assets(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    data: UpdateLockedAssetsMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.owner && info.sender != config.warp_addr {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    match &data.action {
+        account::UpdateLockedAssetsAction::CreateJob => todo!(),
+        account::UpdateLockedAssetsAction::EvictJob => todo!(),
+        account::UpdateLockedAssetsAction::UpdateJobReward => todo!(),
+        account::UpdateLockedAssetsAction::FinishedNonRecurringJob => todo!(),
+        account::UpdateLockedAssetsAction::FinishedRecurringJob => todo!(),
+    }
+
+    // for asset_info in &data.asset_infos {
+    //     match asset_info {
+    //         AssetInfo::Native(denom) => {
+    //             let withdraw_native_msg =
+    //                 withdraw_asset_native(deps.as_ref(), env.clone(), &config.owner, denom)?;
+
+    //             match withdraw_native_msg {
+    //                 None => {}
+    //                 Some(msg) => withdraw_msgs.push(msg),
+    //             }
+    //         }
+    //         AssetInfo::Cw20(addr) => {
+    //             let withdraw_cw20_msg =
+    //                 withdraw_asset_cw20(deps.as_ref(), env.clone(), &config.owner, addr)?;
+
+    //             match withdraw_cw20_msg {
+    //                 None => {}
+    //                 Some(msg) => withdraw_msgs.push(msg),
+    //             }
+    //         }
+    //         AssetInfo::Cw721(addr, token_id) => {
+    //             let withdraw_cw721_msg =
+    //                 withdraw_asset_cw721(deps.as_ref(), &config.owner, addr, token_id)?;
+    //             match withdraw_cw721_msg {
+    //                 None => {}
+    //                 Some(msg) => withdraw_msgs.push(msg),
+    //             }
+    //         }
+    //     }
+    // }
+
+    Ok(Response::new().add_attribute("action", "update_locked_assets"))
 }
 
 fn withdraw_asset_native(

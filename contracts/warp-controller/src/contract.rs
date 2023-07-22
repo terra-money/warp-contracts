@@ -1,5 +1,7 @@
 use crate::error::map_contract_error;
-use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
+use crate::state::{
+    CONFIG, EXECUTION_ASSET_ACCOUNTS, FEE_ASSET_ACCOUNTS, FINISHED_JOBS, PENDING_JOBS,
+};
 use crate::util::variable::apply_var_fn;
 use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
@@ -11,6 +13,10 @@ use cosmwasm_std::{
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
+
+pub const REPLY_ID_FEE_ASSET_ACCOUNT_CREATION: u64 = 0;
+pub const REPLY_ID_EXECUTION_ASSET_ACCOUNT_CREATION: u64 = 1;
+pub const REPLY_ID_JOB_EXECUTION: u64 = 2;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -83,7 +89,12 @@ pub fn execute(
         ExecuteMsg::ExecuteJob(data) => execute::job::execute_job(deps, env, info, data),
         ExecuteMsg::EvictJob(data) => execute::job::evict_job(deps, env, info, data),
 
-        ExecuteMsg::CreateAccount(data) => execute::account::create_account(deps, env, info, data),
+        ExecuteMsg::CreateFeeAccount(data) => {
+            execute::account::create_fee_asset_account(deps, env, info, data)
+        }
+        ExecuteMsg::CreateAssetAccount(data) => {
+            execute::account::create_execution_asset_account(deps, env, info, data)
+        }
 
         ExecuteMsg::UpdateConfig(data) => execute::controller::update_config(deps, env, info, data),
     }
@@ -99,10 +110,18 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query::controller::query_simulate_query(deps, env, data)?)
         }
 
-        QueryMsg::QueryAccount(data) => to_binary(&query::account::query_account(deps, env, data)?),
-        QueryMsg::QueryAccounts(data) => {
-            to_binary(&query::account::query_accounts(deps, env, data)?)
+        QueryMsg::QueryFeeAccount(data) => {
+            to_binary(&query::account::query_fee_asset_account(deps, env, data)?)
         }
+        QueryMsg::QueryAssetAccount(data) => to_binary(
+            &query::account::query_execution_asset_account(deps, env, data)?,
+        ),
+        QueryMsg::QueryFeeAssetAccounts(data) => {
+            to_binary(&query::account::query_fee_asset_accounts(deps, env, data)?)
+        }
+        QueryMsg::QueryExecutionAssetAccounts(data) => to_binary(
+            &query::account::query_execution_asset_accounts(deps, env, data)?,
+        ),
 
         QueryMsg::QueryConfig(data) => {
             to_binary(&query::controller::query_config(deps, env, data)?)
@@ -118,8 +137,8 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        //account creation
-        0 => {
+        // fee account creation
+        REPLY_ID_FEE_ASSET_ACCOUNT_CREATION => {
             let reply = msg.result.into_result().map_err(StdError::generic_err)?;
 
             let event = reply
@@ -206,11 +225,11 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 }))
             }
 
-            if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
+            if FEE_ASSET_ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
                 return Err(ContractError::AccountAlreadyExists {});
             }
 
-            ACCOUNTS().save(
+            FEE_ASSET_ACCOUNTS().save(
                 deps.storage,
                 deps.api.addr_validate(&owner)?,
                 &Account {
@@ -226,8 +245,117 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?)
                 .add_messages(msgs_vec))
         }
-        //job execution
-        _ => {
+        // asset account creation
+        REPLY_ID_EXECUTION_ASSET_ACCOUNT_CREATION => {
+            let reply = msg.result.into_result().map_err(StdError::generic_err)?;
+
+            let event = reply
+                .events
+                .iter()
+                .find(|event| {
+                    event
+                        .attributes
+                        .iter()
+                        .any(|attr| attr.key == "action" && attr.value == "instantiate")
+                })
+                .ok_or_else(|| StdError::generic_err("cannot find `instantiate` event"))?;
+
+            let owner = event
+                .attributes
+                .iter()
+                .cloned()
+                .find(|attr| attr.key == "owner")
+                .ok_or_else(|| StdError::generic_err("cannot find `owner` attribute"))?
+                .value;
+
+            let address = event
+                .attributes
+                .iter()
+                .cloned()
+                .find(|attr| attr.key == "contract_addr")
+                .ok_or_else(|| StdError::generic_err("cannot find `contract_addr` attribute"))?
+                .value;
+
+            let funds: Vec<Coin> = serde_json_wasm::from_str(
+                &event
+                    .attributes
+                    .iter()
+                    .cloned()
+                    .find(|attr| attr.key == "funds")
+                    .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
+                    .value,
+            )?;
+
+            let cw_funds: Option<Vec<Fund>> = serde_json_wasm::from_str(
+                &event
+                    .attributes
+                    .iter()
+                    .cloned()
+                    .find(|attr| attr.key == "cw_funds")
+                    .ok_or_else(|| StdError::generic_err("cannot find `cw_funds` attribute"))?
+                    .value,
+            )?;
+
+            let cw_funds_vec = match cw_funds {
+                None => {
+                    vec![]
+                }
+                Some(funds) => funds,
+            };
+
+            let mut msgs_vec: Vec<CosmosMsg> = vec![];
+
+            for cw_fund in &cw_funds_vec {
+                msgs_vec.push(CosmosMsg::Wasm(match cw_fund {
+                    Fund::Cw20(cw20_fund) => WasmMsg::Execute {
+                        contract_addr: deps
+                            .api
+                            .addr_validate(&cw20_fund.contract_addr)?
+                            .to_string(),
+                        msg: to_binary(&FundTransferMsgs::TransferFrom(TransferFromMsg {
+                            owner: owner.clone(),
+                            recipient: address.clone(),
+                            amount: cw20_fund.amount,
+                        }))?,
+                        funds: vec![],
+                    },
+                    Fund::Cw721(cw721_fund) => WasmMsg::Execute {
+                        contract_addr: deps
+                            .api
+                            .addr_validate(&cw721_fund.contract_addr)?
+                            .to_string(),
+                        msg: to_binary(&FundTransferMsgs::TransferNft(TransferNftMsg {
+                            recipient: address.clone(),
+                            token_id: cw721_fund.token_id.clone(),
+                        }))?,
+                        funds: vec![],
+                    },
+                }))
+            }
+
+            if EXECUTION_ASSET_ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
+                return Err(ContractError::AccountAlreadyExists {});
+            }
+
+            EXECUTION_ASSET_ACCOUNTS().save(
+                deps.storage,
+                deps.api.addr_validate(&owner)?,
+                &Account {
+                    owner: deps.api.addr_validate(&owner.clone())?,
+                    account: deps.api.addr_validate(&address)?,
+                },
+            )?;
+            Ok(Response::new()
+                .add_attribute("action", "save_account")
+                .add_attribute("owner", owner)
+                .add_attribute("account_address", address)
+                .add_attribute("funds", serde_json_wasm::to_string(&funds)?)
+                .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?)
+                .add_messages(msgs_vec))
+        }
+
+        // job execution
+        REPLY_ID_JOB_EXECUTION => {
             let mut state = STATE.load(deps.storage)?;
 
             let new_status = match msg.result {
@@ -256,7 +384,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                     assets_to_withdraw: job.assets_to_withdraw,
-                    assets_to_lock: job.assets_to_lock,
+                    total_fee_assets_to_lock: job.total_fee_assets_to_lock,
+                    total_execution_assets_to_lock: job.total_execution_assets_to_lock,
                 }),
                 Some(_) => Err(ContractError::JobAlreadyFinished {}),
             })?;
@@ -272,7 +401,10 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let mut msgs = vec![];
             let mut new_job_attrs = vec![];
 
-            let account = ACCOUNTS().load(deps.storage, finished_job.owner.clone())?;
+            let fee_asset_account =
+                FEE_ASSET_ACCOUNTS().load(deps.storage, finished_job.owner.clone())?;
+            let execution_asset_account =
+                EXECUTION_ASSET_ACCOUNTS().load(deps.storage, finished_job.owner.clone())?;
             let config = CONFIG.load(deps.storage)?;
 
             //assume reward.amount == warp token allowance
@@ -282,7 +414,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let account_amount = deps
                 .querier
                 .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-                    address: account.account.to_string(),
+                    address: fee_asset_account.account.to_string(),
                     denom: "uluna".to_string(),
                 }))?
                 .amount
@@ -326,7 +458,9 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                                 msgs: finished_job.msgs.clone(),
                                 reward: finished_job.reward,
                                 assets_to_withdraw: finished_job.assets_to_withdraw,
-                                assets_to_lock: finished_job.assets_to_lock,
+                                total_fee_assets_to_lock: finished_job.total_fee_assets_to_lock,
+                                total_execution_assets_to_lock: finished_job
+                                    .total_execution_assets_to_lock,
                             }),
                             Some(_) => Err(ContractError::JobAlreadyExists {}),
                         },
@@ -338,7 +472,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     msgs.push(
                         //send reward to controller
                         WasmMsg::Execute {
-                            contract_addr: account.account.to_string(),
+                            contract_addr: fee_asset_account.account.to_string(),
                             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: config.fee_collector.to_string(),
@@ -352,7 +486,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     msgs.push(
                         //send reward to controller
                         WasmMsg::Execute {
-                            contract_addr: account.account.to_string(),
+                            contract_addr: fee_asset_account.account.to_string(),
                             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: env.contract.address.to_string(),
@@ -366,7 +500,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     msgs.push(
                         //withdraw all assets that are listed
                         WasmMsg::Execute {
-                            contract_addr: account.account.to_string(),
+                            contract_addr: execution_asset_account.account.to_string(),
                             msg: to_binary(&account::ExecuteMsg::WithdrawAssets(
                                 WithdrawAssetsMsg {
                                     asset_infos: new_job.assets_to_withdraw,
@@ -413,5 +547,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .add_attributes(new_job_attrs)
                 .add_messages(msgs))
         }
+        _ => Err(ContractError::InvalidReplyId(msg.id)),
     }
 }

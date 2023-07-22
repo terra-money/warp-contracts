@@ -8,20 +8,6 @@ use strum_macros::Display;
 
 use super::variable::Variable;
 
-// pub enum JobFund {
-//     Cw20(...),
-//     Native(...),
-//     Ibc(...)
-// }
-
-// 1. create_account (can potential embed funds here)
-// 2. cw20_sends, native (native send or within the create_job msg itself), ibc_send (to account)
-// 3. create_job msg
-//      - job.funds -> withdraw_asset_from_account(...), withdraws from account to controller contract
-// ...
-// 4. execute_job msg
-//      - job succceeded -
-
 #[cw_serde]
 pub struct Job {
     pub id: Uint64,
@@ -37,8 +23,12 @@ pub struct Job {
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,
+    // TODO: use AssetInfoWithAmount on assets_to_withdraw
     pub assets_to_withdraw: Vec<AssetInfo>,
-    pub assets_to_lock: Vec<AssetInfoWithAmount>,
+    // total assets paid to protocol fee (job execution reward, job eviction), including recurring jobs
+    pub total_fee_assets_to_lock: AssetInfoWithAmount,
+    // total assets paid to job execution (job execution reward, job eviction), including recurring jobs
+    pub total_execution_assets_to_lock: AssetInfoWithAmount,
 }
 
 #[cw_serde]
@@ -67,8 +57,12 @@ pub struct CreateJobMsg {
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,
+    // withdraw the specified assets from the warp account when job is executed
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
-    pub assets_to_lock: Option<Vec<AssetInfoWithAmount>>,
+    // total assets paid to protocol fee (job execution reward, job eviction), including recurring jobs
+    pub total_fee_assets_to_lock: Option<AssetInfoWithAmount>,
+    // total assets paid to job execution (job execution reward, job eviction), including recurring jobs
+    pub total_execution_assets_to_lock: Option<AssetInfoWithAmount>,
 }
 
 #[cw_serde]
