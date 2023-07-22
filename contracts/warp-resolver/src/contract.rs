@@ -42,6 +42,18 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryValidateJobCreation(data) => {
             let _condition: Condition = serde_json_wasm::from_str(&data.condition)
                 .map_err(|e| StdError::generic_err(format!("Condition input invalid: {}", e)))?;
+            match &data.terminate_condition {
+                Some(terminate_condition) => {
+                    let _terminate_condition: Condition =
+                        serde_json_wasm::from_str(terminate_condition).map_err(|e| {
+                            StdError::generic_err(format!(
+                                "Terminate condition input invalid: {}",
+                                e
+                            ))
+                        })?;
+                }
+                None => {}
+            }
             let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
                 .map_err(|e| StdError::generic_err(format!("Vars input invalid: {}", e)))?;
             let msgs: Vec<String> = serde_json_wasm::from_str(&data.msgs)
