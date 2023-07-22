@@ -33,6 +33,7 @@ pub struct MigrateMsg {}
 #[cw_serde]
 pub struct QueryValidateJobCreationMsg {
     pub condition: String,
+    pub terminate_condition: Option<String>,
     pub vars: String,
     pub msgs: String,
 }
