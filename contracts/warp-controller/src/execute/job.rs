@@ -186,7 +186,10 @@ pub fn delete_job(
         //send reward minus fee back to account
         BankMsg::Send {
             to_address: account.account.to_string(),
-            amount: vec![Coin::new((job.reward - fee).u128(), config.fee_denom.clone())],
+            amount: vec![Coin::new(
+                (job.reward - fee).u128(),
+                config.fee_denom.clone(),
+            )],
         },
         BankMsg::Send {
             to_address: config.fee_collector.to_string(),
@@ -316,12 +319,6 @@ pub fn execute_job(
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
     let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
-    if !ACCOUNTS().has(deps.storage, info.sender.clone()) {
-        return Err(ContractError::AccountDoesNotExist {});
-    }
-
-    let keeper_account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
-
     if job.status != JobStatus::Pending {
         return Err(ContractError::JobNotActive {});
     }
@@ -416,7 +413,7 @@ pub fn execute_job(
     }
 
     let reward_msg = BankMsg::Send {
-        to_address: keeper_account.account.to_string(),
+        to_address: info.sender.to_string(),
         amount: vec![Coin::new(job.reward.u128(), config.fee_denom)],
     };
 
