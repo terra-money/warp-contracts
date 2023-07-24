@@ -15,6 +15,7 @@ pub mod job;
 #[cw_serde]
 pub struct Config {
     pub owner: Addr,
+    pub fee_denom: String,
     pub fee_collector: Addr,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
@@ -38,6 +39,7 @@ pub struct State {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: Option<String>,
+    pub fee_denom: String,
     pub fee_collector: Option<String>,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
@@ -68,6 +70,7 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub owner: Option<String>,
+    pub fee_denom: Option<String>,
     pub fee_collector: Option<String>,
     pub minimum_reward: Option<Uint128>,
     pub creation_fee_percentage: Option<Uint64>,
@@ -108,4 +111,6 @@ pub struct ConfigResponse {
 
 //migrate
 #[cw_serde]
-pub struct MigrateMsg {}
+pub struct MigrateMsg {
+    pub fee_denom: String,
+}

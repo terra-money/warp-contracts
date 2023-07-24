@@ -24,6 +24,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let config = Config {
         owner: deps.api.addr_validate(&msg.owner)?,
+        fee_denom: msg.fee_denom,
         template_fee: Default::default(),
         fee_collector: deps.api.addr_validate(&msg.owner)?,
     };
@@ -226,6 +227,11 @@ pub fn update_config(
     config.owner = match data.owner {
         None => config.owner,
         Some(data) => deps.api.addr_validate(data.as_str())?,
+    };
+
+    config.fee_denom = match data.fee_denom {
+        None => config.fee_denom,
+        Some(data) => data,
     };
 
     config.fee_collector = match data.fee_collector {

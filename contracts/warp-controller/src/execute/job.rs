@@ -97,7 +97,7 @@ pub fn create_job(
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
-                    amount: vec![Coin::new((data.reward).u128(), "uluna")],
+                    amount: vec![Coin::new((data.reward).u128(), config.fee_denom.clone())],
                 })],
             }))?,
             funds: vec![],
@@ -107,7 +107,7 @@ pub fn create_job(
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
-                    amount: vec![Coin::new((fee).u128(), "uluna")],
+                    amount: vec![Coin::new((fee).u128(), config.fee_denom)],
                 })],
             }))?,
             funds: vec![],
@@ -183,11 +183,11 @@ pub fn delete_job(
         //send reward minus fee back to account
         BankMsg::Send {
             to_address: account.account.to_string(),
-            amount: vec![Coin::new((job.reward - fee).u128(), "uluna")],
+            amount: vec![Coin::new((job.reward - fee).u128(), config.fee_denom.clone())],
         },
         BankMsg::Send {
             to_address: config.fee_collector.to_string(),
-            amount: vec![Coin::new(fee.u128(), "uluna")],
+            amount: vec![Coin::new(fee.u128(), config.fee_denom)],
         },
     ];
 
@@ -266,7 +266,7 @@ pub fn update_job(
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: env.contract.address.to_string(),
-                        amount: vec![Coin::new((added_reward).u128(), "uluna")],
+                        amount: vec![Coin::new((added_reward).u128(), config.fee_denom.clone())],
                     })],
                 }))?,
                 funds: vec![],
@@ -279,7 +279,7 @@ pub fn update_job(
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: config.fee_collector.to_string(),
-                        amount: vec![Coin::new((fee).u128(), "uluna")],
+                        amount: vec![Coin::new((fee).u128(), config.fee_denom)],
                     })],
                 }))?,
                 funds: vec![],
@@ -412,7 +412,7 @@ pub fn execute_job(
 
     let reward_msg = BankMsg::Send {
         to_address: keeper_account.account.to_string(),
-        amount: vec![Coin::new(job.reward.u128(), "uluna")],
+        amount: vec![Coin::new(job.reward.u128(), config.fee_denom)],
     };
 
     Ok(Response::new()
@@ -440,7 +440,7 @@ pub fn evict_job(
         .querier
         .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
             address: account.account.to_string(),
-            denom: "uluna".to_string(),
+            denom: config.fee_denom.clone(),
         }))?
         .amount
         .amount;
@@ -477,7 +477,7 @@ pub fn evict_job(
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
-                        amount: vec![Coin::new(a.u128(), "uluna")],
+                        amount: vec![Coin::new(a.u128(), config.fee_denom)],
                     })],
                 }))?,
                 funds: vec![],
@@ -532,11 +532,11 @@ pub fn evict_job(
             //send reward minus fee back to account
             CosmosMsg::Bank(BankMsg::Send {
                 to_address: info.sender.to_string(),
-                amount: vec![Coin::new(a.u128(), "uluna")],
+                amount: vec![Coin::new(a.u128(), config.fee_denom.clone())],
             }),
             CosmosMsg::Bank(BankMsg::Send {
                 to_address: account.account.to_string(),
-                amount: vec![Coin::new((job.reward - a).u128(), "uluna")],
+                amount: vec![Coin::new((job.reward - a).u128(), config.fee_denom)],
             }),
         ]);
     }

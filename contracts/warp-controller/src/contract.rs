@@ -28,6 +28,7 @@ pub fn instantiate(
         owner: deps
             .api
             .addr_validate(&msg.owner.unwrap_or_else(|| info.sender.to_string()))?,
+        fee_denom: msg.fee_denom,
         fee_collector: deps
             .api
             .addr_validate(&msg.fee_collector.unwrap_or_else(|| info.sender.to_string()))?,
@@ -108,7 +109,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    //todo: migrate state
     Ok(Response::new())
 }
 
@@ -279,7 +279,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .querier
                 .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
                     address: account.account.to_string(),
-                    denom: "uluna".to_string(),
+                    denom: config.fee_denom.clone(),
                 }))?
                 .amount
                 .amount;
@@ -297,12 +297,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         "failed_invalid_job_status",
                     ));
                 } else {
-                    // let new_vars = apply_var_fn(
-                    //     deps.as_ref(),
-                    //     env.clone(),
-                    //     finished_job.vars,
-                    //     finished_job.status.clone(),
-                    // )?;
 
                     let new_vars: String = deps.querier.query_wasm_smart(
                         config.resolver_address,
@@ -345,7 +339,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: config.fee_collector.to_string(),
-                                    amount: vec![Coin::new((fee).u128(), "uluna")],
+                                    amount: vec![Coin::new((fee).u128(), config.fee_denom.clone())],
                                 })],
                             }))?,
                             funds: vec![],
@@ -359,7 +353,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: env.contract.address.to_string(),
-                                    amount: vec![Coin::new((new_job.reward).u128(), "uluna")],
+                                    amount: vec![Coin::new((new_job.reward).u128(), config.fee_denom)],
                                 })],
                             }))?,
                             funds: vec![],
