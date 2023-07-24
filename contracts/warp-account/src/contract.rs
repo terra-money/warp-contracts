@@ -4,7 +4,7 @@ use account::{Config, ExecuteMsg, InstantiateMsg, QueryMsg, WithdrawAssetsMsg};
 use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::{
     entry_point, to_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Response, StdResult, Uint128, WasmMsg,
+    Response, StdResult, Uint128, Uint64, WasmMsg,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
@@ -28,7 +28,8 @@ pub fn instantiate(
         .add_attribute("contract_addr", env.contract.address)
         .add_attribute("owner", msg.owner)
         .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
-        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?))
+        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
+        .add_attribute("job_id", msg.job_id.unwrap_or(Uint64::zero())))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

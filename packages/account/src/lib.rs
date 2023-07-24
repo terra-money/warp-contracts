@@ -1,6 +1,6 @@
 use controller::account::{AssetInfo, Fund};
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, CosmosMsg};
+use cosmwasm_std::{Addr, CosmosMsg, Uint64};
 
 #[cw_serde]
 pub struct Config {
@@ -12,6 +12,8 @@ pub struct Config {
 pub struct InstantiateMsg {
     pub owner: String,
     pub funds: Option<Vec<Fund>>,
+    pub job_id: Option<Uint64>,
+    pub is_job_account: Option<bool>,
 }
 
 #[cw_serde]

@@ -7,6 +7,22 @@ pub struct CreateAccountMsg {
 }
 
 #[cw_serde]
+pub struct CreateAccountAndJobMsg {
+    pub name: String,
+    pub description: String,
+    pub labels: Vec<String>,
+    pub condition: String,
+    pub msgs: String,
+    pub vars: String,
+    pub recurring: bool,
+    pub requeue_on_evict: bool,
+    pub reward: Uint128,
+    pub assets_to_withdraw: Option<Vec<AssetInfo>>,
+    pub funds: Option<Vec<Fund>>,
+    pub is_job_account: Option<bool>,
+}
+
+#[cw_serde]
 pub enum Fund {
     Cw20(Cw20Fund),
     Cw721(Cw721Fund),

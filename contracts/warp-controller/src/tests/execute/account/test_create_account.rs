@@ -1,3 +1,4 @@
+use crate::contract::REPLY_ID_CREATE_ACCOUNT;
 use crate::tests::helpers::{create_warp_account, instantiate_warp};
 use crate::ContractError;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
@@ -37,13 +38,15 @@ fn test_create_account_success() {
         Response::new()
             .add_attribute("action", "create_account")
             .add_submessage(SubMsg {
-                id: 0,
+                id: REPLY_ID_CREATE_ACCOUNT,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     admin: Some("cosmos2contract".to_string()),
                     code_id: 0,
                     msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
                         funds: None,
+                        job_id: None,
+                        is_job_account: None,
                     })
                     .unwrap(),
                     funds: vec![],
@@ -102,13 +105,15 @@ fn test_create_account_exists() {
         Response::new()
             .add_attribute("action", "create_account")
             .add_submessage(SubMsg {
-                id: 0,
+                id: REPLY_ID_CREATE_ACCOUNT,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     admin: Some("cosmos2contract".to_string()),
                     code_id: 0,
                     msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
                         funds: None,
+                        job_id: None,
+                        is_job_account: None,
                     })
                     .unwrap(),
                     funds: vec![],

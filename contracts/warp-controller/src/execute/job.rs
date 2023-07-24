@@ -1,3 +1,4 @@
+use crate::contract::REPLY_ID_EXECUTE_JOB;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
@@ -396,7 +397,7 @@ pub fn execute_job(
         }
 
         submsgs.push(SubMsg {
-            id: job.id.u64(),
+            id: REPLY_ID_EXECUTE_JOB,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {

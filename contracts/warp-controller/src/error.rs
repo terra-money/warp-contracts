@@ -9,6 +9,9 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
+    #[error("Unknown reply ID")]
+    UnknownReplyId {},
+
     #[error("Unauthorized")]
     Unauthorized {},
 

@@ -36,6 +36,9 @@ pub struct Job {
     pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Vec<AssetInfo>,
+    // if exists, then job execution fund and protocol fee will be paid from this account
+    // otherwise paid from primary account
+    pub job_account: Option<Addr>,
 }
 
 #[cw_serde]

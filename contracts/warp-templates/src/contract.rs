@@ -89,7 +89,7 @@ pub fn submit_template(
     let config = CONFIG.load(deps.storage)?;
 
     if !info.funds.contains(&Coin {
-        denom: "uluna".to_string(),
+        denom: config.fee_denom.clone(),
         amount: config.template_fee,
     }) {
         return Err(ContractError::TemplateFeeNotFound {});
@@ -137,7 +137,7 @@ pub fn submit_template(
 
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: config.fee_collector.to_string(),
-        amount: vec![Coin::new((config.template_fee).u128(), "uluna")],
+        amount: vec![Coin::new((config.template_fee).u128(), config.fee_denom)],
     });
 
     Ok(Response::new()
