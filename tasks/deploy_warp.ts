@@ -35,6 +35,7 @@ task(async ({ deployer, signer, refs }) => {
 
   const instantiateControllerMsg = {
     warp_account_code_id: id,
+    fee_denom: "uluna",
     creation_fee: "5",
     cancellation_fee: "5",
     minimum_reward: "10000",

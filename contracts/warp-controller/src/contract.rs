@@ -110,7 +110,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    //todo: migrate state
     Ok(Response::new())
 }
 
@@ -299,12 +298,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         "failed_invalid_job_status",
                     ));
                 } else {
-                    // let new_vars = apply_var_fn(
-                    //     deps.as_ref(),
-                    //     env.clone(),
-                    //     finished_job.vars,
-                    //     finished_job.status.clone(),
-                    // )?;
 
                     let new_vars: String = deps.querier.query_wasm_smart(
                         config.resolver_address,

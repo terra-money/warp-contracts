@@ -478,7 +478,7 @@ pub fn evict_job(
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
-                        amount: vec![Coin::new(a.u128(), config.fee_denom.clone())],
+                        amount: vec![Coin::new(a.u128(), config.fee_denom)],
                     })],
                 }))?,
                 funds: vec![],
