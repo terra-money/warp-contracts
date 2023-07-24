@@ -6,6 +6,7 @@ use cosmwasm_std::{Addr, Uint128, Uint64};
 #[cw_serde]
 pub struct Config {
     pub owner: Addr,
+    pub fee_denom: String,
     pub template_fee: Uint128,
     pub fee_collector: Addr,
 }
@@ -18,6 +19,7 @@ pub struct State {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
+    pub fee_denom: String,
     pub fee_collector: String,
     pub templates: Vec<Template>,
 }
@@ -111,6 +113,7 @@ pub struct TemplatesResponse {
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub owner: Option<String>,
+    pub fee_denom: Option<String>,
     pub template_fee: Option<Uint128>,
     pub fee_collector: Option<String>,
 }

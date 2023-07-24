@@ -1,3 +1,4 @@
+use cosmwasm_schema::cw_serde;
 use crate::error::map_contract_error;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::util::variable::apply_var_fn;
@@ -6,11 +7,8 @@ use account::{GenericMsg, WithdrawAssetsMsg};
 use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use controller::job::{Job, JobStatus};
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
-use cosmwasm_std::{
-    entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
-    CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
-    SubMsgResult, Uint128, Uint64, WasmMsg,
-};
+use cosmwasm_std::{entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg, Addr};
+use cw_storage_plus::Item;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -29,6 +27,7 @@ pub fn instantiate(
         owner: deps
             .api
             .addr_validate(&msg.owner.unwrap_or_else(|| info.sender.to_string()))?,
+        fee_denom: msg.fee_denom,
         fee_collector: deps
             .api
             .addr_validate(&msg.fee_collector.unwrap_or_else(|| info.sender.to_string()))?,
@@ -111,8 +110,44 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::new())
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    #[cw_serde]
+    pub struct V1Config {
+        pub owner: Addr,
+        pub fee_collector: Addr,
+        pub warp_account_code_id: Uint64,
+        pub minimum_reward: Uint128,
+        pub creation_fee_percentage: Uint64,
+        pub cancellation_fee_percentage: Uint64,
+        pub t_max: Uint64,
+        pub t_min: Uint64,
+        pub a_max: Uint128,
+        pub a_min: Uint128,
+        pub q_max: Uint64,
+    }
+    let v1_config: V1Config = Item::new("config").load(deps.storage)?;
+
+    let new_config = Config {
+        owner: v1_config.owner,
+        fee_denom: msg.fee_denom,
+        fee_collector: v1_config.fee_collector,
+        warp_account_code_id: v1_config.warp_account_code_id,
+        minimum_reward: v1_config.minimum_reward,
+        creation_fee_percentage: v1_config.creation_fee_percentage,
+        cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
+        t_max: v1_config.t_max,
+        t_min: v1_config.t_min,
+        a_max: v1_config.a_max,
+        a_min: v1_config.a_min,
+        q_max: v1_config.q_max,
+    };
+
+    CONFIG.save(deps.storage, &new_config)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "migrate")
+        .add_attribute("fee_denom", new_config.fee_denom)
+    )
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -282,7 +317,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 .querier
                 .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
                     address: account.account.to_string(),
-                    denom: "uluna".to_string(),
+                    denom: config.fee_denom.clone(),
                 }))?
                 .amount
                 .amount;
@@ -340,7 +375,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: config.fee_collector.to_string(),
-                                    amount: vec![Coin::new((fee).u128(), "uluna")],
+                                    amount: vec![Coin::new((fee).u128(), config.fee_denom.clone())],
                                 })],
                             }))?,
                             funds: vec![],
@@ -354,7 +389,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                     to_address: env.contract.address.to_string(),
-                                    amount: vec![Coin::new((new_job.reward).u128(), "uluna")],
+                                    amount: vec![Coin::new((new_job.reward).u128(), config.fee_denom)],
                                 })],
                             }))?,
                             funds: vec![],

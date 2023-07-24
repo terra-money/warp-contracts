@@ -1,11 +1,9 @@
+use cosmwasm_schema::cw_serde;
 use crate::state::{CONFIG, QUERY_PAGE_SIZE, STATE, TEMPLATES};
 use crate::ContractError;
 use controller::MigrateMsg;
-use cosmwasm_std::{
-    entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Order, Response, StdError, StdResult, Uint64,
-};
-use cw_storage_plus::Bound;
+use cosmwasm_std::{entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint64, Addr, Uint128};
+use cw_storage_plus::{Bound, Item};
 use resolver::{
     Config, ConfigResponse, DeleteTemplateMsg, EditTemplateMsg, ExecuteMsg, InstantiateMsg,
     QueryConfigMsg, QueryMsg, QueryTemplateMsg, QueryTemplatesMsg, State, SubmitTemplateMsg,
@@ -21,6 +19,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let config = Config {
         owner: deps.api.addr_validate(&msg.owner)?,
+        fee_denom: msg.fee_denom,
         template_fee: Default::default(),
         fee_collector: deps.api.addr_validate(&msg.owner)?,
     };
@@ -72,8 +71,27 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::new())
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    #[cw_serde]
+    pub struct V1Config {
+        pub owner: Addr,
+        pub template_fee: Uint128,
+        pub fee_collector: Addr,
+    }
+    let v1_config: V1Config = Item::new("config").load(deps.storage)?;
+
+    let new_config = Config {
+        owner: v1_config.owner,
+        fee_denom: msg.fee_denom,
+        template_fee: v1_config.template_fee,
+        fee_collector: v1_config.fee_collector,
+    };
+
+    CONFIG.save(deps.storage, &new_config)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "migrate")
+        .add_attribute("fee_denom", new_config.fee_denom))
 }
 
 pub fn submit_template(
@@ -85,7 +103,7 @@ pub fn submit_template(
     let config = CONFIG.load(deps.storage)?;
 
     if !info.funds.contains(&Coin {
-        denom: "uluna".to_string(),
+        denom: config.fee_denom.clone(),
         amount: config.template_fee,
     }) {
         return Err(ContractError::TemplateFeeNotFound {});
@@ -133,7 +151,7 @@ pub fn submit_template(
 
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: config.fee_collector.to_string(),
-        amount: vec![Coin::new((config.template_fee).u128(), "uluna")],
+        amount: vec![Coin::new((config.template_fee).u128(), config.fee_denom)],
     });
 
     Ok(Response::new()
@@ -223,6 +241,11 @@ pub fn update_config(
     config.owner = match data.owner {
         None => config.owner,
         Some(data) => deps.api.addr_validate(data.as_str())?,
+    };
+
+    config.fee_denom = match data.fee_denom {
+        None => config.fee_denom,
+        Some(data) => data,
     };
 
     config.fee_collector = match data.fee_collector {
