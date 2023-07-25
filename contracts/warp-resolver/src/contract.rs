@@ -42,17 +42,13 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryValidateJobCreation(data) => {
             let _condition: Condition = serde_json_wasm::from_str(&data.condition)
                 .map_err(|e| StdError::generic_err(format!("Condition input invalid: {}", e)))?;
-            match &data.terminate_condition {
-                Some(terminate_condition) => {
-                    let _terminate_condition: Condition =
-                        serde_json_wasm::from_str(terminate_condition).map_err(|e| {
-                            StdError::generic_err(format!(
-                                "Terminate condition input invalid: {}",
-                                e
-                            ))
-                        })?;
-                }
-                None => {}
+            let terminate_condition_str =
+                data.terminate_condition.clone().unwrap_or("".to_string());
+            if !terminate_condition_str.is_empty() {
+                let _terminate_condition: Condition =
+                    serde_json_wasm::from_str(&terminate_condition_str).map_err(|e| {
+                        StdError::generic_err(format!("Terminate condition input invalid: {}", e))
+                    })?;
             }
             let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
                 .map_err(|e| StdError::generic_err(format!("Vars input invalid: {}", e)))?;
@@ -71,16 +67,19 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 ));
             }
 
-            if !(string_vars_in_vector(&vars, &data.condition)//stringified
-                && string_vars_in_vector(&vars, &data.msgs))
-            //stringified
+            if !(string_vars_in_vector(&vars, &data.condition) //stringified
+            && string_vars_in_vector(&vars, &terminate_condition_str) //stringified
+            && string_vars_in_vector(&vars, &data.msgs))
             {
                 return Err(StdError::generic_err(
                     ContractError::VariablesMissingFromVector {}.to_string(),
                 ));
             }
 
-            if !all_vector_vars_present(&vars, format!("{}{}", data.condition, data.msgs)) {
+            if !all_vector_vars_present(
+                &vars,
+                format!("{}{}{}", data.condition, terminate_condition_str, data.msgs),
+            ) {
                 return Err(StdError::generic_err(
                     ContractError::ExcessVariablesInVector {}.to_string(),
                 ));
