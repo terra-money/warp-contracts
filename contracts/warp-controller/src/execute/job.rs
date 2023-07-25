@@ -58,11 +58,7 @@ pub fn create_job(
         return Err(ContractError::ExcessVariablesInVector {});
     }
 
-    if !msgs_valid(&data.msgs, &data.vars)? {
-        return Err(ContractError::MsgError {
-            msg: "msgs are invalid".to_string(),
-        });
-    }
+    msgs_valid(&data.msgs, &data.vars)?;
 
     let q = ACCOUNTS()
         .idx
@@ -75,6 +71,16 @@ pub fn create_job(
             .map_err(|_e| ContractError::AccountDoesNotExist {})?,
         Some(q) => q.1,
     };
+
+    // compare contract balance with job reward
+    let account_balance = deps
+        .querier
+        .query_balance(&account.account, "uluna")?
+        .amount;
+
+    if account_balance < data.reward {
+        Err(ContractError::AccountBalanceSmallerThanJobReward {})?;
+    }
 
     // let mut msgs = vec![];
     // for msg in data.msgs {

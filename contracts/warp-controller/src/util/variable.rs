@@ -308,7 +308,7 @@ fn replace_in_string(value: String, vars: &[Variable]) -> Result<String, Contrac
     Ok(replaced_value)
 }
 
-pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, ContractError> {
+pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<(), ContractError> {
     let mut parsed_msgs: Vec<CosmosMsg> = vec![];
     for msg in msgs {
         let mut replaced_msg = msg.clone();
@@ -367,7 +367,7 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
     } //todo: check if msgs valid
 
-    Ok(true)
+    Ok(())
 }
 
 pub fn apply_var_fn(
