@@ -228,7 +228,7 @@ pub fn create_account_and_job(
 
             attrs.push(Attribute::new("action", "create_account"));
             attrs.push(Attribute::new("owner", account.owner));
-            attrs.push(Attribute::new("account_address", account.account));
+            attrs.push(Attribute::new("account_address", account.account.clone()));
 
             //assume reward.amount == warp token allowance
             let fee =
@@ -240,7 +240,7 @@ pub fn create_account_and_job(
                     msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                             to_address: env.contract.address.to_string(),
-                            amount: vec![Coin::new((data.reward).u128(), config.fee_denom)],
+                            amount: vec![Coin::new((data.reward).u128(), config.fee_denom.clone())],
                         })],
                     }))?,
                     funds: vec![],
@@ -302,6 +302,7 @@ pub fn create_account_and_job(
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
+    attrs.push(Attribute::new("job_id", job.id));
 
     STATE.save(
         deps.storage,

@@ -56,7 +56,18 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
     let mut msgs = vec![];
     let mut new_job_attrs = vec![];
 
-    let account = ACCOUNTS().load(deps.storage, finished_job.owner.clone())?;
+    let account;
+    match finished_job.job_account.clone() {
+        Some(job_account) => {
+            account = job_account;
+        }
+        None => {
+            account = ACCOUNTS()
+                .load(deps.storage, finished_job.owner.clone())?
+                .account;
+        }
+    }
+
     let config = CONFIG.load(deps.storage)?;
 
     //assume reward.amount == warp token allowance
@@ -66,8 +77,8 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
     let account_amount = deps
         .querier
         .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-            address: account.account.to_string(),
-            denom: config.fee_denom,
+            address: account.to_string(),
+            denom: config.fee_denom.clone(),
         }))?
         .amount
         .amount;
@@ -127,11 +138,11 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
             msgs.push(
                 //send reward to controller
                 WasmMsg::Execute {
-                    contract_addr: account.account.to_string(),
+                    contract_addr: account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                             to_address: config.fee_collector.to_string(),
-                            amount: vec![Coin::new((fee).u128(), config.fee_denom)],
+                            amount: vec![Coin::new((fee).u128(), config.fee_denom.clone())],
                         })],
                     }))?,
                     funds: vec![],
@@ -141,7 +152,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
             msgs.push(
                 //send reward to controller
                 WasmMsg::Execute {
-                    contract_addr: account.account.to_string(),
+                    contract_addr: account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                             to_address: env.contract.address.to_string(),
@@ -155,7 +166,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
             msgs.push(
                 //withdraw all assets that are listed
                 WasmMsg::Execute {
-                    contract_addr: account.account.to_string(),
+                    contract_addr: account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
                         asset_infos: new_job.assets_to_withdraw,
                     }))?,

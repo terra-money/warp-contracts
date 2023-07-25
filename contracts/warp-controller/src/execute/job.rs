@@ -78,6 +78,7 @@ pub fn create_job(
             description: data.description,
             labels: data.labels,
             assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
+            job_account: None,
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
@@ -149,7 +150,15 @@ pub fn delete_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let account = ACCOUNTS().load(deps.storage, info.sender)?;
+    let account;
+    match job.job_account.clone() {
+        Some(job_account) => {
+            account = job_account;
+        }
+        None => {
+            account = ACCOUNTS().load(deps.storage, info.sender)?.account;
+        }
+    }
 
     PENDING_JOBS().remove(deps.storage, data.id.u64())?;
     let _new_job = FINISHED_JOBS().update(deps.storage, data.id.u64(), |h| match h {
@@ -169,6 +178,7 @@ pub fn delete_job(
             description: job.description,
             labels: job.labels,
             assets_to_withdraw: job.assets_to_withdraw,
+            job_account: job.job_account,
         }),
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
     })?;
@@ -186,8 +196,11 @@ pub fn delete_job(
     let cw20_send_msgs = vec![
         //send reward minus fee back to account
         BankMsg::Send {
-            to_address: account.account.to_string(),
-            amount: vec![Coin::new((job.reward - fee).u128(), config.fee_denom.clone())],
+            to_address: account.to_string(),
+            amount: vec![Coin::new(
+                (job.reward - fee).u128(),
+                config.fee_denom.clone(),
+            )],
         },
         BankMsg::Send {
             to_address: config.fee_collector.to_string(),
@@ -216,7 +229,15 @@ pub fn update_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let account = ACCOUNTS().load(deps.storage, info.sender)?;
+    let account;
+    match job.job_account.clone() {
+        Some(job_account) => {
+            account = job_account;
+        }
+        None => {
+            account = ACCOUNTS().load(deps.storage, info.sender)?.account;
+        }
+    }
 
     let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
 
@@ -250,6 +271,7 @@ pub fn update_job(
             requeue_on_evict: job.requeue_on_evict,
             reward: job.reward + added_reward,
             assets_to_withdraw: job.assets_to_withdraw,
+            job_account: job.job_account,
         }),
     })?;
 
@@ -267,7 +289,7 @@ pub fn update_job(
         cw20_send_msgs.push(
             //send reward to controller
             WasmMsg::Execute {
-                contract_addr: account.account.to_string(),
+                contract_addr: account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: env.contract.address.to_string(),
@@ -280,7 +302,7 @@ pub fn update_job(
         cw20_send_msgs.push(
             //send reward to controller
             WasmMsg::Execute {
-                contract_addr: account.account.to_string(),
+                contract_addr: account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: config.fee_collector.to_string(),
@@ -380,6 +402,7 @@ pub fn execute_job(
                 requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
                 assets_to_withdraw: job.assets_to_withdraw,
+                job_account: job.job_account,
             },
         )?;
         PENDING_JOBS().remove(deps.storage, data.id.u64())?;
@@ -440,12 +463,20 @@ pub fn evict_job(
     let config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
-    let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
+    let account;
+    match job.job_account.clone() {
+        Some(job_account) => {
+            account = job_account;
+        }
+        None => {
+            account = ACCOUNTS().load(deps.storage, job.owner.clone())?.account;
+        }
+    }
 
     let account_amount = deps
         .querier
         .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-            address: account.account.to_string(),
+            address: account.to_string(),
             denom: config.fee_denom.clone(),
         }))?
         .amount
@@ -479,7 +510,7 @@ pub fn evict_job(
         cosmos_msgs.push(
             //send reward to evictor
             CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: account.account.to_string(),
+                contract_addr: account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
@@ -508,6 +539,7 @@ pub fn evict_job(
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                     assets_to_withdraw: job.assets_to_withdraw,
+                    job_account: job.job_account,
                 }),
             })?
             .status;
@@ -531,6 +563,7 @@ pub fn evict_job(
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                     assets_to_withdraw: job.assets_to_withdraw,
+                    job_account: job.job_account,
                 }),
                 Some(_) => Err(ContractError::JobAlreadyExists {}),
             })?
@@ -543,7 +576,7 @@ pub fn evict_job(
                 amount: vec![Coin::new(a.u128(), config.fee_denom.clone())],
             }),
             CosmosMsg::Bank(BankMsg::Send {
-                to_address: account.account.to_string(),
+                to_address: account.to_string(),
                 amount: vec![Coin::new((job.reward - a).u128(), config.fee_denom)],
             }),
         ]);

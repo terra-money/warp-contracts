@@ -1,9 +1,19 @@
-use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
-use cosmwasm_std::{to_binary, Coin, CosmosMsg, DepsMut, Env, Reply, Response, StdError, WasmMsg};
+use account::GenericMsg;
+use controller::{
+    account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg},
+    job::Job,
+};
+use cosmwasm_std::{
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, Reply, Response, StdError, Uint128,
+    WasmMsg,
+};
 
-use crate::{state::ACCOUNTS, ContractError};
+use crate::{
+    state::{ACCOUNTS, CONFIG, PENDING_JOBS},
+    ContractError,
+};
 
-pub fn create_account(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+pub fn create_account(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     let reply = msg.result.into_result().map_err(StdError::generic_err)?;
 
     let event = reply
@@ -165,6 +175,43 @@ pub fn create_account_and_job(
             .value,
     )?;
 
+    let job_id = event
+        .attributes
+        .iter()
+        .cloned()
+        .find(|attr| attr.key == "job_id")
+        .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
+        .value;
+
+    let job = PENDING_JOBS().load(deps.storage, u64::from_str_radix(job_id.as_str(), 10)?)?;
+    //assume reward.amount == warp token allowance
+    let config = CONFIG.load(deps.storage)?;
+    let fee = job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+
+    let reward_send_msgs = vec![
+        //send reward to controller
+        WasmMsg::Execute {
+            contract_addr: address.clone(),
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                    to_address: env.contract.address.to_string(),
+                    amount: vec![Coin::new((job.reward).u128(), config.fee_denom.clone())],
+                })],
+            }))?,
+            funds: vec![],
+        },
+        WasmMsg::Execute {
+            contract_addr: address.clone(),
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                    to_address: config.fee_collector.to_string(),
+                    amount: vec![Coin::new((fee).u128(), config.fee_denom)],
+                })],
+            }))?,
+            funds: vec![],
+        },
+    ];
+
     let cw_funds_vec = match cw_funds {
         None => {
             vec![]
@@ -220,7 +267,8 @@ pub fn create_account_and_job(
         .add_attribute("account_address", address)
         .add_attribute("funds", serde_json_wasm::to_string(&funds)?)
         .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?)
-        .add_messages(msgs_vec))
+        .add_messages(msgs_vec)
+        .add_messages(reward_send_msgs))
 }
 
 pub fn create_job_account_and_job(
@@ -277,6 +325,64 @@ pub fn create_job_account_and_job(
             .value,
     )?;
 
+    let job_id = event
+        .attributes
+        .iter()
+        .cloned()
+        .find(|attr| attr.key == "job_id")
+        .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
+        .value;
+
+    let job = PENDING_JOBS().load(deps.storage, u64::from_str_radix(job_id.as_str(), 10)?)?;
+    PENDING_JOBS().update(deps.storage, job.id.u64(), |h| match h {
+        None => Err(ContractError::JobDoesNotExist {}),
+        Some(job) => Ok(Job {
+            id: job.id,
+            owner: job.owner,
+            last_update_time: job.last_update_time,
+            name: job.name,
+            description: job.description,
+            labels: job.labels,
+            status: job.status,
+            condition: job.condition,
+            msgs: job.msgs,
+            vars: job.vars,
+            recurring: job.recurring,
+            requeue_on_evict: job.requeue_on_evict,
+            reward: job.reward,
+            assets_to_withdraw: job.assets_to_withdraw,
+            job_account: Some(Addr::unchecked(address.clone())),
+        }),
+    })?;
+
+    //assume reward.amount == warp token allowance
+    let config = CONFIG.load(deps.storage)?;
+    let fee = job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+
+    let reward_send_msgs = vec![
+        //send reward to controller
+        WasmMsg::Execute {
+            contract_addr: address.clone(),
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                    to_address: env.contract.address.to_string(),
+                    amount: vec![Coin::new((job.reward).u128(), config.fee_denom.clone())],
+                })],
+            }))?,
+            funds: vec![],
+        },
+        WasmMsg::Execute {
+            contract_addr: address.clone(),
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                    to_address: config.fee_collector.to_string(),
+                    amount: vec![Coin::new((fee).u128(), config.fee_denom)],
+                })],
+            }))?,
+            funds: vec![],
+        },
+    ];
+
     let cw_funds_vec = match cw_funds {
         None => {
             vec![]
@@ -314,23 +420,13 @@ pub fn create_job_account_and_job(
         }))
     }
 
-    if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
-        return Err(ContractError::AccountAlreadyExists {});
-    }
-
-    ACCOUNTS().save(
-        deps.storage,
-        deps.api.addr_validate(&owner)?,
-        &Account {
-            owner: deps.api.addr_validate(&owner.clone())?,
-            account: deps.api.addr_validate(&address)?,
-        },
-    )?;
+    // don't save job account, they are more like 1 time account that ties to a job or a recurring job
     Ok(Response::new()
         .add_attribute("action", "save_account")
         .add_attribute("owner", owner)
         .add_attribute("account_address", address)
         .add_attribute("funds", serde_json_wasm::to_string(&funds)?)
         .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?)
-        .add_messages(msgs_vec))
+        .add_messages(msgs_vec)
+        .add_messages(reward_send_msgs))
 }
