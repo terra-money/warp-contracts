@@ -134,6 +134,7 @@ pub fn create_account_and_job(
         config.resolver_address,
         &resolver::QueryMsg::QueryValidateJobCreation(resolver::QueryValidateJobCreationMsg {
             condition: data.condition.clone(),
+            terminate_condition: data.terminate_condition.clone(),
             vars: data.vars.clone(),
             msgs: data.msgs.clone(),
         }),
@@ -290,6 +291,7 @@ pub fn create_account_and_job(
             name: data.name,
             status: JobStatus::Pending,
             condition: data.condition.clone(),
+            terminate_condition: data.terminate_condition.clone(),
             recurring: data.recurring,
             requeue_on_evict: data.requeue_on_evict,
             vars: data.vars,

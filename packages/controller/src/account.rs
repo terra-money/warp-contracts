@@ -12,6 +12,7 @@ pub struct CreateAccountAndJobMsg {
     pub description: String,
     pub labels: Vec<String>,
     pub condition: String,
+    pub terminate_condition: Option<String>,
     pub msgs: String,
     pub vars: String,
     pub recurring: bool,

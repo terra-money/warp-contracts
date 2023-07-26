@@ -345,6 +345,7 @@ pub fn create_job_account_and_job(
             labels: job.labels,
             status: job.status,
             condition: job.condition,
+            terminate_condition: job.terminate_condition,
             msgs: job.msgs,
             vars: job.vars,
             recurring: job.recurring,
