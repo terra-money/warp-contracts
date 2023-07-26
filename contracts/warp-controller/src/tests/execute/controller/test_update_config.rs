@@ -16,11 +16,13 @@ fn test_modify_config_success() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
-        Some(info.sender.to_string()),
+        "luna".to_string(),
+        Default::default(),
         Uint64::new(0),
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
+        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),
@@ -40,6 +42,7 @@ fn test_modify_config_success() {
         a_max: Some(Uint128::new(8)),
         a_min: Some(Uint128::new(7)),
         q_max: Some(Uint64::new(9)),
+        fee_denom: Some("uluna".to_string()),
     };
 
     let modify_config_res =
@@ -72,11 +75,13 @@ fn test_modify_config_unauthorized() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
-        Some(info.sender.to_string()),
+        "luna".to_string(),
+        Default::default(),
         Uint64::new(0),
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
+        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),
@@ -96,6 +101,7 @@ fn test_modify_config_unauthorized() {
         a_max: Some(Uint128::new(7)),
         a_min: Some(Uint128::new(8)),
         q_max: Some(Uint64::new(9)),
+        fee_denom: Some("uluna".to_string()),
     };
 
     let info = mock_info("vlad2", &vec![coin(100, "uluna")]);
@@ -117,11 +123,13 @@ fn test_modify_config_bad_percentages() {
         env.clone(),
         info.clone(),
         Some(info.sender.to_string()),
-        Some(info.sender.to_string()),
+        "luna".to_string(),
+        Default::default(),
         Uint64::new(0),
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
+        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),
@@ -141,6 +149,7 @@ fn test_modify_config_bad_percentages() {
         a_max: Some(Uint128::new(8)),
         a_min: Some(Uint128::new(7)),
         q_max: Some(Uint64::new(9)),
+        fee_denom: Some("uluna".to_string()),
     };
 
     let modify_config_res =
@@ -159,6 +168,7 @@ fn test_modify_config_bad_percentages() {
         a_max: Some(Uint128::new(8)),
         a_min: Some(Uint128::new(7)),
         q_max: Some(Uint64::new(9)),
+        fee_denom: Some("uluna".to_string()),
     };
 
     let modify_config_res =
