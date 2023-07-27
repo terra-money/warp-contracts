@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Uint128, Uint64};
 
 #[cw_serde]
 pub struct CreateAccountMsg {
@@ -71,6 +71,11 @@ pub struct QueryAccountMsg {
 }
 
 #[cw_serde]
+pub struct QueryJobAccountMsg {
+    pub job_id: Uint64,
+}
+
+#[cw_serde]
 pub struct QueryAccountsMsg {
     pub start_after: Option<String>,
     pub limit: Option<u32>,
@@ -85,6 +90,11 @@ pub struct Account {
 #[cw_serde]
 pub struct AccountResponse {
     pub account: Account,
+}
+
+#[cw_serde]
+pub struct JobAccountResponse {
+    pub account: Option<Account>,
 }
 
 #[cw_serde]

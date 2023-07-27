@@ -105,6 +105,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query::account::query_accounts(deps, env, data)?)
         }
 
+        QueryMsg::QueryJobAccount(data) => {
+            to_binary(&query::account::query_job_account(deps, env, data)?)
+        }
+
         QueryMsg::QueryConfig(data) => {
             to_binary(&query::controller::query_config(deps, env, data)?)
         }

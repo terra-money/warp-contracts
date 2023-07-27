@@ -6,6 +6,7 @@ use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, UpdateJobMsg,
 };
+use account::{JobAccountResponse, QueryJobAccountMsg};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Uint128, Uint64};
 
@@ -98,6 +99,9 @@ pub enum QueryMsg {
     QueryAccount(QueryAccountMsg),
     #[returns(AccountsResponse)]
     QueryAccounts(QueryAccountsMsg),
+
+    #[returns(JobAccountResponse)]
+    QueryJobAccount(QueryJobAccountMsg),
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),

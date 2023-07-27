@@ -1,5 +1,8 @@
-use crate::state::{ACCOUNTS, QUERY_PAGE_SIZE};
-use controller::account::{AccountResponse, AccountsResponse, QueryAccountMsg, QueryAccountsMsg};
+use crate::state::{ACCOUNTS, FINISHED_JOBS, PENDING_JOBS, QUERY_PAGE_SIZE};
+use controller::account::{
+    Account, AccountResponse, AccountsResponse, JobAccountResponse, QueryAccountMsg,
+    QueryAccountsMsg, QueryJobAccountMsg,
+};
 use cosmwasm_std::{Deps, Env, Order, StdResult};
 use cw_storage_plus::Bound;
 
@@ -28,4 +31,26 @@ pub fn query_accounts(
         accounts.push(tuple.1)
     }
     Ok(AccountsResponse { accounts })
+}
+
+pub fn query_job_account(
+    deps: Deps,
+    _env: Env,
+    data: QueryJobAccountMsg,
+) -> StdResult<JobAccountResponse> {
+    let job = if FINISHED_JOBS().has(deps.storage, data.job_id.u64()) {
+        FINISHED_JOBS().load(deps.storage, data.job_id.u64())?
+    } else {
+        PENDING_JOBS().load(deps.storage, data.job_id.u64())?
+    };
+    if job.job_account.is_some() {
+        Ok(JobAccountResponse {
+            account: Some(Account {
+                owner: job.owner,
+                account: job.job_account.unwrap(),
+            }),
+        })
+    } else {
+        Ok(JobAccountResponse { account: None })
+    }
 }
