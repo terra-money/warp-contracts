@@ -19,6 +19,7 @@ task(async ({ deployer, signer, refs }) => {
 
   const instantiateTemplatesMsg = {
     owner: signer.key.accAddress,
+    fee_denom: "uluna",
     fee_collector: signer.key.accAddress,
     templates: [],
   }
@@ -49,6 +50,7 @@ task(async ({ deployer, signer, refs }) => {
 
   await deployer.instantiate("warp-controller", instantiateControllerMsg, {
     admin: signer.key.accAddress,
+    label: "warp-controller: job account enabled",
   });
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
