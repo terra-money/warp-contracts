@@ -22,7 +22,7 @@ fn test_modify_config_success() {
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
-        Default::default(),
+        "terra1".to_string(),
         Default::default(),
         Default::default(),
         Default::default(),
@@ -53,6 +53,8 @@ fn test_modify_config_success() {
         Response::new()
             .add_attribute("action", "update_config")
             .add_attribute("config_owner", info.sender.to_string())
+            .add_attribute("config_fee_denom", "uluna".to_string())
+            .add_attribute("config_fee_collector", "vlad".to_string())
             .add_attribute("config_minimum_reward", Uint128::new(7))
             .add_attribute("config_creation_fee_percentage", Uint64::new(2),)
             .add_attribute("config_cancellation_fee_percentage", Uint64::new(3))
@@ -81,7 +83,7 @@ fn test_modify_config_unauthorized() {
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
-        Default::default(),
+        "terra1".to_string(),
         Default::default(),
         Default::default(),
         Default::default(),
@@ -129,7 +131,7 @@ fn test_modify_config_bad_percentages() {
         Uint128::new(0),
         Uint64::new(0),
         Uint64::new(0),
-        Default::default(),
+        "terra1".to_string(),
         Default::default(),
         Default::default(),
         Default::default(),
