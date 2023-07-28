@@ -26,11 +26,13 @@ task(async ({ deployer, signer, refs }) => {
 
   await deployer.instantiate("warp-templates", instantiateTemplatesMsg, {
     admin: signer.key.accAddress,
+    label: "warp-templates: job account v0.1",
   });
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
   let resolver_address = await deployer.instantiate("warp-resolver", {}, {
     admin: signer.key.accAddress,
+    label: "warp-resolver: job account v0.1",
   });
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
@@ -50,7 +52,7 @@ task(async ({ deployer, signer, refs }) => {
 
   await deployer.instantiate("warp-controller", instantiateControllerMsg, {
     admin: signer.key.accAddress,
-    label: "warp-controller: job account enabled",
+    label: "warp-controller: job account v0.1",
   });
   await new Promise((resolve) => setTimeout(resolve, 10000));
 

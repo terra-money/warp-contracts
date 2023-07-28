@@ -9,19 +9,19 @@
   },
   "testnet": {
     "warp-account": {
-      "codeId": "9701"
+      "codeId": "9724"
     },
     "warp-controller": {
-      "codeId": "9704",
-      "address": "terra1ga07xmu20xgg7z9e6e45wgkq63akm9aydmdt45qf3sc42z95yf5sj87p4n"
+      "codeId": "9727",
+      "address": "terra13d0qrjqr0w6d2fjy4a943ca3kapg7vt5ka5k6jnaw2aku9xgsvlqv7rw07"
     },
     "warp-resolver": {
-      "codeId": "9702",
-      "address": "terra1lgn4wx78q2cfvjexjkuw43jw4cnekpqd27wlz86jss3jetp07a3qc25zf8"
+      "codeId": "9725",
+      "address": "terra1c009h9xaxeewkdnpfzrrydcau9jjz6achl8a2kwk3827xp48p6sq5cu0rn"
     },
     "warp-templates": {
-      "codeId": "9703",
-      "address": "terra1jt0wu5vydku22p8rjhunzef00jc0kxuylzuftk6wc9hx4kg0qyss942cll"
+      "codeId": "9726",
+      "address": "terra1v5gne65j7edyfjr4vv3d0cvfkwgffj2nlgean3klqh6h979jt7ns2euxvr"
     }
   },
   "mainnet": {
