@@ -26,6 +26,7 @@ fn test_execute_controller() {
     );
 
     let execute_msg = ExecuteMsg::Generic(GenericMsg {
+        job_id: None,
         msgs: vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
@@ -80,6 +81,7 @@ fn test_execute_controller() {
     assert_eq!(
         execute_res,
         Response::new()
+            .add_attribute("job_id", "0")
             .add_attribute("action", "generic")
             .add_messages(vec![
                 CosmosMsg::Wasm(WasmMsg::Execute {
@@ -150,6 +152,7 @@ fn test_execute_owner() {
     );
 
     let execute_msg = ExecuteMsg::Generic(GenericMsg {
+        job_id: None,
         msgs: vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
@@ -206,6 +209,7 @@ fn test_execute_owner() {
     assert_eq!(
         execute_res,
         Response::new()
+            .add_attribute("job_id", "0")
             .add_attribute("action", "generic")
             .add_messages(vec![
                 CosmosMsg::Wasm(WasmMsg::Execute {
@@ -276,6 +280,7 @@ fn test_execute_unauth() {
     );
 
     let execute_msg = ExecuteMsg::Generic(GenericMsg {
+        job_id: None,
         msgs: vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),

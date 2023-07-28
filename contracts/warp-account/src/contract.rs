@@ -46,6 +46,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Generic(data) => Ok(Response::new()
             .add_messages(data.msgs)
+            .add_attribute("job_id", data.job_id.unwrap_or(Uint64::zero()))
             .add_attribute("action", "generic")),
         ExecuteMsg::WithdrawAssets(data) => withdraw_assets(deps, env, info, data),
     }

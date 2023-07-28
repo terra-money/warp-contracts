@@ -175,15 +175,16 @@ pub fn create_account_and_job(
             .value,
     )?;
 
-    let job_id = event
+    let job_id_str = event
         .attributes
         .iter()
         .cloned()
         .find(|attr| attr.key == "job_id")
         .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
         .value;
+    let job_id = u64::from_str_radix(job_id_str.as_str(), 10)?;
+    let job = PENDING_JOBS().load(deps.storage, job_id)?;
 
-    let job = PENDING_JOBS().load(deps.storage, u64::from_str_radix(job_id.as_str(), 10)?)?;
     //assume reward.amount == warp token allowance
     let config = CONFIG.load(deps.storage)?;
     let fee = job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
@@ -193,6 +194,7 @@ pub fn create_account_and_job(
         WasmMsg::Execute {
             contract_addr: address.clone(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                job_id: Some(job.id),
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
                     amount: vec![Coin::new((job.reward).u128(), config.fee_denom.clone())],
@@ -203,6 +205,7 @@ pub fn create_account_and_job(
         WasmMsg::Execute {
             contract_addr: address.clone(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                job_id: Some(job.id),
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
                     amount: vec![Coin::new((fee).u128(), config.fee_denom)],
@@ -325,15 +328,16 @@ pub fn create_job_account_and_job(
             .value,
     )?;
 
-    let job_id = event
+    let job_id_str = event
         .attributes
         .iter()
         .cloned()
         .find(|attr| attr.key == "job_id")
         .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
         .value;
+    let job_id = u64::from_str_radix(job_id_str.as_str(), 10)?;
+    let job = PENDING_JOBS().load(deps.storage, job_id)?;
 
-    let job = PENDING_JOBS().load(deps.storage, u64::from_str_radix(job_id.as_str(), 10)?)?;
     PENDING_JOBS().update(deps.storage, job.id.u64(), |h| match h {
         None => Err(ContractError::JobDoesNotExist {}),
         Some(job) => Ok(Job {
@@ -365,6 +369,7 @@ pub fn create_job_account_and_job(
         WasmMsg::Execute {
             contract_addr: address.clone(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                job_id: Some(job.id),
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
                     amount: vec![Coin::new((job.reward).u128(), config.fee_denom.clone())],
@@ -375,6 +380,7 @@ pub fn create_job_account_and_job(
         WasmMsg::Execute {
             contract_addr: address.clone(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                job_id: Some(job.id),
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
                     amount: vec![Coin::new((fee).u128(), config.fee_denom)],

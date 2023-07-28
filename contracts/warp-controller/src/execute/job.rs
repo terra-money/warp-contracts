@@ -99,6 +99,7 @@ pub fn create_job(
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                job_id: Some(job.id),
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
                     amount: vec![Coin::new((data.reward).u128(), config.fee_denom.clone())],
@@ -109,6 +110,7 @@ pub fn create_job(
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                job_id: Some(job.id),
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
                     amount: vec![Coin::new((fee).u128(), config.fee_denom)],
@@ -291,6 +293,7 @@ pub fn update_job(
             WasmMsg::Execute {
                 contract_addr: account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                    job_id: Some(job.id),
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: env.contract.address.to_string(),
                         amount: vec![Coin::new((added_reward).u128(), config.fee_denom.clone())],
@@ -304,6 +307,7 @@ pub fn update_job(
             WasmMsg::Execute {
                 contract_addr: account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                    job_id: Some(job.id),
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: config.fee_collector.to_string(),
                         amount: vec![Coin::new((fee).u128(), config.fee_denom)],
@@ -418,6 +422,7 @@ pub fn execute_job(
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                    job_id: Some(job.id),
                     msgs: deps.querier.query_wasm_smart(
                         config.resolver_address,
                         &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
@@ -506,6 +511,7 @@ pub fn evict_job(
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                    job_id: Some(job.id),
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
                         amount: vec![Coin::new(a.u128(), config.fee_denom)],

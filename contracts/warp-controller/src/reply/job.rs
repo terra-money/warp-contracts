@@ -2,7 +2,7 @@ use account::{GenericMsg, WithdrawAssetsMsg};
 use controller::job::{Job, JobStatus};
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
-    QueryRequest, Reply, Response, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg,
+    QueryRequest, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg,
 };
 
 use crate::{
@@ -19,12 +19,39 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         SubMsgResult::Err(_) => JobStatus::Failed,
     };
 
-    let job = PENDING_JOBS().load(deps.storage, msg.id)?;
-    PENDING_JOBS().remove(deps.storage, msg.id)?;
+    let reply = msg
+        .result
+        .clone()
+        .into_result()
+        .map_err(StdError::generic_err)?;
+    let event = reply
+        .events
+        .iter()
+        .find(|event| {
+            event
+                .attributes
+                .iter()
+                .any(|attr| attr.key == "action" && attr.value == "generic")
+        })
+        .ok_or_else(|| StdError::generic_err("cannot find `generic` event"))?;
+    let job_id_str = event
+        .attributes
+        .iter()
+        .cloned()
+        .find(|attr| attr.key == "job_id")
+        .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
+        .value;
+    if job_id_str == "0" {
+        return Err(ContractError::JobExecutionReplyHasInvalidJobId {});
+    }
+    let job_id = u64::from_str_radix(job_id_str.as_str(), 10)?;
+    let job = PENDING_JOBS().load(deps.storage, job_id)?;
+
+    PENDING_JOBS().remove(deps.storage, job_id)?;
 
     state.q = state.q.checked_sub(Uint64::new(1))?;
 
-    let finished_job = FINISHED_JOBS().update(deps.storage, msg.id, |j| match j {
+    let finished_job = FINISHED_JOBS().update(deps.storage, job_id, |j| match j {
         None => Ok(Job {
             id: job.id,
             owner: job.owner,
@@ -183,6 +210,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                     WasmMsg::Execute {
                         contract_addr: account.to_string(),
                         msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                            job_id: Some(new_job.id),
                             msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                 to_address: config.fee_collector.to_string(),
                                 amount: vec![Coin::new((fee).u128(), config.fee_denom.clone())],
@@ -197,6 +225,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                     WasmMsg::Execute {
                         contract_addr: account.to_string(),
                         msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                            job_id: Some(new_job.id),
                             msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                 to_address: env.contract.address.to_string(),
                                 amount: vec![Coin::new(

@@ -239,6 +239,7 @@ pub fn create_account_and_job(
                 WasmMsg::Execute {
                     contract_addr: account.account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                        job_id: Some(current_job_id),
                         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                             to_address: env.contract.address.to_string(),
                             amount: vec![Coin::new((data.reward).u128(), config.fee_denom.clone())],
@@ -249,6 +250,7 @@ pub fn create_account_and_job(
                 WasmMsg::Execute {
                     contract_addr: account.account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                        job_id: Some(current_job_id),
                         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                             to_address: config.fee_collector.to_string(),
                             amount: vec![Coin::new((fee).u128(), config.fee_denom)],

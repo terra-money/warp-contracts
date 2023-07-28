@@ -24,6 +24,7 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub struct GenericMsg {
+    pub job_id: Option<Uint64>,
     pub msgs: Vec<CosmosMsg>,
 }
 
