@@ -182,6 +182,9 @@ pub fn create_account_and_job(
         .find(|attr| attr.key == "job_id")
         .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
         .value;
+    if job_id_str == "0" {
+        return Err(ContractError::CreateAccountAndJobReplyHasInvalidJobId {});
+    }
     let job_id = u64::from_str_radix(job_id_str.as_str(), 10)?;
     let job = PENDING_JOBS().load(deps.storage, job_id)?;
 
