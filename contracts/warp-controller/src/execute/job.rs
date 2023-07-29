@@ -341,7 +341,15 @@ pub fn execute_job(
     let state = STATE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
-    let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
+    let account;
+    match job.job_account.clone() {
+        Some(job_account) => {
+            account = job_account;
+        }
+        None => {
+            account = ACCOUNTS().load(deps.storage, job.owner.clone())?.account;
+        }
+    }
 
     if job.status != JobStatus::Pending {
         return Err(ContractError::JobNotActive {});
@@ -420,7 +428,7 @@ pub fn execute_job(
         submsgs.push(SubMsg {
             id: REPLY_ID_EXECUTE_JOB,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: account.account.to_string(),
+                contract_addr: account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     job_id: Some(job.id),
                     msgs: deps.querier.query_wasm_smart(

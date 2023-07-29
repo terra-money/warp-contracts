@@ -23,7 +23,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         .result
         .clone()
         .into_result()
-        .map_err(StdError::generic_err)?;
+        .map_err(|e| StdError::generic_err(e))?;
     let event = reply
         .events
         .iter()

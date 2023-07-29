@@ -96,10 +96,10 @@ pub fn create_account(
                 owner: info.sender.to_string(),
                 funds: data.funds,
                 job_id: None,
-                is_job_account: None,
+                is_job_account: Some(false),
             })?,
             funds: info.funds,
-            label: info.sender.to_string(),
+            label: format!("warp default account owned by {}", info.sender.to_string()),
         }),
         gas_limit: None,
         reply_on: ReplyOn::Always,
@@ -172,7 +172,7 @@ pub fn create_account_and_job(
                     is_job_account: Some(true),
                 })?,
                 funds: info.funds,
-                label: format!("{} job account for {}", info.sender.to_string(), data.name),
+                label: format!("warp job account owned by {}", info.sender.to_string()),
             }),
             gas_limit: None,
             reply_on: ReplyOn::Always,
@@ -227,7 +227,7 @@ pub fn create_account_and_job(
                 }))
             }
 
-            attrs.push(Attribute::new("action", "create_account"));
+            attrs.push(Attribute::new("action", "create_account_and_job"));
             attrs.push(Attribute::new("owner", account.owner));
             attrs.push(Attribute::new("account_address", account.account.clone()));
 
@@ -270,16 +270,16 @@ pub fn create_account_and_job(
                     msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
                         funds: data.funds,
-                        job_id: Some(current_job_id),
-                        is_job_account: None,
+                        job_id: None,
+                        is_job_account: Some(false),
                     })?,
                     funds: info.funds,
-                    label: info.sender.to_string(),
+                    label: format!("warp default account owned by {}", info.sender.to_string()),
                 }),
                 gas_limit: None,
                 reply_on: ReplyOn::Always,
             });
-            attrs.push(Attribute::new("action", "create_account"));
+            attrs.push(Attribute::new("action", "create_account_and_job"));
         }
     }
 

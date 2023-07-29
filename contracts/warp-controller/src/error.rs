@@ -57,6 +57,9 @@ pub enum ContractError {
     #[error("Job execution reply has invalid job id")]
     JobExecutionReplyHasInvalidJobId {},
 
+    #[error("Create account and job reply has invalid job id")]
+    CreateAccountAndJobReplyHasInvalidJobId {},
+
     #[error("Cancellation fee too high")]
     CancellationFeeTooHigh {},
 
