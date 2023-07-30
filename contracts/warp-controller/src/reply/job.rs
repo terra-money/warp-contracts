@@ -110,6 +110,12 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         .amount
         .amount;
 
+    if true {
+        return Err(ContractError::CustomError {
+            val: (format!("start to handle recurring job",)),
+        });
+    }
+
     if finished_job.recurring {
         if account_amount < fee + finished_job.reward {
             new_job_attrs.push(Attribute::new("action", "recur_job"));
@@ -130,6 +136,12 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                     status: finished_job.status.clone(),
                 }),
             )?; //todo: TEST THIS
+
+            if true {
+                return Err(ContractError::CustomError {
+                    val: (format!("start to evaluate should_terminate_job",)),
+                });
+            }
 
             let should_terminate_job: bool;
             match finished_job.terminate_condition.clone() {

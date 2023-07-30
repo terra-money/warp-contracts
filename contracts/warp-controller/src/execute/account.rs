@@ -158,7 +158,7 @@ pub fn create_account_and_job(
 
     let current_job_id = STATE.load(deps.storage)?.current_job_id;
 
-    // create job account, always instantiate a new Warp account
+    // create job account and job, always instantiate a new Warp account
     if data.is_job_account.unwrap_or(false) {
         submsgs.push(SubMsg {
             id: REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
@@ -179,7 +179,7 @@ pub fn create_account_and_job(
         });
         attrs.push(Attribute::new("action", "create_job_account"));
     }
-    // create regular account
+    // create regular account and job
     else {
         // account already exists, send funds to account
         if ACCOUNTS().has(deps.storage, info.sender.clone()) {
@@ -270,7 +270,7 @@ pub fn create_account_and_job(
                     msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
                         funds: data.funds,
-                        job_id: None,
+                        job_id: Some(current_job_id),
                         is_job_account: Some(false),
                     })?,
                     funds: info.funds,
