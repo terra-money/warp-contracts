@@ -375,7 +375,7 @@ pub fn apply_var_fn(
     env: Env,
     vars: Vec<Variable>,
     status: JobStatus,
-) -> Result<Vec<Variable>, ContractError> {
+) -> Result<String, ContractError> {
     let mut res = vec![];
     for var in vars.clone() {
         match var {
@@ -846,7 +846,7 @@ pub fn apply_var_fn(
             }
         }
     }
-    Ok(res)
+    Ok(serde_json_wasm::to_string(&res)?)
 }
 
 pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, ContractError> {
