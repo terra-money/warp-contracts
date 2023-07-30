@@ -1,19 +1,19 @@
 {
   "localterra": {
     "warp-account": {
-      "codeId": "49"
+      "codeId": "53"
     },
     "warp-controller": {
-      "codeId": "52",
-      "address": "terra1gejprau3wdcjaha8chrpdhccype39gzaycsce390ytcvme7gclqstdu46l"
+      "codeId": "56",
+      "address": "terra1005ufmx3z6nel3jkrjfvcjhyvtuk2yc6837ujq8edu6wdw2ztx4qsn95tv"
     },
     "warp-resolver": {
-      "codeId": "50",
-      "address": "terra13d8maq0zr30h7k8lz8ytlz8qz4jwd5qte5haexwkyjg4fu0609nqlmxx4w"
+      "codeId": "54",
+      "address": "terra16sw563a7qg0m9uspk05gpxhrld3kvndeqmmjlejrhg49w2dqw4fs0qnjrj"
     },
     "warp-templates": {
-      "codeId": "51",
-      "address": "terra1z0uz82yle9tavl4qpq86a34z4hn7gsdd8n56t3qzr0nf4nwptv8qncsvp8"
+      "codeId": "55",
+      "address": "terra1aeykerz75zy7cc62srj9rz02kqffsk8qtej7uc6ua5mmlq4l6xsq0l9r9x"
     }
   },
   "testnet": {

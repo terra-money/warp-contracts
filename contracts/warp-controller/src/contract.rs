@@ -123,11 +123,30 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        REPLY_ID_CREATE_ACCOUNT => reply::account::create_account(deps, env, msg),
-        REPLY_ID_CREATE_ACCOUNT_AND_JOB => reply::account::create_account_and_job(deps, env, msg),
-        REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => {
-            reply::account::create_job_account_and_job(deps, env, msg)
-        }
+        REPLY_ID_CREATE_ACCOUNT => reply::account::create_account_and_job(
+            deps,
+            env,
+            msg,
+            false,
+            false,
+            "save_account".to_string(),
+        ),
+        REPLY_ID_CREATE_ACCOUNT_AND_JOB => reply::account::create_account_and_job(
+            deps,
+            env,
+            msg,
+            true,
+            false,
+            "save_account_and_job".to_string(),
+        ),
+        REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => reply::account::create_account_and_job(
+            deps,
+            env,
+            msg,
+            true,
+            true,
+            "save_job_account_and_job".to_string(),
+        ),
         REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg),
         _ => Err(ContractError::UnknownReplyId {}),
     }
