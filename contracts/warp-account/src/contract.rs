@@ -24,6 +24,9 @@ pub fn instantiate(
         },
     )?;
     Ok(Response::new()
+        // note if we want to spend token here we can only spend native token as it comes with init
+        // cw tokens are deposited in reply so can't be spent here
+        .add_messages(msg.msgs_to_execute_at_init)
         .add_attribute("action", "instantiate")
         .add_attribute("contract_addr", env.contract.address)
         .add_attribute("owner", msg.owner)

@@ -60,7 +60,11 @@ pub fn create_warp_account(
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        CreateAccountMsg { funds: None },
+        CreateAccountMsg {
+            funds: None,
+            is_job_account: None,
+            msgs_to_execute_at_init: None,
+        },
     );
 
     let reply_msg = Reply {

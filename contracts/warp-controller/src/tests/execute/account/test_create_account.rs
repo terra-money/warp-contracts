@@ -49,6 +49,7 @@ fn test_create_account_success() {
                         funds: None,
                         job_id: None,
                         is_job_account: None,
+                        msgs_to_execute_at_init: vec![],
                     })
                     .unwrap(),
                     funds: vec![],
@@ -118,6 +119,7 @@ fn test_create_account_exists() {
                         funds: None,
                         job_id: None,
                         is_job_account: None,
+                        msgs_to_execute_at_init: vec![],
                     })
                     .unwrap(),
                     funds: vec![],

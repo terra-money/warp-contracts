@@ -22,6 +22,7 @@ fn test_execute_controller() {
             funds: None,
             job_id: None,
             is_job_account: None,
+            msgs_to_execute_at_init: vec![],
         },
     );
 
@@ -148,6 +149,7 @@ fn test_execute_owner() {
             funds: None,
             job_id: None,
             is_job_account: None,
+            msgs_to_execute_at_init: vec![],
         },
     );
 
@@ -276,6 +278,7 @@ fn test_execute_unauth() {
             funds: None,
             job_id: None,
             is_job_account: None,
+            msgs_to_execute_at_init: vec![],
         },
     );
 

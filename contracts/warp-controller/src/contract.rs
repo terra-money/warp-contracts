@@ -8,9 +8,10 @@ use cosmwasm_std::{
 };
 
 pub const REPLY_ID_CREATE_ACCOUNT: u64 = 0;
-pub const REPLY_ID_CREATE_ACCOUNT_AND_JOB: u64 = 1;
-pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 2;
-pub const REPLY_ID_EXECUTE_JOB: u64 = 3;
+pub const REPLY_ID_CREATE_JOB_ACCOUNT: u64 = 1;
+pub const REPLY_ID_CREATE_ACCOUNT_AND_JOB: u64 = 2;
+pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 3;
+pub const REPLY_ID_EXECUTE_JOB: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -129,6 +130,14 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             msg,
             false,
             false,
+            "save_account".to_string(),
+        ),
+        REPLY_ID_CREATE_JOB_ACCOUNT => reply::account::create_account_and_job(
+            deps,
+            env,
+            msg,
+            false,
+            true,
             "save_account".to_string(),
         ),
         REPLY_ID_CREATE_ACCOUNT_AND_JOB => reply::account::create_account_and_job(

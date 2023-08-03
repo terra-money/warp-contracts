@@ -64,8 +64,10 @@ pub enum ExecuteMsg {
     ExecuteJob(ExecuteJobMsg),
     EvictJob(EvictJobMsg),
 
+    // create account if not exist, also fund the account
     CreateAccount(CreateAccountMsg),
 
+    // create account if not exist and create job, also fund the account
     CreateAccountAndJob(CreateAccountAndJobMsg),
 
     UpdateConfig(UpdateConfigMsg),

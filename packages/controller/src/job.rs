@@ -69,6 +69,7 @@ pub struct CreateJobMsg {
     pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
+    pub job_account: Option<Addr>,
 }
 
 #[cw_serde]

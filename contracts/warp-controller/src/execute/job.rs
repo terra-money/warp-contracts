@@ -78,7 +78,7 @@ pub fn create_job(
             description: data.description,
             labels: data.labels,
             assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
-            job_account: None,
+            job_account: data.job_account,
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
