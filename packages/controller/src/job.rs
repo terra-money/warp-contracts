@@ -1,7 +1,7 @@
 use crate::account::AssetInfo;
 use crate::condition::Condition;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Uint128, Uint64, CosmosMsg};
+use cosmwasm_std::{Addr, CosmosMsg, Uint128, Uint64};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
