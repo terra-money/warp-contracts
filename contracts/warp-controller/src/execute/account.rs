@@ -85,6 +85,7 @@ pub fn create_account(
             admin: Some(env.contract.address.to_string()),
             code_id: config.warp_account_code_id.u64(),
             msg: to_binary(&account::InstantiateMsg {
+                msgs: data.msgs,
                 owner: info.sender.to_string(),
                 funds: data.funds,
             })?,

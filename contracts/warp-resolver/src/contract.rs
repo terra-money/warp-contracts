@@ -1,8 +1,11 @@
-use cosmwasm_schema::cw_serde;
 use crate::state::{CONFIG, QUERY_PAGE_SIZE, STATE, TEMPLATES};
 use crate::ContractError;
 use controller::MigrateMsg;
-use cosmwasm_std::{entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint64, Addr, Uint128};
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{
+    entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Order, Response, StdError, StdResult, Uint128, Uint64,
+};
 use cw_storage_plus::{Bound, Item};
 use resolver::{
     Config, ConfigResponse, DeleteTemplateMsg, EditTemplateMsg, ExecuteMsg, InstantiateMsg,

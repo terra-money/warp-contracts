@@ -207,7 +207,10 @@ pub fn delete_job(
         //send reward minus fee back to account
         BankMsg::Send {
             to_address: account.account.to_string(),
-            amount: vec![Coin::new((job.reward - fee).u128(), config.fee_denom.clone())],
+            amount: vec![Coin::new(
+                (job.reward - fee).u128(),
+                config.fee_denom.clone(),
+            )],
         },
         BankMsg::Send {
             to_address: config.fee_collector.to_string(),
