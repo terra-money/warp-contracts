@@ -1,7 +1,7 @@
 use crate::account::AssetInfo;
 use crate::condition::Condition;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Uint128, Uint64};
+use cosmwasm_std::{Addr, Uint128, Uint64, CosmosMsg};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
@@ -67,6 +67,7 @@ pub struct CreateJobMsg {
     pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
+    pub account_msgs: Option<Vec<CosmosMsg>>,
 }
 
 #[cw_serde]
