@@ -14,7 +14,7 @@ pub struct InstantiateMsg {
     pub funds: Option<Vec<Fund>>,
     pub job_id: Option<Uint64>,
     pub is_job_account: Option<bool>,
-    pub msgs_to_execute_at_init: Vec<CosmosMsg>,
+    pub msgs: Option<String>,
 }
 
 #[cw_serde]

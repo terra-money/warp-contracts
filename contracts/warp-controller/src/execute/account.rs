@@ -81,25 +81,21 @@ pub fn create_account(
             }))
         }
 
+        let msgs_to_execute_at_init: Vec<CosmosMsg> = deps.querier.query_wasm_smart(
+            config.resolver_address,
+            &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                vars: "".to_string(),
+                msgs: data.msgs.unwrap_or("".to_string()),
+            }),
+        )?;
+
+        msgs_vec.extend(msgs_to_execute_at_init);
+
         return Ok(Response::new()
             .add_attribute("action", "create_account")
             .add_attribute("owner", account.owner)
             .add_attribute("account_address", account.account)
             .add_messages(msgs_vec));
-    }
-
-    let mut msgs_to_execute_at_init: Vec<CosmosMsg> = vec![];
-    match data.msgs_to_execute_at_init {
-        None => {}
-        Some(msgs) => {
-            msgs_to_execute_at_init = deps.querier.query_wasm_smart(
-                config.resolver_address,
-                &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
-                    vars: "[]".to_string(),
-                    msgs,
-                }),
-            )?;
-        }
     }
 
     let submsg = SubMsg {
@@ -112,7 +108,7 @@ pub fn create_account(
                 funds: data.funds,
                 job_id: None,
                 is_job_account: Some(false),
-                msgs_to_execute_at_init,
+                msgs: data.msgs,
             })?,
             funds: info.funds,
             label: format!("warp default account owned by {}", info.sender.to_string()),
@@ -174,20 +170,6 @@ pub fn create_account_and_job(
 
     let current_job_id = STATE.load(deps.storage)?.current_job_id;
 
-    let mut msgs_to_execute_at_init: Vec<CosmosMsg> = vec![];
-    match data.msgs_to_execute_at_init {
-        None => {}
-        Some(msgs) => {
-            msgs_to_execute_at_init = deps.querier.query_wasm_smart(
-                config.resolver_address,
-                &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
-                    vars: data.vars.clone(),
-                    msgs,
-                }),
-            )?;
-        }
-    }
-
     // create job account and job, always instantiate a new Warp account
     if data.is_job_account.unwrap_or(false) {
         submsgs.push(SubMsg {
@@ -200,7 +182,7 @@ pub fn create_account_and_job(
                     funds: data.funds,
                     job_id: Some(current_job_id),
                     is_job_account: Some(true),
-                    msgs_to_execute_at_init,
+                    msgs: data.initial_msgs,
                 })?,
                 funds: info.funds,
                 label: format!("warp job account owned by {}", info.sender.to_string()),
@@ -258,6 +240,16 @@ pub fn create_account_and_job(
                 }))
             }
 
+            let msgs_to_execute_at_init: Vec<CosmosMsg> = deps.querier.query_wasm_smart(
+                config.resolver_address,
+                &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                    vars: "".to_string(),
+                    msgs: data.initial_msgs.unwrap_or("".to_string()),
+                }),
+            )?;
+    
+            msgs.extend(msgs_to_execute_at_init);
+
             attrs.push(Attribute::new("action", "create_account_and_job"));
             attrs.push(Attribute::new("owner", account.owner));
             attrs.push(Attribute::new("account_address", account.account.clone()));
@@ -303,7 +295,7 @@ pub fn create_account_and_job(
                         funds: data.funds,
                         job_id: Some(current_job_id),
                         is_job_account: Some(false),
-                        msgs_to_execute_at_init,
+                        msgs: data.initial_msgs,
                     })?,
                     funds: info.funds,
                     label: format!("warp default account owned by {}", info.sender.to_string()),

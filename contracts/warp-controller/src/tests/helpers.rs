@@ -63,7 +63,7 @@ pub fn create_warp_account(
         CreateAccountMsg {
             funds: None,
             is_job_account: None,
-            msgs_to_execute_at_init: None,
+            msgs: None,
         },
     );
 

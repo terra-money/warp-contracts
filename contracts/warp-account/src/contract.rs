@@ -24,15 +24,13 @@ pub fn instantiate(
         },
     )?;
     Ok(Response::new()
-        // note if we want to spend token here we can only spend native token as it comes with init
-        // cw tokens are deposited in reply so can't be spent here
-        .add_messages(msg.msgs_to_execute_at_init)
         .add_attribute("action", "instantiate")
         .add_attribute("contract_addr", env.contract.address)
         .add_attribute("owner", msg.owner)
         .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
         .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
-        .add_attribute("job_id", msg.job_id.unwrap_or(Uint64::zero())))
+        .add_attribute("job_id", msg.job_id.unwrap_or(Uint64::zero()))
+        .add_attribute("msgs", msg.msgs.unwrap_or("".to_string())))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

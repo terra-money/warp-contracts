@@ -7,6 +7,7 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, Reply, Response, StdError, Uint128,
     WasmMsg,
 };
+use resolver::QueryHydrateMsgsMsg;
 
 use crate::{
     state::{ACCOUNTS, CONFIG, PENDING_JOBS},
@@ -21,6 +22,8 @@ pub fn create_account_and_job(
     create_job_account: bool,
     attribute_action_value: String,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
     let reply = msg.result.into_result().map_err(StdError::generic_err)?;
 
     let event = reply
@@ -49,6 +52,22 @@ pub fn create_account_and_job(
         .find(|attr| attr.key == "contract_addr")
         .ok_or_else(|| StdError::generic_err("cannot find `contract_addr` attribute"))?
         .value;
+
+    let msgs_string = event
+        .attributes
+        .iter()
+        .cloned()
+        .find(|attr| attr.key == "msgs")
+        .ok_or_else(|| StdError::generic_err("cannot find `msgs` attribute"))?
+        .value;
+
+    let msgs_to_execute_at_init: Vec<CosmosMsg> = deps.querier.query_wasm_smart(
+        config.resolver_address,
+        &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+            vars: "".to_string(),
+            msgs: msgs_string,
+        }),
+    )?;
 
     let funds: Vec<Coin> = serde_json_wasm::from_str(
         &event
@@ -107,6 +126,8 @@ pub fn create_account_and_job(
             },
         }))
     }
+
+    msgs_vec.extend(msgs_to_execute_at_init);
 
     if create_job {
         let job_id_str = event
