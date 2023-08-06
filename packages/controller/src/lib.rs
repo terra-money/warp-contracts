@@ -58,19 +58,29 @@ pub struct InstantiateMsg {
 //execute
 #[cw_serde]
 pub enum ExecuteMsg {
-    CreateJob(CreateJobMsg),
-    DeleteJob(DeleteJobMsg),
-    UpdateJob(UpdateJobMsg),
-    ExecuteJob(ExecuteJobMsg),
-    EvictJob(EvictJobMsg),
+    UpdateConfig(UpdateConfigMsg),
 
     // create account if not exist, also fund the account
+    // if is_job_account is set to true then always create a new job account and fund it
     CreateAccount(CreateAccountMsg),
-
-    // create account if not exist and create job, also fund the account
+    // create account if not exist and fund it
+    // if is_job_account is set to true then always create a new job account and fund it
+    // also create a job, if is_job_account is set to true then tied the job to job account
     CreateAccountAndJob(CreateAccountAndJobMsg),
 
-    UpdateConfig(UpdateConfigMsg),
+    // create a job, assuming account exist or job account exist
+    CreateJob(CreateJobMsg),
+    // delete a job, assuming account exist or job account exist
+    // return reward to account or job account if job has a job account
+    DeleteJob(DeleteJobMsg),
+    // update a job, assuming account exist or job account exist
+    UpdateJob(UpdateJobMsg),
+    // called by keeper, keeper doesn't need to have an account
+    // job reward is send directly to keeper wallet
+    ExecuteJob(ExecuteJobMsg),
+    // called by keeper, keeper doesn't need to have an account
+    // eviction fee is send directly to keeper wallet
+    EvictJob(EvictJobMsg),
 }
 
 #[cw_serde]
