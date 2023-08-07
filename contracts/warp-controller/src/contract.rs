@@ -234,9 +234,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 
             let job = PENDING_JOBS().load(deps.storage, msg.id)?;
             PENDING_JOBS().remove(deps.storage, msg.id)?;
-
-            state.q = state.q.checked_sub(Uint64::new(1))?;
-
+            
             let finished_job = FINISHED_JOBS().update(deps.storage, msg.id, |j| match j {
                 None => Ok(Job {
                     id: job.id,
