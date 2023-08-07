@@ -92,7 +92,14 @@ pub fn create_account(
             }),
         )?;
 
-        msgs_vec.extend(msgs_to_execute_at_init);
+        msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: account.account.to_string(),
+            msg: to_binary(&GenericMsg {
+                job_id: None,
+                msgs: msgs_to_execute_at_init,
+            })?,
+            funds: vec![],
+        }));
 
         return Ok(Response::new()
             .add_attribute("action", "create_account")
@@ -253,7 +260,14 @@ pub fn create_account_and_job(
                 }),
             )?;
 
-            msgs.extend(msgs_to_execute_at_init);
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account.account.to_string(),
+                msg: to_binary(&GenericMsg {
+                    job_id: None,
+                    msgs: msgs_to_execute_at_init,
+                })?,
+                funds: vec![],
+            }));
 
             attrs.push(Attribute::new("action", "create_account_and_job"));
             attrs.push(Attribute::new("owner", account.owner));

@@ -1,7 +1,7 @@
 use account::GenericMsg;
 use controller::{
     account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg},
-    job::Job,
+    job::{self, Job},
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, Reply, Response, StdError, Uint128,
@@ -130,8 +130,6 @@ pub fn create_account_and_job(
         }))
     }
 
-    msgs_vec.extend(msgs_to_execute_at_init);
-
     if create_job {
         let job_id_str = event
             .attributes
@@ -145,6 +143,15 @@ pub fn create_account_and_job(
         }
         let job_id = u64::from_str_radix(job_id_str.as_str(), 10)?;
         let job = PENDING_JOBS().load(deps.storage, job_id)?;
+
+        msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: address.clone(),
+            msg: to_binary(&GenericMsg {
+                job_id: Some(job.id),
+                msgs: msgs_to_execute_at_init,
+            })?,
+            funds: vec![],
+        }));
 
         // if we are creating a job account, we need to save the job account address to job
         if create_job_account {
@@ -236,6 +243,15 @@ pub fn create_account_and_job(
                 funds: vec![],
             },
         ];
+    } else {
+        msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: address.clone(),
+            msg: to_binary(&GenericMsg {
+                job_id: None,
+                msgs: msgs_to_execute_at_init,
+            })?,
+            funds: vec![],
+        }));
     }
 
     if !create_job_account {
