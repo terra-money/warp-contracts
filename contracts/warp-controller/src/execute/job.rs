@@ -547,6 +547,11 @@ pub fn evict_job(
                 amount: vec![Coin::new((job.reward - a).u128(), config.fee_denom)],
             }),
         ]);
+
+        STATE.save(deps.storage, &State {
+            current_job_id: state.current_job_id,
+            q: state.q.checked_sub(Uint64::new(1))?,
+        })?;
     }
 
     Ok(Response::new()
