@@ -7,12 +7,13 @@ use crate::ContractError;
 use cosmwasm_schema::serde::de::DeserializeOwned;
 use cosmwasm_schema::serde::Serialize;
 use cosmwasm_std::{
-    Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, Uint128, Uint256, WasmQuery,
+    Addr, Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, StdError, Uint128, Uint256,
+    WasmQuery,
 };
 use std::str::FromStr;
 
 use controller::job::{ExternalInput, JobStatus};
-use resolver::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
+use resolver::variable::{QueryExpr, StaticVariable, UpdateFnValue, Variable, VariableKind};
 
 pub fn hydrate_vars(
     deps: Deps,
@@ -129,6 +130,34 @@ pub fn hydrate_vars(
         hydrated_vars.push(hydrated_var);
     }
     Ok(hydrated_vars)
+}
+
+pub fn update_account_address_var_in_vars(
+    vars: Vec<Variable>,
+    updated_account_address: String,
+) -> Result<String, ContractError> {
+    let mut not_found_var_account_address = true;
+    let updated_vars: Vec<Variable> = vars
+        .into_iter()
+        .map(|var| match var {
+            Variable::Static(v) if v.name == "account_address" => {
+                not_found_var_account_address = false;
+                Variable::Static(StaticVariable {
+                    kind: VariableKind::String,
+                    name: "account_address".to_string(),
+                    value: updated_account_address.clone(),
+                    update_fn: None,
+                })
+            }
+            _ => var,
+        })
+        .collect();
+    if not_found_var_account_address {
+        return Err(ContractError::CustomError {
+            val: "Var account_address not found".to_string(),
+        });
+    }
+    Ok(serde_json_wasm::to_string(&updated_vars)?)
 }
 
 pub fn hydrate_msgs(

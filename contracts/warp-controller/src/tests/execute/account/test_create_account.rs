@@ -48,8 +48,6 @@ fn test_create_account_success() {
                         owner: info.sender.to_string(),
                         funds: None,
                         job_id: None,
-                        is_job_account: false,
-                        should_update_var_account_address: false,
                         msgs: None,
                     })
                     .unwrap(),
@@ -119,8 +117,6 @@ fn test_create_account_exists() {
                         owner: info.sender.to_string(),
                         funds: None,
                         job_id: None,
-                        is_job_account: false,
-                        should_update_var_account_address: false,
                         msgs: None,
                     })
                     .unwrap(),

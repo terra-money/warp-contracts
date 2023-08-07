@@ -1,7 +1,7 @@
 use crate::util::condition::{resolve_cond, resolve_query_expr};
 use crate::util::variable::{
     all_vector_vars_present, apply_var_fn, has_duplicates, hydrate_msgs, hydrate_vars, msgs_valid,
-    string_vars_in_vector, vars_valid,
+    string_vars_in_vector, update_account_address_var_in_vars, vars_valid,
 };
 use crate::ContractError;
 use cosmwasm_std::{
@@ -130,6 +130,17 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             let msgs: Vec<String> = serde_json_wasm::from_str(&data.msgs)
                 .map_err(|e| StdError::generic_err(e.to_string()))?;
             to_binary(&hydrate_msgs(msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))?)
+        }
+        QueryMsg::QueryVarsWithUpdatedAccountAddress(data) => {
+            let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
+                .map_err(|e| StdError::generic_err(e.to_string()))?;
+            to_binary(
+                &serde_json_wasm::to_string(
+                    &update_account_address_var_in_vars(vars, data.updated_account_address)
+                        .map_err(|e| StdError::generic_err(e.to_string()))?,
+                )
+                .map_err(|e| StdError::generic_err(e.to_string()))?,
+            )
         }
     }
 }
