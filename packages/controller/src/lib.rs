@@ -70,7 +70,6 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub owner: Option<String>,
-    pub fee_denom: Option<String>,
     pub fee_collector: Option<String>,
     pub minimum_reward: Option<Uint128>,
     pub creation_fee_percentage: Option<Uint64>,
