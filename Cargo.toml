@@ -17,9 +17,9 @@ incremental = false
 overflow-checks = true
 
 [workspace.dependencies]
-cosmwasm-std = { version = "1.2", features = ["staking", "stargate", "ibc3", "cosmwasm_1_1", "cosmwasm_1_2"] }
-cosmwasm-storage = "1.2"
-cosmwasm-schema = "1.2"
+cosmwasm-std = "1.1"
+cosmwasm-storage = "1.1"
+cosmwasm-schema = "1.1"
 base64 = "0.13.0"
 cw-asset = "2.2"
 cw-storage-plus = "0.16"
