@@ -1,10 +1,6 @@
 [workspace]
-members = [
-    "contracts/*",
-    "packages/*"
-]
-exclude = [
-]
+members = ["contracts/*", "packages/*"]
+exclude = []
 
 [profile.dev]
 overflow-checks = true
@@ -19,3 +15,22 @@ codegen-units = 1
 panic = 'abort'
 incremental = false
 overflow-checks = true
+
+[workspace.dependencies]
+cosmwasm-std = { version = "1.2", features = ["staking", "stargate", "ibc3", "cosmwasm_1_1", "cosmwasm_1_2"] }
+cosmwasm-storage = "1.2"
+cosmwasm-schema = "1.2"
+base64 = "0.13.0"
+cw-asset = "2.2"
+cw-storage-plus = "0.16"
+cw-utils = "0.16"
+cw2 = "0.16"
+cw20 = "0.16"
+cw721 = "0.16.0"
+schemars = "0.8"
+thiserror = "1"
+serde-json-wasm = "0.4.1"
+json-codec-wasm = "0.1.0"
+serde = { version = "1", default-features = false, features = ["derive"] }
+strum = "0.24"
+strum_macros = "0.24"

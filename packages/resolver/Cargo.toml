@@ -9,20 +9,21 @@ edition = "2021"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-std = "1.1"
-cosmwasm-storage = "1.1"
-cosmwasm-schema = "1.1"
-cw-asset = "2.2"
-cw20 = "0.16"
-cw-storage-plus = "0.16"
-cw2 = "0.16"
-schemars = "0.8"
-serde = { version = "1", default-features = false, features = ["derive"] }
-json-codec-wasm = "0.1.0"
-strum = "0.24"
-strum_macros = "0.24"
-thiserror = { version = "1" }
-controller = {path = "../controller"}
+cosmwasm-std = { workspace = true }
+cosmwasm-storage = { workspace = true }
+cosmwasm-schema = { workspace = true }
+cw-asset = { workspace = true }
+cw20 = { workspace = true }
+cw-storage-plus = { workspace = true }
+cw2 = { workspace = true }
+schemars = { workspace = true }
+serde = { workspace = true }
+json-codec-wasm = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
+thiserror = { workspace = true }
+
+controller = { path = "../controller" }
 
 [dev-dependencies]
 cw-multi-test = "0.16"

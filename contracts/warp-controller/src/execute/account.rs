@@ -247,7 +247,7 @@ pub fn create_account_and_job(
                     msgs: data.initial_msgs.unwrap_or("".to_string()),
                 }),
             )?;
-    
+
             msgs.extend(msgs_to_execute_at_init);
 
             attrs.push(Attribute::new("action", "create_account_and_job"));
