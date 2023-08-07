@@ -19,11 +19,6 @@ pub fn update_config(
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
 
-    config.fee_denom = match data.fee_denom {
-        None => config.fee_denom,
-        Some(data) => data,
-    };
-
     config.fee_collector = match data.fee_collector {
         None => config.fee_collector,
         Some(data) => deps.api.addr_validate(data.as_str())?,
@@ -67,7 +62,6 @@ pub fn update_config(
     Ok(Response::new()
         .add_attribute("action", "update_config")
         .add_attribute("config_owner", config.owner)
-        .add_attribute("config_fee_denom", config.fee_denom)
         .add_attribute("config_fee_collector", config.fee_collector)
         .add_attribute("config_minimum_reward", config.minimum_reward)
         .add_attribute(
