@@ -13,7 +13,8 @@ pub struct InstantiateMsg {
     pub owner: String,
     pub funds: Option<Vec<Fund>>,
     pub job_id: Option<Uint64>,
-    pub is_job_account: Option<bool>,
+    pub is_job_account: bool,
+    pub should_update_var_account_address: bool,
     pub msgs: Option<String>,
 }
 

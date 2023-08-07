@@ -107,7 +107,8 @@ pub fn create_account(
                 owner: info.sender.to_string(),
                 funds: data.funds,
                 job_id: None,
-                is_job_account: Some(false),
+                is_job_account: false,
+                should_update_var_account_address: false,
                 msgs: data.msgs,
             })?,
             funds: info.funds,
@@ -181,7 +182,10 @@ pub fn create_account_and_job(
                     owner: info.sender.to_string(),
                     funds: data.funds,
                     job_id: Some(current_job_id),
-                    is_job_account: Some(true),
+                    is_job_account: true,
+                    should_update_var_account_address: data
+                        .should_update_var_account_address
+                        .unwrap_or(false),
                     msgs: data.initial_msgs,
                 })?,
                 funds: info.funds,
@@ -294,7 +298,10 @@ pub fn create_account_and_job(
                         owner: info.sender.to_string(),
                         funds: data.funds,
                         job_id: Some(current_job_id),
-                        is_job_account: Some(false),
+                        is_job_account: false,
+                        should_update_var_account_address: data
+                            .should_update_var_account_address
+                            .unwrap_or(false),
                         msgs: data.initial_msgs,
                     })?,
                     funds: info.funds,

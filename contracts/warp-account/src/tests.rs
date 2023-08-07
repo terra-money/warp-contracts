@@ -21,7 +21,8 @@ fn test_execute_controller() {
             owner: "vlad".to_string(),
             funds: None,
             job_id: None,
-            is_job_account: None,
+            is_job_account: false,
+            should_update_var_account_address: false,
             msgs: None,
         },
     );
@@ -148,7 +149,8 @@ fn test_execute_owner() {
             owner: "vlad".to_string(),
             funds: None,
             job_id: None,
-            is_job_account: None,
+            is_job_account: false,
+            should_update_var_account_address: false,
             msgs: None,
         },
     );
@@ -277,7 +279,8 @@ fn test_execute_unauth() {
             owner: "vlad".to_string(),
             funds: None,
             job_id: None,
-            is_job_account: None,
+            is_job_account: false,
+            should_update_var_account_address: false,
             msgs: None,
         },
     );

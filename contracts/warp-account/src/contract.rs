@@ -30,7 +30,11 @@ pub fn instantiate(
         .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
         .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
         .add_attribute("job_id", msg.job_id.unwrap_or(Uint64::zero()))
-        .add_attribute("msgs", msg.msgs.unwrap_or("".to_string())))
+        .add_attribute("msgs", msg.msgs.unwrap_or("".to_string()))
+        .add_attribute(
+            "should_update_var_account_address",
+            msg.should_update_var_account_address.to_string(),
+        ))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
