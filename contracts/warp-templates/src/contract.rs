@@ -142,7 +142,7 @@ pub fn submit_template(
 
     Ok(Response::new()
         .add_message(msg)
-        .add_attribute("action", "submit_msg_template")
+        .add_attribute("action", "submit_template")
         .add_attribute("id", state.current_template_id)
         .add_attribute("owner", info.sender)
         .add_attribute("name", data.name)
@@ -185,7 +185,7 @@ pub fn edit_template(
     })?;
 
     Ok(Response::new()
-        .add_attribute("action", "submit_msg_template")
+        .add_attribute("action", "edit_template")
         .add_attribute("id", t.id)
         .add_attribute("owner", info.sender)
         .add_attribute("name", t.name)
