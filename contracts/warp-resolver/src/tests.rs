@@ -193,11 +193,11 @@ fn test_hydrate_vars_nested_variables_binary_json() {
         encode: false,
     });
 
-    let vars = vec![var2, var1, var3];
+    let vars = vec![var3, var1, var2];
     let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
 
     assert_eq!(
-        hydrated_vars[0],
+        hydrated_vars[2],
         Variable::Query(QueryVariable {
             name: "var2".to_string(),
             kind: VariableKind::Json,
@@ -206,7 +206,7 @@ fn test_hydrate_vars_nested_variables_binary_json() {
                 query: QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: "contract_addr".to_string(),
                     msg: Binary::from(
-                        r#"{"test":{"address":"contract_addr","msg":"Mock message"}}"#.as_bytes()
+                        r#"{"test":"eyJhZGRyZXNzIjoiY29udHJhY3RfYWRkciIsIm1zZyI6Ik1vY2sgbWVzc2FnZSJ9"}"#.as_bytes()
                     ),
                 }),
             },
