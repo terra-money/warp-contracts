@@ -111,8 +111,6 @@ pub fn submit_template(
         return Err(ContractError::NameTooShort {});
     }
 
-    //todo: checks for vars based on string and msg
-
     let state = STATE.load(deps.storage)?;
     let msg_template = Template {
         id: state.current_template_id,
@@ -261,7 +259,6 @@ pub fn query_template(
 }
 
 pub fn query_templates(
-    //todo: separate code into fns
     deps: Deps,
     env: Env,
     data: QueryTemplatesMsg,

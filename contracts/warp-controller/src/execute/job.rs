@@ -41,7 +41,7 @@ pub fn create_job(
             vars: data.vars.clone(),
             msgs: data.msgs.clone(),
         }),
-    )?; //todo: TEST THIS
+    )?;
 
     let q = ACCOUNTS()
         .idx
@@ -252,8 +252,6 @@ pub fn update_job(
         }),
     })?;
 
-    //todo: sanitize updates
-
     let fee = added_reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
     if !added_reward.is_zero() && fee.is_zero() {
@@ -340,7 +338,7 @@ pub fn execute_job(
             vars: job.vars,
             external_inputs: data.external_inputs,
         }),
-    )?; //todo: TEST THIS
+    )?;
 
     //
     // let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
@@ -351,7 +349,7 @@ pub fn execute_job(
             condition: job.condition,
             vars: vars.clone(),
         }),
-    ); //todo: TEST THIS
+    );
 
     let mut attrs = vec![];
 
