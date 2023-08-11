@@ -302,7 +302,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             vars: finished_job.vars,
                             status: finished_job.status.clone(),
                         }),
-                    )?; //todo: TEST THIS
+                    )?;
 
                     let should_terminate_job: bool;
                     match finished_job.terminate_condition.clone() {

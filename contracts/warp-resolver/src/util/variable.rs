@@ -391,9 +391,9 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                     match msgs_valid(&vec![v.value.clone()], &v.vars)? {
                         true => {"\test\""}
                         false => {
-                            return Err(ContractError::Unauthorized {}) //todo:
+                            return Err(ContractError::Unauthorized {})
                         }
-                    }, //todo: check logic here
+                    },
                 )
             };
             replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), replacement);
@@ -404,7 +404,7 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
             }
         }
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
-    } //todo: check if msgs valid
+    }
 
     Ok(true)
 }
