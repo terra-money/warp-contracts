@@ -112,6 +112,9 @@ fn resolve_ref_int(
             })?;
             str::parse::<i128>(&val)?
         }
+        Variable::Nested(_) => {
+            return Err(ContractError::Unauthorized {}) //todo: err
+        }
     };
 
     Ok(res)
@@ -227,6 +230,9 @@ fn resolve_ref_uint(
                 msg: "Uint External value not found.".to_string(),
             })?;
             Uint256::from_str(&val)?
+        }
+        Variable::Nested(_) => {
+            return Err(ContractError::Unauthorized {}) //todo:
         }
     };
 
@@ -345,6 +351,9 @@ fn resolve_ref_decimal(
                 msg: "Decimal External value not found.".to_string(),
             })?;
             Decimal256::from_str(&val)?
+        }
+        Variable::Nested(_) => {
+            return Err(ContractError::Unauthorized {}) //todo:
         }
     };
 
@@ -532,6 +541,9 @@ fn resolve_ref_string(
         Variable::External(e) => e.value.clone().ok_or(ContractError::ConditionError {
             msg: "String External value not found.".to_string(),
         })?,
+        Variable::Nested(_) => {
+            return Err(ContractError::Unauthorized {}) //todo:
+        }
     };
 
     Ok(res)
@@ -605,6 +617,9 @@ pub fn resolve_ref_bool(
                 msg: "String Bool value not found.".to_string(),
             })?;
             str::parse::<bool>(&val)?
+        }
+        Variable::Nested(_) => {
+            return Err(ContractError::Unauthorized {}) //todo:
         }
     };
     Ok(res)
