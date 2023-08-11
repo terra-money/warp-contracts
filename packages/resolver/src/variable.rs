@@ -97,6 +97,7 @@ pub enum Variable {
 pub struct StaticVariable {
     pub kind: VariableKind,
     pub name: String,
+    pub encode: bool,
     pub value: String,
     pub update_fn: Option<UpdateFn>,
 }
@@ -105,6 +106,7 @@ pub struct StaticVariable {
 pub struct ExternalVariable {
     pub kind: VariableKind,
     pub name: String,
+    pub encode: bool,
     pub init_fn: ExternalExpr,
     pub reinitialize: bool,
     pub value: Option<String>, //none if uninitialized
@@ -115,6 +117,7 @@ pub struct ExternalVariable {
 pub struct QueryVariable {
     pub kind: VariableKind,
     pub name: String,
+    pub encode: bool,
     pub init_fn: QueryExpr,
     pub reinitialize: bool,
     pub value: Option<String>, //none if uninitialized
