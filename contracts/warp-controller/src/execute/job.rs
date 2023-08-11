@@ -12,6 +12,8 @@ use cosmwasm_std::{
 };
 use resolver::QueryHydrateMsgsMsg;
 
+const MAX_TEXT_LENGTH: usize = 280;
+
 pub fn create_job(
     deps: DepsMut,
     env: Env,
@@ -21,7 +23,7 @@ pub fn create_job(
     let state = STATE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
 
-    if data.name.len() > 280 {
+    if data.name.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -219,7 +221,7 @@ pub fn update_job(
 
     let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
 
-    if data.name.is_some() && data.name.clone().unwrap().len() > 280 {
+    if data.name.is_some() && data.name.clone().unwrap().len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
