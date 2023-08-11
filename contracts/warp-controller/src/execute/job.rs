@@ -57,11 +57,6 @@ pub fn create_job(
         Some(q) => q.1,
     };
 
-    // let mut msgs = vec![];
-    // for msg in data.msgs {
-    //     msgs.push(serde_json_wasm::from_str::<CosmosMsg>(msg.as_str())?)
-    // }
-
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
         None => Ok(Job {
             id: state.current_job_id,
@@ -326,13 +321,6 @@ pub fn execute_job(
         return Err(ContractError::JobNotActive {});
     }
 
-    // let vars = hydrate_vars(
-    //     deps.as_ref(),
-    //     env.clone(),
-    //     job.vars.clone(),
-    //     data.external_inputs,
-    // )?;
-
     let vars: String = deps.querier.query_wasm_smart(
         config.resolver_address.clone(),
         &resolver::QueryMsg::QueryHydrateVars(resolver::QueryHydrateVarsMsg {
@@ -340,9 +328,6 @@ pub fn execute_job(
             external_inputs: data.external_inputs,
         }),
     )?;
-
-    //
-    // let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
 
     let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
         config.resolver_address.clone(),
@@ -353,7 +338,6 @@ pub fn execute_job(
     );
 
     let mut attrs = vec![];
-
     let mut submsgs = vec![];
 
     if let Err(e) = resolution {
