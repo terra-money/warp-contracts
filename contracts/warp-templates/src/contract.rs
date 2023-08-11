@@ -15,6 +15,8 @@ use templates::{
     State, UpdateConfigMsg,
 };
 
+const MAX_TEXT_LENGTH: usize = 280;
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -95,7 +97,7 @@ pub fn submit_template(
         return Err(ContractError::TemplateFeeNotFound {});
     }
 
-    if data.name.len() > 280 {
+    if data.name.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -103,7 +105,7 @@ pub fn submit_template(
         return Err(ContractError::NameTooShort {});
     }
 
-    if data.formatted_str.len() > 280 {
+    if data.formatted_str.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -161,7 +163,7 @@ pub fn edit_template(
         return Err(ContractError::Unauthorized {});
     }
 
-    if data.name.is_some() && data.clone().name.unwrap().len() > 280 {
+    if data.name.is_some() && data.clone().name.unwrap().len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
