@@ -45,16 +45,16 @@ pub fn create_job(
         }),
     )?;
 
-    let q = ACCOUNTS()
+    let account_record = ACCOUNTS()
         .idx
         .account
         .item(deps.storage, info.sender.clone())?;
 
-    let account = match q {
+    let account = match account_record {
         None => ACCOUNTS()
             .load(deps.storage, info.sender)
             .map_err(|_e| ContractError::AccountDoesNotExist {})?,
-        Some(q) => q.1,
+        Some(record) => record.1,
     };
 
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
