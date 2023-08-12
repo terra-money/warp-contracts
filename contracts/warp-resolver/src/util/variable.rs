@@ -18,7 +18,7 @@ pub fn hydrate_vars(
     deps: Deps,
     env: Env,
     vars: Vec<Variable>,
-    external_inputs: &Option<Vec<ExternalInput>>,
+    external_inputs: Option<Vec<ExternalInput>>,
 ) -> Result<Vec<Variable>, ContractError> {
     let mut hydrated_vars = vec![];
 
@@ -125,18 +125,6 @@ pub fn hydrate_vars(
                 }
                 Variable::Query(v)
             }
-            Variable::Nested(mut v) => {
-                v.vars = hydrate_vars(deps, env.clone(), v.vars, external_inputs)?;
-                v.value = match v.encoded {
-                    true => {
-                        base64::encode(v.value)
-                    }
-                    false => {
-                        v.value
-                    }
-                };
-                Variable::Nested(v)
-            }
         };
         hydrated_vars.push(hydrated_var);
     }
@@ -224,15 +212,6 @@ fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), Contrac
                 },
             ),
         },
-        Variable::Nested(v) => (
-            v.name.clone(),
-            match v.encoded {
-                true => {
-                    format!("\"{}\"", base64::encode(v.value.clone()))
-                }
-                false => {format!("\"{}\"", v.value.clone())}
-            }
-        )
     };
 
     Ok((name, replacement))
@@ -257,15 +236,6 @@ fn get_replacement_in_string(var: &Variable) -> Result<(String, String), Contrac
             }
             Some(val) => (v.name.clone(), val),
         },
-        Variable::Nested(v) => (
-            v.name.clone(),
-            match v.encoded {
-                true => {
-                    format!("\"{}\"", base64::encode(v.value.clone()))
-                }
-                false => {format!("\"{}\"", v.value.clone())}
-            }
-        )
     };
 
     Ok((name, replacement))
@@ -386,15 +356,6 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Json => "true",
                     },
                 ),
-                Variable::Nested(v) => (
-                    v.name.clone(),
-                    match msgs_valid(&vec![v.value.clone()], &v.vars)? {
-                        true => {"\test\""}
-                        false => {
-                            return Err(ContractError::Unauthorized {})
-                        }
-                    },
-                )
             };
             replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), replacement);
             if replacement.contains("$warp.variable") {
@@ -883,9 +844,6 @@ pub fn apply_var_fn(
                 }
                 res.push(Variable::Query(v));
             }
-            Variable::Nested(mut v) => {
-                v.vars = apply_var_fn(deps, env.clone(), v.vars, status.clone())?;
-            }
         }
     }
     Ok(res)
@@ -897,7 +855,6 @@ pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, Contract
             Variable::Static(v) => v.name.clone(),
             Variable::External(v) => v.name.clone(),
             Variable::Query(v) => v.name.clone(),
-            Variable::Nested(v) => v.name.clone()
         };
         if format!("$warp.variable.{}", n) == name {
             return Ok(var);
@@ -927,11 +884,6 @@ pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
                                 return true;
                             }
                         }
-                        Variable::Nested(varj) => {
-                            if vari.name == varj.name {
-                                return true;
-                            }
-                        }
                     },
                     Variable::External(vari) => match vars[j].clone() {
                         Variable::Static(varj) => {
@@ -945,11 +897,6 @@ pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
                             }
                         }
                         Variable::Query(varj) => {
-                            if vari.name == varj.name {
-                                return true;
-                            }
-                        }
-                        Variable::Nested(varj) => {
                             if vari.name == varj.name {
                                 return true;
                             }
@@ -971,13 +918,7 @@ pub fn has_duplicates(vars: &Vec<Variable>) -> bool {
                                 return true;
                             }
                         }
-                        Variable::Nested(varj) => {
-                            if vari.name == varj.name {
-                                return true;
-                            }
-                        }
                     },
-                    Variable::Nested(v) => return has_duplicates(&v.vars)
                 }
             }
         }
@@ -1012,7 +953,6 @@ fn get_var_name(var: &Variable) -> String {
         Variable::Static(v) => v.name,
         Variable::External(v) => v.name,
         Variable::Query(v) => v.name,
-        Variable::Nested(v) => v.name
     }
 }
 
@@ -1151,7 +1091,6 @@ pub fn vars_valid(vars: &Vec<Variable>) -> bool {
                     }
                 }
             }
-            Variable::Nested(v) => return vars_valid(&v.vars)
         }
     }
     true
