@@ -90,7 +90,6 @@ pub enum Variable {
     Static(StaticVariable),
     External(ExternalVariable),
     Query(QueryVariable),
-    Nested(NestedVariable),
 }
 
 #[cw_serde]
@@ -122,12 +121,4 @@ pub struct QueryVariable {
     pub reinitialize: bool,
     pub value: Option<String>, //none if uninitialized
     pub update_fn: Option<UpdateFn>,
-}
-
-#[cw_serde]
-pub struct NestedVariable {
-    pub name: String,
-    pub encoded: bool,
-    pub value: String,
-    pub vars: Vec<Variable>,
 }
