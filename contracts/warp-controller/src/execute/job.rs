@@ -13,6 +13,8 @@ use cosmwasm_std::{
 };
 use resolver::QueryHydrateMsgsMsg;
 
+const MAX_TEXT_LENGTH: usize = 280;
+
 pub fn create_job(
     deps: DepsMut,
     env: Env,
@@ -22,7 +24,7 @@ pub fn create_job(
     let state = STATE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
 
-    if data.name.len() > 280 {
+    if data.name.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -42,24 +44,19 @@ pub fn create_job(
             vars: data.vars.clone(),
             msgs: data.msgs.clone(),
         }),
-    )?; //todo: TEST THIS
+    )?;
 
-    let q = ACCOUNTS()
+    let account_record = ACCOUNTS()
         .idx
         .account
         .item(deps.storage, info.sender.clone())?;
 
-    let account = match q {
+    let account = match account_record {
         None => ACCOUNTS()
             .load(deps.storage, info.sender)
             .map_err(|_e| ContractError::AccountDoesNotExist {})?,
-        Some(q) => q.1,
+        Some(record) => record.1,
     };
-
-    // let mut msgs = vec![];
-    // for msg in data.msgs {
-    //     msgs.push(serde_json_wasm::from_str::<CosmosMsg>(msg.as_str())?)
-    // }
 
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
         None => Ok(Job {
@@ -243,7 +240,7 @@ pub fn update_job(
 
     let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
 
-    if data.name.is_some() && data.name.clone().unwrap().len() > 280 {
+    if data.name.is_some() && data.name.clone().unwrap().len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -276,8 +273,6 @@ pub fn update_job(
             job_account: job.job_account,
         }),
     })?;
-
-    //todo: sanitize updates
 
     let fee = added_reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
@@ -355,23 +350,13 @@ pub fn execute_job(
         return Err(ContractError::JobNotActive {});
     }
 
-    // let vars = hydrate_vars(
-    //     deps.as_ref(),
-    //     env.clone(),
-    //     job.vars.clone(),
-    //     data.external_inputs,
-    // )?;
-
     let vars: String = deps.querier.query_wasm_smart(
         config.resolver_address.clone(),
         &resolver::QueryMsg::QueryHydrateVars(resolver::QueryHydrateVarsMsg {
             vars: job.vars,
             external_inputs: data.external_inputs,
         }),
-    )?; //todo: TEST THIS
-
-    //
-    // let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
+    )?;
 
     let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
         config.resolver_address.clone(),
@@ -379,10 +364,9 @@ pub fn execute_job(
             condition: job.condition,
             vars: vars.clone(),
         }),
-    ); //todo: TEST THIS
+    );
 
     let mut attrs = vec![];
-
     let mut submsgs = vec![];
 
     if let Err(e) = resolution {
@@ -588,6 +572,11 @@ pub fn evict_job(
                 amount: vec![Coin::new((job.reward - a).u128(), config.fee_denom)],
             }),
         ]);
+
+        STATE.save(deps.storage, &State {
+            current_job_id: state.current_job_id,
+            q: state.q.checked_sub(Uint64::new(1))?,
+        })?;
     }
 
     Ok(Response::new()

@@ -15,6 +15,8 @@ use templates::{
     State, UpdateConfigMsg,
 };
 
+const MAX_TEXT_LENGTH: usize = 280;
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -95,7 +97,7 @@ pub fn submit_template(
         return Err(ContractError::TemplateFeeNotFound {});
     }
 
-    if data.name.len() > 280 {
+    if data.name.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -103,15 +105,13 @@ pub fn submit_template(
         return Err(ContractError::NameTooShort {});
     }
 
-    if data.formatted_str.len() > 280 {
+    if data.formatted_str.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
     if data.formatted_str.is_empty() {
         return Err(ContractError::NameTooShort {});
     }
-
-    //todo: checks for vars based on string and msg
 
     let state = STATE.load(deps.storage)?;
     let msg_template = Template {
@@ -142,7 +142,7 @@ pub fn submit_template(
 
     Ok(Response::new()
         .add_message(msg)
-        .add_attribute("action", "submit_msg_template")
+        .add_attribute("action", "submit_template")
         .add_attribute("id", state.current_template_id)
         .add_attribute("owner", info.sender)
         .add_attribute("name", data.name)
@@ -163,7 +163,7 @@ pub fn edit_template(
         return Err(ContractError::Unauthorized {});
     }
 
-    if data.name.is_some() && data.clone().name.unwrap().len() > 280 {
+    if data.name.is_some() && data.clone().name.unwrap().len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -185,7 +185,7 @@ pub fn edit_template(
     })?;
 
     Ok(Response::new()
-        .add_attribute("action", "submit_msg_template")
+        .add_attribute("action", "edit_template")
         .add_attribute("id", t.id)
         .add_attribute("owner", info.sender)
         .add_attribute("name", t.name)
@@ -261,7 +261,6 @@ pub fn query_template(
 }
 
 pub fn query_templates(
-    //todo: separate code into fns
     deps: Deps,
     env: Env,
     data: QueryTemplatesMsg,
