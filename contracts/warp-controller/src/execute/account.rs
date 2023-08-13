@@ -86,6 +86,7 @@ pub fn create_account(
             &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
                 vars: "".to_string(),
                 msgs: data.msgs.unwrap_or("".to_string()),
+                account: account.account.to_string(),
             }),
         )?;
 
@@ -250,6 +251,7 @@ pub fn create_account_and_job(
                 &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
                     vars: "".to_string(),
                     msgs: data.initial_msgs.unwrap_or("".to_string()),
+                    account: account.account.to_string(),
                 }),
             )?;
 

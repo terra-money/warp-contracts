@@ -354,6 +354,7 @@ pub fn execute_job(
         config.resolver_address.clone(),
         &resolver::QueryMsg::QueryHydrateVars(resolver::QueryHydrateVarsMsg {
             vars: job.vars,
+            account: account.to_string(),
             external_inputs: data.external_inputs,
         }),
     )?;
@@ -420,6 +421,7 @@ pub fn execute_job(
                         &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
                             msgs: job.msgs,
                             vars,
+                            account: account.to_string(),
                         }),
                     )?,
                 }))?,

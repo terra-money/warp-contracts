@@ -42,11 +42,13 @@ pub struct QueryValidateJobCreationMsg {
 pub struct QueryHydrateMsgsMsg {
     pub msgs: String,
     pub vars: String,
+    pub account: String,
 }
 
 #[cw_serde]
 pub struct QueryHydrateVarsMsg {
     pub vars: String,
+    pub account: String,
     pub external_inputs: Option<Vec<ExternalInput>>,
 }
 

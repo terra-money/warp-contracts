@@ -45,7 +45,7 @@ pub fn create_account_and_job(
         .ok_or_else(|| StdError::generic_err("cannot find `owner` attribute"))?
         .value;
 
-    let address = event
+    let account_address: String = event
         .attributes
         .iter()
         .cloned()
@@ -68,6 +68,7 @@ pub fn create_account_and_job(
         &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
             vars: "".to_string(),
             msgs: msgs_string,
+            account: account_address.clone(),
         }),
     )?;
 
@@ -110,7 +111,7 @@ pub fn create_account_and_job(
                     .to_string(),
                 msg: to_binary(&FundTransferMsgs::TransferFrom(TransferFromMsg {
                     owner: owner.clone(),
-                    recipient: address.clone(),
+                    recipient: account_address.clone(),
                     amount: cw20_fund.amount,
                 }))?,
                 funds: vec![],
@@ -121,7 +122,7 @@ pub fn create_account_and_job(
                     .addr_validate(&cw721_fund.contract_addr)?
                     .to_string(),
                 msg: to_binary(&FundTransferMsgs::TransferNft(TransferNftMsg {
-                    recipient: address.clone(),
+                    recipient: account_address.clone(),
                     token_id: cw721_fund.token_id.clone(),
                 }))?,
                 funds: vec![],
@@ -144,7 +145,7 @@ pub fn create_account_and_job(
         let job = PENDING_JOBS().load(deps.storage, job_id)?;
 
         msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: address.clone(),
+            contract_addr: account_address.clone(),
             msg: to_binary(&GenericMsg {
                 job_id: Some(job.id),
                 msgs: msgs_to_execute_at_init,
@@ -172,7 +173,7 @@ pub fn create_account_and_job(
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                     assets_to_withdraw: job.assets_to_withdraw,
-                    job_account: Some(Addr::unchecked(address.clone())),
+                    job_account: Some(Addr::unchecked(account_address.clone())),
                 }),
             })?;
         }
@@ -184,7 +185,7 @@ pub fn create_account_and_job(
         reward_send_msgs = vec![
             //send reward to controller
             WasmMsg::Execute {
-                contract_addr: address.clone(),
+                contract_addr: account_address.clone(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     job_id: Some(job.id),
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
@@ -196,7 +197,7 @@ pub fn create_account_and_job(
             },
             // send fee to fee collector
             WasmMsg::Execute {
-                contract_addr: address.clone(),
+                contract_addr: account_address.clone(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     job_id: Some(job.id),
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
@@ -209,7 +210,7 @@ pub fn create_account_and_job(
         ];
     } else {
         msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: address.clone(),
+            contract_addr: account_address.clone(),
             msg: to_binary(&GenericMsg {
                 job_id: None,
                 msgs: msgs_to_execute_at_init,
@@ -229,7 +230,7 @@ pub fn create_account_and_job(
             deps.api.addr_validate(&owner)?,
             &Account {
                 owner: deps.api.addr_validate(&owner.clone())?,
-                account: deps.api.addr_validate(&address)?,
+                account: deps.api.addr_validate(&account_address)?,
             },
         )?;
     }
@@ -237,7 +238,7 @@ pub fn create_account_and_job(
     Ok(Response::new()
         .add_attribute("action", attribute_action_value)
         .add_attribute("owner", owner)
-        .add_attribute("account_address", address)
+        .add_attribute("account_address", account_address)
         .add_attribute("funds", serde_json_wasm::to_string(&funds)?)
         .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?)
         .add_messages(msgs_vec)
