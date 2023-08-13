@@ -23,7 +23,6 @@ pub struct CreateAccountAndJobMsg {
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
     pub funds: Option<Vec<Fund>>,
     pub is_job_account: Option<bool>,
-    pub should_update_var_account_address: Option<bool>,
     // optional msgs for account to run when job first created
     pub initial_msgs: Option<String>,
 }

@@ -10,10 +10,8 @@ use cosmwasm_std::{
 pub const REPLY_ID_CREATE_ACCOUNT: u64 = 0;
 pub const REPLY_ID_CREATE_JOB_ACCOUNT: u64 = 1;
 pub const REPLY_ID_CREATE_ACCOUNT_AND_JOB: u64 = 2;
-pub const REPLY_ID_CREATE_ACCOUNT_AND_JOB_THEN_UPDATE_VAR_ACCOUNT_ADDRESS: u64 = 3;
-pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 4;
-pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB_THEN_UPDATE_VAR_ACCOUNT_ADDRESS: u64 = 5;
-pub const REPLY_ID_EXECUTE_JOB: u64 = 6;
+pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 3;
+pub const REPLY_ID_EXECUTE_JOB: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -132,7 +130,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             msg,
             false,
             false,
-            false,
             "save_account".to_string(),
         ),
         REPLY_ID_CREATE_JOB_ACCOUNT => reply::account::create_account_and_job(
@@ -141,7 +138,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             msg,
             false,
             true,
-            false,
             "save_account".to_string(),
         ),
         REPLY_ID_CREATE_ACCOUNT_AND_JOB => reply::account::create_account_and_job(
@@ -150,40 +146,16 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             msg,
             true,
             false,
-            false,
             "save_account_and_job".to_string(),
         ),
-        REPLY_ID_CREATE_ACCOUNT_AND_JOB_THEN_UPDATE_VAR_ACCOUNT_ADDRESS => {
-            reply::account::create_account_and_job(
-                deps,
-                env,
-                msg,
-                true,
-                false,
-                true,
-                "save_account_and_job_then_update_var_account_address".to_string(),
-            )
-        }
         REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => reply::account::create_account_and_job(
             deps,
             env,
             msg,
             true,
             true,
-            false,
             "save_job_account_and_job".to_string(),
         ),
-        REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB_THEN_UPDATE_VAR_ACCOUNT_ADDRESS => {
-            reply::account::create_account_and_job(
-                deps,
-                env,
-                msg,
-                true,
-                true,
-                true,
-                "save_job_account_and_job_then_update_var_account_address".to_string(),
-            )
-        }
         REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg),
         _ => Err(ContractError::UnknownReplyId {}),
     }

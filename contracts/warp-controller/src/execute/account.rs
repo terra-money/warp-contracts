@@ -1,8 +1,5 @@
 use crate::contract::{
-    REPLY_ID_CREATE_ACCOUNT, REPLY_ID_CREATE_ACCOUNT_AND_JOB,
-    REPLY_ID_CREATE_ACCOUNT_AND_JOB_THEN_UPDATE_VAR_ACCOUNT_ADDRESS,
-    REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
-    REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB_THEN_UPDATE_VAR_ACCOUNT_ADDRESS,
+    REPLY_ID_CREATE_ACCOUNT, REPLY_ID_CREATE_ACCOUNT_AND_JOB, REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
 };
 use crate::state::{ACCOUNTS, CONFIG, PENDING_JOBS, STATE};
 use crate::ContractError;
@@ -181,12 +178,8 @@ pub fn create_account_and_job(
 
     // create job account and job, always instantiate a new Warp account
     if data.is_job_account.unwrap_or(false) {
-        let mut reply_id = REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB;
-        if data.should_update_var_account_address.unwrap_or(false) {
-            reply_id = REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB_THEN_UPDATE_VAR_ACCOUNT_ADDRESS;
-        }
         submsgs.push(SubMsg {
-            id: reply_id,
+            id: REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                 admin: Some(env.contract.address.to_string()),
                 code_id: config.warp_account_code_id.u64(),
@@ -304,12 +297,8 @@ pub fn create_account_and_job(
         }
         // account does not exist, create account
         else {
-            let mut reply_id = REPLY_ID_CREATE_ACCOUNT_AND_JOB;
-            if data.should_update_var_account_address.unwrap_or(false) {
-                reply_id = REPLY_ID_CREATE_ACCOUNT_AND_JOB_THEN_UPDATE_VAR_ACCOUNT_ADDRESS;
-            }
             submsgs.push(SubMsg {
-                id: reply_id,
+                id: REPLY_ID_CREATE_ACCOUNT_AND_JOB,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     admin: Some(env.contract.address.to_string()),
                     code_id: config.warp_account_code_id.u64(),

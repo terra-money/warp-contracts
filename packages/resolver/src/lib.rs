@@ -3,7 +3,7 @@ pub mod variable;
 
 use controller::job::{ExternalInput, JobStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{QueryRequest, Addr};
+use cosmwasm_std::QueryRequest;
 #[cw_serde]
 pub struct InstantiateMsg {}
 
@@ -25,9 +25,6 @@ pub enum QueryMsg {
     QueryApplyVarFn(QueryApplyVarFnMsg),
     #[returns(SimulateResponse)]
     QueryHydrateMsgs(QueryHydrateMsgsMsg),
-    // update the account_address var value
-    #[returns(SimulateResponse)]
-    QueryVarsWithUpdatedAccountAddress(QueryVarsWithUpdatedAccountAddressMsg),
 }
 
 #[cw_serde]
@@ -63,12 +60,6 @@ pub struct QueryResolveConditionMsg {
 pub struct QueryApplyVarFnMsg {
     pub vars: String,
     pub status: JobStatus,
-}
-
-#[cw_serde]
-pub struct QueryVarsWithUpdatedAccountAddressMsg {
-    pub vars: String,
-    pub updated_account_address: String,
 }
 
 #[cw_serde]

@@ -1,13 +1,13 @@
 use account::GenericMsg;
 use controller::{
     account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg},
-    job::{self, Job},
+    job::Job,
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, Reply, Response, StdError, Uint128,
     WasmMsg,
 };
-use resolver::{QueryHydrateMsgsMsg, QueryVarsWithUpdatedAccountAddressMsg};
+use resolver::QueryHydrateMsgsMsg;
 
 use crate::{
     state::{ACCOUNTS, CONFIG, PENDING_JOBS},
@@ -20,7 +20,6 @@ pub fn create_account_and_job(
     msg: Reply,
     create_job: bool,
     create_job_account: bool,
-    update_var_account_address: bool,
     attribute_action_value: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -169,41 +168,6 @@ pub fn create_account_and_job(
                     terminate_condition: job.terminate_condition,
                     msgs: job.msgs,
                     vars: job.vars,
-                    recurring: job.recurring,
-                    requeue_on_evict: job.requeue_on_evict,
-                    reward: job.reward,
-                    assets_to_withdraw: job.assets_to_withdraw,
-                    job_account: Some(Addr::unchecked(address.clone())),
-                }),
-            })?;
-        }
-
-        // if we need to update the account address var in job vars
-        // we need to do it here because only in reply we know the account address
-        if update_var_account_address {
-            let updated_vars: String = deps.querier.query_wasm_smart(
-                config.resolver_address,
-                &resolver::QueryMsg::QueryVarsWithUpdatedAccountAddress(
-                    QueryVarsWithUpdatedAccountAddressMsg {
-                        vars: job.vars,
-                        updated_account_address: address.clone(),
-                    },
-                ),
-            )?;
-            PENDING_JOBS().update(deps.storage, job.id.u64(), |h| match h {
-                None => Err(ContractError::JobDoesNotExist {}),
-                Some(job) => Ok(Job {
-                    id: job.id,
-                    owner: job.owner,
-                    last_update_time: job.last_update_time,
-                    name: job.name,
-                    description: job.description,
-                    labels: job.labels,
-                    status: job.status,
-                    condition: job.condition,
-                    terminate_condition: job.terminate_condition,
-                    msgs: job.msgs,
-                    vars: updated_vars,
                     recurring: job.recurring,
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
