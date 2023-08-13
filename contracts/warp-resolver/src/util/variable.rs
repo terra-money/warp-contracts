@@ -19,7 +19,6 @@ pub fn hydrate_vars(
     env: Env,
     vars: Vec<Variable>,
     external_inputs: Option<Vec<ExternalInput>>,
-    account: String,
 ) -> Result<Vec<Variable>, ContractError> {
     let mut hydrated_vars = vec![];
 
@@ -61,7 +60,7 @@ pub fn hydrate_vars(
             }
             Variable::Query(mut v) => {
                 if v.reinitialize || v.value.is_none() {
-                    v.init_fn = replace_references(v.init_fn, &hydrated_vars, account.clone())?;
+                    v.init_fn = replace_references(v.init_fn, &hydrated_vars)?;
 
                     match v.kind {
                         VariableKind::String => {
@@ -135,7 +134,6 @@ pub fn hydrate_vars(
 pub fn hydrate_msgs(
     msgs: Vec<String>,
     vars: Vec<Variable>,
-    account: String,
 ) -> Result<Vec<CosmosMsg>, ContractError> {
     let mut parsed_msgs: Vec<CosmosMsg> = vec![];
     for msg in msgs {
@@ -158,158 +156,134 @@ pub fn hydrate_msgs(
 
 fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), ContractError> {
     let (name, replacement) = match var {
-        Variable::Static(v) => (v.name.clone(), {
-            match v.kind {
-                VariableKind::String => format!(
-                    "\"{}\"",
-                    match v.encode {
+        Variable::Static(v) => (
+            v.name.clone(),
+            {
+                match v.kind {
+                    VariableKind::String => format!("\"{}\"", match v.encode {
                         true => {
                             base64::encode(v.value.clone())
                         }
-                        false => v.value.clone(),
-                    }
-                ),
-                VariableKind::Uint => format!(
-                    "\"{}\"",
-                    match v.encode {
+                        false => v.value.clone()
+                    }),
+                    VariableKind::Uint => format!("\"{}\"", match v.encode {
                         true => {
                             base64::encode(v.value.clone())
                         }
-                        false => v.value.clone(),
-                    }
-                ),
-                VariableKind::Int => match v.encode {
-                    true => {
-                        format!("\"{}\"", base64::encode(v.value.clone()))
-                    }
-                    false => v.value.clone(),
-                },
-                VariableKind::Decimal => format!(
-                    "\"{}\"",
-                    match v.encode {
+                        false => v.value.clone()
+                    }),
+                    VariableKind::Int => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(v.value.clone()))
+                        }
+                        false => v.value.clone()
+                    },
+                    VariableKind::Decimal => format!("\"{}\"", match v.encode {
                         true => {
                             base64::encode(v.value.clone())
                         }
-                        false => v.value.clone(),
-                    }
-                ),
-                VariableKind::Timestamp => match v.encode {
-                    true => {
-                        format!("\"{}\"", base64::encode(v.value.clone()))
-                    }
-                    false => v.value.clone(),
-                },
-                VariableKind::Bool => match v.encode {
-                    true => {
-                        format!("\"{}\"", base64::encode(v.value.clone()))
-                    }
-                    false => v.value.clone(),
-                },
-                VariableKind::Amount => format!(
-                    "\"{}\"",
-                    match v.encode {
+                        false => v.value.clone()
+                    }),
+                    VariableKind::Timestamp => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(v.value.clone()))
+                        }
+                        false => v.value.clone()
+                    },
+                    VariableKind::Bool => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(v.value.clone()))
+                        }
+                        false => v.value.clone()
+                    },
+                    VariableKind::Amount => format!("\"{}\"", match v.encode {
                         true => {
                             base64::encode(v.value.clone())
                         }
-                        false => v.value.clone(),
-                    }
-                ),
-                VariableKind::Asset => format!(
-                    "\"{}\"",
-                    match v.encode {
+                        false => v.value.clone()
+                    }),
+                    VariableKind::Asset => format!("\"{}\"", match v.encode {
                         true => {
                             base64::encode(v.value.clone())
                         }
-                        false => v.value.clone(),
-                    }
-                ),
-                VariableKind::Json => match v.encode {
-                    true => {
-                        format!("\"{}\"", base64::encode(v.value.clone()))
-                    }
-                    false => v.value.clone(),
-                },
+                        false => v.value.clone()
+                    }),
+                    VariableKind::Json => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(v.value.clone()))
+                        }
+                        false => v.value.clone()
+                    },
+                }
             }
-        }),
+        ),
         Variable::External(v) => match v.value.clone() {
             None => {
                 return Err(ContractError::HydrationError {
                     msg: "External msg value is none.".to_string(),
                 });
             }
-            Some(val) => (v.name.clone(), {
-                match v.kind {
-                    VariableKind::String => format!(
-                        "\"{}\"",
-                        match v.encode {
+            Some(val) => (
+                v.name.clone(),
+                {
+                    match v.kind {
+                        VariableKind::String => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Uint => format!(
-                        "\"{}\"",
-                        match v.encode {
+                            false => val
+                        }),
+                        VariableKind::Uint => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Int => match v.encode {
-                        true => {
-                            format!("\"{}\"", base64::encode(val))
-                        }
-                        false => val,
-                    },
-                    VariableKind::Decimal => format!(
-                        "\"{}\"",
-                        match v.encode {
+                            false => val
+                        }),
+                        VariableKind::Int => match v.encode {
+                            true => {
+                                format!("\"{}\"", base64::encode(val))
+                            }
+                            false => val
+                        },
+                        VariableKind::Decimal => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Timestamp => match v.encode {
-                        true => {
-                            format!("\"{}\"", base64::encode(val))
-                        }
-                        false => val,
-                    },
-                    VariableKind::Bool => match v.encode {
-                        true => {
-                            format!("\"{}\"", base64::encode(val))
-                        }
-                        false => val,
-                    },
-                    VariableKind::Amount => format!(
-                        "\"{}\"",
-                        match v.encode {
+                            false => val
+                        }),
+                        VariableKind::Timestamp => match v.encode {
+                            true => {
+                                format!("\"{}\"", base64::encode(val))
+                            }
+                            false => val
+                        },
+                        VariableKind::Bool => match v.encode {
+                            true => {
+                                format!("\"{}\"", base64::encode(val))
+                            }
+                            false => val
+                        },
+                        VariableKind::Amount => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Asset => format!(
-                        "\"{}\"",
-                        match v.encode {
+                            false => val
+                        }),
+                        VariableKind::Asset => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Json => match v.encode {
-                        true => {
-                            format!("\"{}\"", base64::encode(val))
-                        }
-                        false => val,
-                    },
+                            false => val
+                        }),
+                        VariableKind::Json => match v.encode {
+                            true => {
+                                format!("\"{}\"", base64::encode(val))
+                            }
+                            false => val
+                        },
+                    }
                 }
-            }),
+            ),
         },
         Variable::Query(v) => match v.value.clone() {
             None => {
@@ -317,79 +291,67 @@ fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), Contrac
                     msg: "Query msg value is none.".to_string(),
                 });
             }
-            Some(val) => (v.name.clone(), {
-                match v.kind {
-                    VariableKind::String => format!(
-                        "\"{}\"",
-                        match v.encode {
+            Some(val) => (
+                v.name.clone(),
+                {
+                    match v.kind {
+                        VariableKind::String => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Uint => format!(
-                        "\"{}\"",
-                        match v.encode {
+                            false => val
+                        }),
+                        VariableKind::Uint => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Int => match v.encode {
-                        true => {
-                            format!("\"{}\"", base64::encode(val))
-                        }
-                        false => val,
-                    },
-                    VariableKind::Decimal => format!(
-                        "\"{}\"",
-                        match v.encode {
+                            false => val
+                        }),
+                        VariableKind::Int => match v.encode {
+                            true => {
+                                format!("\"{}\"", base64::encode(val))
+                            }
+                            false => val
+                        },
+                        VariableKind::Decimal => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Timestamp => match v.encode {
-                        true => {
-                            format!("\"{}\"", base64::encode(val))
-                        }
-                        false => val,
-                    },
-                    VariableKind::Bool => match v.encode {
-                        true => {
-                            format!("\"{}\"", base64::encode(val))
-                        }
-                        false => val,
-                    },
-                    VariableKind::Amount => format!(
-                        "\"{}\"",
-                        match v.encode {
+                            false => val
+                        }),
+                        VariableKind::Timestamp => match v.encode {
+                            true => {
+                                format!("\"{}\"", base64::encode(val))
+                            }
+                            false => val
+                        },
+                        VariableKind::Bool => match v.encode {
+                            true => {
+                                format!("\"{}\"", base64::encode(val))
+                            }
+                            false => val
+                        },
+                        VariableKind::Amount => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Asset => format!(
-                        "\"{}\"",
-                        match v.encode {
+                            false => val
+                        }),
+                        VariableKind::Asset => format!("\"{}\"", match v.encode {
                             true => {
                                 base64::encode(val)
                             }
-                            false => val,
-                        }
-                    ),
-                    VariableKind::Json => match v.encode {
-                        true => {
-                            format!("\"{}\"", base64::encode(val))
-                        }
-                        false => val,
-                    },
+                            false => val
+                        }),
+                        VariableKind::Json => match v.encode {
+                            true => {
+                                format!("\"{}\"", base64::encode(val))
+                            }
+                            false => val
+                        },
+                    }
                 }
-            }),
+            ),
         },
     };
 
@@ -401,9 +363,11 @@ fn get_replacement_in_string(var: &Variable) -> Result<(String, String), Contrac
         Variable::Static(v) => (
             v.name.clone(),
             match v.encode {
-                true => base64::encode(v.value.clone()),
-                false => v.value.clone(),
-            },
+                true => {
+                    base64::encode(v.value.clone())
+                }
+                false => v.value.clone()
+            }
         ),
         Variable::External(v) => match v.value.clone() {
             None => {
@@ -414,9 +378,11 @@ fn get_replacement_in_string(var: &Variable) -> Result<(String, String), Contrac
             Some(val) => (
                 v.name.clone(),
                 match v.encode {
-                    true => base64::encode(val),
-                    false => val,
-                },
+                    true => {
+                        base64::encode(val)
+                    }
+                    false => val
+                }
             ),
         },
         Variable::Query(v) => match v.value.clone() {
@@ -428,9 +394,11 @@ fn get_replacement_in_string(var: &Variable) -> Result<(String, String), Contrac
             Some(val) => (
                 v.name.clone(),
                 match v.encode {
-                    true => base64::encode(val),
-                    false => val,
-                },
+                    true => {
+                        base64::encode(val)
+                    }
+                    false => val
+                }
             ),
         },
     };
@@ -438,31 +406,23 @@ fn get_replacement_in_string(var: &Variable) -> Result<(String, String), Contrac
     Ok((name, replacement))
 }
 
-fn replace_references(
-    mut expr: QueryExpr,
-    vars: &[Variable],
-    account: String,
-) -> Result<QueryExpr, ContractError> {
+fn replace_references(mut expr: QueryExpr, vars: &[Variable]) -> Result<QueryExpr, ContractError> {
     match &mut expr.query {
         QueryRequest::Wasm(WasmQuery::Smart { msg, contract_addr }) => {
-            *msg = replace_in_binary(msg, vars, account.clone())?;
-            *contract_addr = replace_in_string(contract_addr.to_string(), vars, account.clone())?;
+            *msg = replace_in_binary(msg, vars)?;
+            *contract_addr = replace_in_string(contract_addr.to_string(), vars)?;
         }
         QueryRequest::Wasm(WasmQuery::Raw { key, contract_addr }) => {
-            *key = replace_in_binary(key, vars, account.clone())?;
-            *contract_addr = replace_in_string(contract_addr.to_string(), vars, account.clone())?;
+            *key = replace_in_binary(key, vars)?;
+            *contract_addr = replace_in_string(contract_addr.to_string(), vars)?;
         }
-        _ => expr.query = replace_in_struct(&expr.query, vars, account)?,
+        _ => expr.query = replace_in_struct(&expr.query, vars)?,
     }
 
     Ok(expr)
 }
 
-fn replace_in_binary(
-    binary_str: &Binary,
-    vars: &[Variable],
-    account: String,
-) -> Result<Binary, ContractError> {
+fn replace_in_binary(binary_str: &Binary, vars: &[Variable]) -> Result<Binary, ContractError> {
     let decoded =
         base64::decode(binary_str.to_string()).map_err(|_| ContractError::HydrationError {
             msg: "Failed to decode Base64.".to_string(),
@@ -471,7 +431,7 @@ fn replace_in_binary(
         msg: "Failed to convert from UTF8.".to_string(),
     })?;
 
-    let updated_string = replace_in_struct_string(decoded_string, vars, account)?;
+    let updated_string = replace_in_struct_string(decoded_string, vars)?;
 
     Ok(Binary::from(updated_string.as_bytes()))
 }
@@ -479,24 +439,19 @@ fn replace_in_binary(
 fn replace_in_struct<T: Serialize + DeserializeOwned>(
     struct_val: &T,
     vars: &[Variable],
-    account: String,
 ) -> Result<T, ContractError> {
     let struct_as_json =
         serde_json_wasm::to_string(&struct_val).map_err(|_| ContractError::HydrationError {
             msg: "Failed to convert struct to JSON.".to_string(),
         })?;
-    let updated_struct_as_json = replace_in_struct_string(struct_as_json, vars, account)?;
+    let updated_struct_as_json = replace_in_struct_string(struct_as_json, vars)?;
     serde_json_wasm::from_str(&updated_struct_as_json).map_err(|_| ContractError::HydrationError {
         msg: "Failed to convert JSON back to struct.".to_string(),
     })
 }
 
-fn replace_in_struct_string(
-    value: String,
-    vars: &[Variable],
-    account: String,
-) -> Result<String, ContractError> {
-    let mut replaced_value = value.replace("\"$warp.account\"", &account);
+fn replace_in_struct_string(value: String, vars: &[Variable]) -> Result<String, ContractError> {
+    let mut replaced_value = value;
 
     for var in vars {
         let (name, replacement) = get_replacement_in_struct(var)?;
@@ -507,12 +462,8 @@ fn replace_in_struct_string(
     Ok(replaced_value)
 }
 
-fn replace_in_string(
-    value: String,
-    vars: &[Variable],
-    account: String,
-) -> Result<String, ContractError> {
-    let mut replaced_value = value.replace("\"$warp.account\"", &account);
+fn replace_in_string(value: String, vars: &[Variable]) -> Result<String, ContractError> {
+    let mut replaced_value = value;
 
     for var in vars {
         let (name, replacement) = get_replacement_in_string(var)?;

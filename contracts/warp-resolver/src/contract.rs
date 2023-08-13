@@ -100,7 +100,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 .map_err(|e| StdError::generic_err(e.to_string()))?;
             to_binary(
                 &serde_json_wasm::to_string(
-                    &hydrate_vars(deps, env, vars, data.external_inputs, data.account)
+                    &hydrate_vars(deps, env, vars, data.external_inputs)
                         .map_err(|e| StdError::generic_err(e.to_string()))?,
                 )
                 .map_err(|e| StdError::generic_err(e.to_string()))?,
@@ -129,10 +129,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 .map_err(|e| StdError::generic_err(e.to_string()))?;
             let msgs: Vec<String> = serde_json_wasm::from_str(&data.msgs)
                 .map_err(|e| StdError::generic_err(e.to_string()))?;
-            to_binary(
-                &hydrate_msgs(msgs, vars, data.account)
-                    .map_err(|e| StdError::generic_err(e.to_string()))?,
-            )
+            to_binary(&hydrate_msgs(msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))?)
         }
     }
 }
