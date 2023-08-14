@@ -24,7 +24,10 @@ pub fn hydrate_vars(
 
     for var in vars {
         let hydrated_var = match var {
-            Variable::Static(v) => Variable::Static(v),
+            Variable::Static(mut v) => {
+                v.value = replace_in_string(v.value, &hydrated_vars)?;
+                Variable::Static(v)
+            },
             Variable::External(mut v) => {
                 if v.reinitialize || v.value.is_none() {
                     match external_inputs {
