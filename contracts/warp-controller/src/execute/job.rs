@@ -2,7 +2,7 @@ use crate::contract::REPLY_ID_EXECUTE_JOB;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
-use account::GenericMsg;
+use account::{AddInUseSubAccountMsg, FreeInUseSubAccountMsg, GenericMsg, WithdrawAssetsMsg};
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
@@ -46,22 +46,29 @@ pub fn create_job(
         }),
     )?;
 
-    let account_record = ACCOUNTS()
-        .idx
-        .account
-        .item(deps.storage, info.sender.clone())?;
-
-    let account = match account_record {
-        None => ACCOUNTS()
-            .load(deps.storage, info.sender)
-            .map_err(|_e| ContractError::AccountDoesNotExist {})?,
-        Some(record) => record.1,
+    let account = match data.account.clone() {
+        None => {
+            let account_record = ACCOUNTS()
+                .idx
+                .account
+                .item(deps.storage, info.sender.clone())?;
+            match account_record {
+                None => ACCOUNTS()
+                    .load(deps.storage, info.sender.clone())
+                    .map_err(|_e| ContractError::AccountDoesNotExist {})?,
+                Some(record) => record.1,
+            }
+            .account
+        }
+        Some(account) => account,
     };
 
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
         None => Ok(Job {
             id: state.current_job_id,
-            owner: account.owner,
+            prev_id: None,
+            owner: info.sender.clone(),
+            account: data.account.clone(),
             last_update_time: Uint64::from(env.block.time.seconds()),
             name: data.name,
             status: JobStatus::Pending,
@@ -75,7 +82,6 @@ pub fn create_job(
             description: data.description,
             labels: data.labels,
             assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
-            job_account: data.job_account,
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
@@ -91,10 +97,10 @@ pub fn create_job(
     //assume reward.amount == warp token allowance
     let fee = data.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
-    let reward_send_msgs = vec![
-        //send reward to controller
-        WasmMsg::Execute {
-            contract_addr: account.account.to_string(),
+    let mut msgs_vec = vec![
+        // send reward to controller
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: account.to_string(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 job_id: Some(job.id),
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
@@ -103,9 +109,10 @@ pub fn create_job(
                 })],
             }))?,
             funds: vec![],
-        },
-        WasmMsg::Execute {
-            contract_addr: account.account.to_string(),
+        }),
+        // send fee to fee collector
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: account.to_string(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 job_id: Some(job.id),
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
@@ -114,11 +121,28 @@ pub fn create_job(
                 })],
             }))?,
             funds: vec![],
-        },
+        }),
     ];
 
+    if data.account.is_some() {
+        msgs_vec.push(
+            // Add account to in use account list
+            // If account is default account, it will be ignored by the account contract
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account.to_string(),
+                msg: to_binary(&account::ExecuteMsg::AddInUseSubAccount(
+                    AddInUseSubAccountMsg {
+                        job_id: job.id,
+                        sub_account: account.to_string(),
+                    },
+                ))?,
+                funds: vec![],
+            }),
+        )
+    }
+
     Ok(Response::new()
-        .add_messages(reward_send_msgs)
+        .add_messages(msgs_vec)
         .add_attribute("action", "create_job")
         .add_attribute("job_id", job.id)
         .add_attribute("job_owner", job.owner)
@@ -150,9 +174,9 @@ pub fn delete_job(
     }
 
     let account;
-    match job.job_account.clone() {
-        Some(job_account) => {
-            account = job_account;
+    match job.account.clone() {
+        Some(sub_account) => {
+            account = sub_account;
         }
         None => {
             account = ACCOUNTS().load(deps.storage, info.sender)?.account;
@@ -163,7 +187,9 @@ pub fn delete_job(
     let _new_job = FINISHED_JOBS().update(deps.storage, data.id.u64(), |h| match h {
         None => Ok(Job {
             id: job.id,
+            prev_id: job.prev_id,
             owner: job.owner,
+            account: job.account.clone(),
             last_update_time: job.last_update_time,
             name: job.name,
             status: JobStatus::Cancelled,
@@ -176,8 +202,7 @@ pub fn delete_job(
             reward: job.reward,
             description: job.description,
             labels: job.labels,
-            assets_to_withdraw: job.assets_to_withdraw,
-            job_account: job.job_account,
+            assets_to_withdraw: job.assets_to_withdraw.clone(),
         }),
         Some(_job) => Err(ContractError::JobAlreadyFinished {}),
     })?;
@@ -192,23 +217,48 @@ pub fn delete_job(
 
     let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
 
-    let cw20_send_msgs = vec![
-        //send reward minus fee back to account
-        BankMsg::Send {
+    let mut msgs_vec = vec![
+        // send reward minus fee back to account
+        CosmosMsg::Bank(BankMsg::Send {
             to_address: account.to_string(),
             amount: vec![Coin::new(
                 (job.reward - fee).u128(),
                 config.fee_denom.clone(),
             )],
-        },
-        BankMsg::Send {
+        }),
+        // send delete fee to fee collector
+        CosmosMsg::Bank(BankMsg::Send {
             to_address: config.fee_collector.to_string(),
             amount: vec![Coin::new(fee.u128(), config.fee_denom)],
-        },
+        }),
+        //withdraw all assets that are listed
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: account.to_string(),
+            msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
+                asset_infos: job.assets_to_withdraw,
+            }))?,
+            funds: vec![],
+        }),
     ];
 
+    if job.account.is_some() {
+        msgs_vec.push(
+            // Free account from in use account list
+            // If account is default account, it will be ignored by the account contract
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account.to_string(),
+                msg: to_binary(&account::ExecuteMsg::FreeInUseSubAccount(
+                    FreeInUseSubAccountMsg {
+                        sub_account: account.to_string(),
+                    },
+                ))?,
+                funds: vec![],
+            }),
+        )
+    }
+
     Ok(Response::new()
-        .add_messages(cw20_send_msgs)
+        .add_messages(msgs_vec)
         .add_attribute("action", "delete_job")
         .add_attribute("job_id", job.id)
         .add_attribute("job_status", serde_json_wasm::to_string(&job.status)?)
@@ -229,9 +279,9 @@ pub fn update_job(
     }
 
     let account;
-    match job.job_account.clone() {
-        Some(job_account) => {
-            account = job_account;
+    match job.account.clone() {
+        Some(sub_account) => {
+            account = sub_account;
         }
         None => {
             account = ACCOUNTS().load(deps.storage, info.sender)?.account;
@@ -252,7 +302,9 @@ pub fn update_job(
         None => Err(ContractError::JobDoesNotExist {}),
         Some(job) => Ok(Job {
             id: job.id,
+            prev_id: job.prev_id,
             owner: job.owner,
+            account: job.account,
             last_update_time: if added_reward > config.minimum_reward {
                 Uint64::new(env.block.time.seconds())
             } else {
@@ -270,7 +322,6 @@ pub fn update_job(
             requeue_on_evict: job.requeue_on_evict,
             reward: job.reward + added_reward,
             assets_to_withdraw: job.assets_to_withdraw,
-            job_account: job.job_account,
         }),
     })?;
 
@@ -337,9 +388,9 @@ pub fn execute_job(
     let config = CONFIG.load(deps.storage)?;
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
     let account;
-    match job.job_account.clone() {
-        Some(job_account) => {
-            account = job_account;
+    match job.account.clone() {
+        Some(sub_account) => {
+            account = sub_account;
         }
         None => {
             account = ACCOUNTS().load(deps.storage, job.owner.clone())?.account;
@@ -367,7 +418,8 @@ pub fn execute_job(
     );
 
     let mut attrs = vec![];
-    let mut submsgs = vec![];
+    let mut msgs_vec = vec![];
+    let mut submsgs_vec = vec![];
 
     if let Err(e) = resolution {
         attrs.push(Attribute::new("job_condition_status", "invalid"));
@@ -378,7 +430,9 @@ pub fn execute_job(
             data.id.u64(),
             &Job {
                 id: job.id,
+                prev_id: job.prev_id,
                 owner: job.owner,
+                account: job.account.clone(),
                 last_update_time: job.last_update_time,
                 name: job.name,
                 description: job.description,
@@ -392,7 +446,6 @@ pub fn execute_job(
                 requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
                 assets_to_withdraw: job.assets_to_withdraw,
-                job_account: job.job_account,
             },
         )?;
         PENDING_JOBS().remove(deps.storage, data.id.u64())?;
@@ -403,13 +456,29 @@ pub fn execute_job(
                 q: state.q.checked_sub(Uint64::new(1))?,
             },
         )?;
+
+        if job.account.is_some() {
+            msgs_vec.push(
+                // Free account from in use account list
+                // If account is default account, it will be ignored by the account contract
+                CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: account.to_string(),
+                    msg: to_binary(&account::ExecuteMsg::FreeInUseSubAccount(
+                        FreeInUseSubAccountMsg {
+                            sub_account: account.to_string(),
+                        },
+                    ))?,
+                    funds: vec![],
+                }),
+            )
+        }
     } else {
         attrs.push(Attribute::new("job_condition_status", "valid"));
         if !resolution? {
             return Err(ContractError::JobNotActive {});
         }
 
-        submsgs.push(SubMsg {
+        submsgs_vec.push(SubMsg {
             id: REPLY_ID_EXECUTE_JOB,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.to_string(),
@@ -430,14 +499,14 @@ pub fn execute_job(
         });
     }
 
-    let reward_msg = BankMsg::Send {
+    msgs_vec.push(CosmosMsg::Bank(BankMsg::Send {
         to_address: info.sender.to_string(),
         amount: vec![Coin::new(job.reward.u128(), config.fee_denom)],
-    };
+    }));
 
     Ok(Response::new()
-        .add_submessages(submsgs)
-        .add_message(reward_msg)
+        .add_submessages(submsgs_vec)
+        .add_messages(msgs_vec)
         .add_attribute("action", "execute_job")
         .add_attribute("executor", info.sender)
         .add_attribute("job_id", job.id)
@@ -455,9 +524,9 @@ pub fn evict_job(
     let state = STATE.load(deps.storage)?;
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
     let account;
-    match job.job_account.clone() {
-        Some(job_account) => {
-            account = job_account;
+    match job.account.clone() {
+        Some(sub_account) => {
+            account = sub_account;
         }
         None => {
             account = ACCOUNTS().load(deps.storage, job.owner.clone())?.account;
@@ -493,13 +562,13 @@ pub fn evict_job(
         return Err(EvictionPeriodNotElapsed {});
     }
 
-    let mut cosmos_msgs = vec![];
+    let mut msgs_vec = vec![];
 
     let job_status;
 
     if job.requeue_on_evict && account_amount >= a {
-        cosmos_msgs.push(
-            //send reward to evictor
+        msgs_vec.push(
+            // send reward to evictor
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
@@ -517,7 +586,9 @@ pub fn evict_job(
                 None => Err(ContractError::JobDoesNotExist {}),
                 Some(job) => Ok(Job {
                     id: job.id,
+                    prev_id: job.prev_id,
                     owner: job.owner,
+                    account: job.account,
                     last_update_time: Uint64::new(env.block.time.seconds()),
                     name: job.name,
                     description: job.description,
@@ -531,7 +602,6 @@ pub fn evict_job(
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                     assets_to_withdraw: job.assets_to_withdraw,
-                    job_account: job.job_account,
                 }),
             })?
             .status;
@@ -541,7 +611,9 @@ pub fn evict_job(
             .update(deps.storage, data.id.u64(), |j| match j {
                 None => Ok(Job {
                     id: job.id,
+                    prev_id: job.prev_id,
                     owner: job.owner,
+                    account: job.account.clone(),
                     last_update_time: Uint64::new(env.block.time.seconds()),
                     name: job.name,
                     description: job.description,
@@ -554,34 +626,61 @@ pub fn evict_job(
                     recurring: job.recurring,
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
-                    assets_to_withdraw: job.assets_to_withdraw,
-                    job_account: job.job_account,
+                    assets_to_withdraw: job.assets_to_withdraw.clone(),
                 }),
                 Some(_) => Err(ContractError::JobAlreadyExists {}),
             })?
             .status;
 
-        cosmos_msgs.append(&mut vec![
-            //send reward minus fee back to account
+        msgs_vec.append(&mut vec![
+            // send reward to evictor
             CosmosMsg::Bank(BankMsg::Send {
                 to_address: info.sender.to_string(),
                 amount: vec![Coin::new(a.u128(), config.fee_denom.clone())],
             }),
+            //send reward minus fee back to account
             CosmosMsg::Bank(BankMsg::Send {
                 to_address: account.to_string(),
                 amount: vec![Coin::new((job.reward - a).u128(), config.fee_denom)],
             }),
+            //withdraw all assets that are listed
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account.to_string(),
+                msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
+                    asset_infos: job.assets_to_withdraw,
+                }))?,
+                funds: vec![],
+            }),
         ]);
 
-        STATE.save(deps.storage, &State {
-            current_job_id: state.current_job_id,
-            q: state.q.checked_sub(Uint64::new(1))?,
-        })?;
+        if job.account.is_some() {
+            msgs_vec.push(
+                // Free account from in use account list
+                // If account is default account, it will be ignored by the account contract
+                CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: account.to_string(),
+                    msg: to_binary(&account::ExecuteMsg::FreeInUseSubAccount(
+                        FreeInUseSubAccountMsg {
+                            sub_account: account.to_string(),
+                        },
+                    ))?,
+                    funds: vec![],
+                }),
+            )
+        }
+
+        STATE.save(
+            deps.storage,
+            &State {
+                current_job_id: state.current_job_id,
+                q: state.q.checked_sub(Uint64::new(1))?,
+            },
+        )?;
     }
 
     Ok(Response::new()
+        .add_messages(msgs_vec)
         .add_attribute("action", "evict_job")
         .add_attribute("job_id", job.id)
-        .add_attribute("job_status", serde_json_wasm::to_string(&job_status)?)
-        .add_messages(cosmos_msgs))
+        .add_attribute("job_status", serde_json_wasm::to_string(&job_status)?))
 }

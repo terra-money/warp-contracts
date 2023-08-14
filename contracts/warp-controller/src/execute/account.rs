@@ -1,5 +1,5 @@
 use crate::contract::{
-    REPLY_ID_CREATE_ACCOUNT, REPLY_ID_CREATE_ACCOUNT_AND_JOB, REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
+    REPLY_ID_CREATE_ACCOUNT, REPLY_ID_CREATE_ACCOUNT_AND_JOB, REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
 };
 use crate::state::{ACCOUNTS, CONFIG, PENDING_JOBS, STATE};
 use crate::ContractError;
@@ -124,8 +124,8 @@ pub fn create_account(
     };
 
     Ok(Response::new()
-        .add_attribute("action", "create_account")
-        .add_submessage(submsg))
+        .add_submessage(submsg)
+        .add_attribute("action", "create_account"))
 }
 
 pub fn create_account_and_job(
@@ -169,17 +169,16 @@ pub fn create_account_and_job(
         return Err(ContractError::AccountCannotCreateAccount {});
     }
 
-    let mut msgs = vec![];
-    let mut wasm_msgs = vec![];
-    let mut submsgs = vec![];
+    let mut msgs_vec = vec![];
+    let mut submsgs_vec = vec![];
     let mut attrs = vec![];
 
     let current_job_id = STATE.load(deps.storage)?.current_job_id;
 
-    // create job account and job, always instantiate a new Warp account
-    if data.is_job_account.unwrap_or(false) {
-        submsgs.push(SubMsg {
-            id: REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
+    // create sub account and job, always instantiate a new sub account
+    if data.is_sub_account.unwrap_or(false) {
+        submsgs_vec.push(SubMsg {
+            id: REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                 admin: Some(env.contract.address.to_string()),
                 code_id: config.warp_account_code_id.u64(),
@@ -190,12 +189,12 @@ pub fn create_account_and_job(
                     msgs: data.initial_msgs,
                 })?,
                 funds: info.funds,
-                label: format!("warp job account owned by {}", info.sender.to_string()),
+                label: format!("warp sub account owned by {}", info.sender.to_string()),
             }),
             gas_limit: None,
             reply_on: ReplyOn::Always,
         });
-        attrs.push(Attribute::new("action", "create_job_account"));
+        attrs.push(Attribute::new("action", "create_sub_account"));
     }
     // create regular account and job
     else {
@@ -211,14 +210,14 @@ pub fn create_account_and_job(
             };
 
             if !info.funds.is_empty() {
-                msgs.push(CosmosMsg::Bank(BankMsg::Send {
+                msgs_vec.push(CosmosMsg::Bank(BankMsg::Send {
                     to_address: account.account.to_string(),
                     amount: info.funds.clone(),
                 }))
             }
 
             for cw_fund in &cw_funds {
-                msgs.push(CosmosMsg::Wasm(match cw_fund {
+                msgs_vec.push(CosmosMsg::Wasm(match cw_fund {
                     Fund::Cw20(cw20_fund) => WasmMsg::Execute {
                         contract_addr: deps
                             .api
@@ -253,7 +252,7 @@ pub fn create_account_and_job(
                 }),
             )?;
 
-            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&GenericMsg {
                     job_id: None,
@@ -270,8 +269,8 @@ pub fn create_account_and_job(
             let fee =
                 data.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
-            wasm_msgs = vec![
-                WasmMsg::Execute {
+            msgs_vec.append(&mut vec![
+                CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: account.account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                         job_id: Some(current_job_id),
@@ -281,8 +280,8 @@ pub fn create_account_and_job(
                         })],
                     }))?,
                     funds: vec![],
-                },
-                WasmMsg::Execute {
+                }),
+                CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: account.account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                         job_id: Some(current_job_id),
@@ -292,12 +291,12 @@ pub fn create_account_and_job(
                         })],
                     }))?,
                     funds: vec![],
-                },
-            ];
+                }),
+            ]);
         }
         // account does not exist, create account
         else {
-            submsgs.push(SubMsg {
+            submsgs_vec.push(SubMsg {
                 id: REPLY_ID_CREATE_ACCOUNT_AND_JOB,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     admin: Some(env.contract.address.to_string()),
@@ -323,6 +322,8 @@ pub fn create_account_and_job(
     let job = PENDING_JOBS().update(deps.storage, current_job_id.u64(), |s| match s {
         None => Ok(Job {
             id: current_job_id,
+            prev_id: None,
+            account: None,
             owner: info.sender,
             last_update_time: Uint64::from(env.block.time.seconds()),
             name: data.name,
@@ -337,7 +338,6 @@ pub fn create_account_and_job(
             description: data.description,
             labels: data.labels,
             assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
-            job_account: None,
         }),
         Some(_) => Err(ContractError::JobAlreadyExists {}),
     })?;
@@ -352,8 +352,7 @@ pub fn create_account_and_job(
     )?;
 
     Ok(Response::new()
-        .add_attributes(attrs)
-        .add_messages(msgs)
-        .add_messages(wasm_msgs)
-        .add_submessages(submsgs))
+        .add_messages(msgs_vec)
+        .add_submessages(submsgs_vec)
+        .add_attributes(attrs))
 }

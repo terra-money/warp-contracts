@@ -8,9 +8,9 @@ use cosmwasm_std::{
 };
 
 pub const REPLY_ID_CREATE_ACCOUNT: u64 = 0;
-pub const REPLY_ID_CREATE_JOB_ACCOUNT: u64 = 1;
+pub const REPLY_ID_CREATE_SUB_ACCOUNT: u64 = 1;
 pub const REPLY_ID_CREATE_ACCOUNT_AND_JOB: u64 = 2;
-pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 3;
+pub const REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB: u64 = 3;
 pub const REPLY_ID_EXECUTE_JOB: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -107,7 +107,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
 
         QueryMsg::QueryJobAccount(data) => {
-            to_binary(&query::account::query_job_account(deps, env, data)?)
+            to_binary(&query::account::query_account_used_by_job(deps, env, data)?)
         }
 
         QueryMsg::QueryConfig(data) => {
@@ -132,7 +132,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             false,
             "save_account".to_string(),
         ),
-        REPLY_ID_CREATE_JOB_ACCOUNT => reply::account::create_account_and_job(
+        REPLY_ID_CREATE_SUB_ACCOUNT => reply::account::create_account_and_job(
             deps,
             env,
             msg,
@@ -148,13 +148,13 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             false,
             "save_account_and_job".to_string(),
         ),
-        REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => reply::account::create_account_and_job(
+        REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB => reply::account::create_account_and_job(
             deps,
             env,
             msg,
             true,
             true,
-            "save_job_account_and_job".to_string(),
+            "save_sub_account_and_job".to_string(),
         ),
         REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg),
         _ => Err(ContractError::UnknownReplyId {}),

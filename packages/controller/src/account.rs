@@ -4,7 +4,7 @@ use cosmwasm_std::{Addr, Uint128, Uint64};
 #[cw_serde]
 pub struct CreateAccountMsg {
     pub funds: Option<Vec<Fund>>,
-    pub is_job_account: Option<bool>,
+    pub is_sub_account: Option<bool>,
     pub msgs: Option<String>,
 }
 
@@ -22,7 +22,7 @@ pub struct CreateAccountAndJobMsg {
     pub reward: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
     pub funds: Option<Vec<Fund>>,
-    pub is_job_account: Option<bool>,
+    pub is_sub_account: Option<bool>,
     // optional msgs for account to run when job first created
     pub initial_msgs: Option<String>,
 }
@@ -75,7 +75,7 @@ pub struct QueryAccountMsg {
 }
 
 #[cw_serde]
-pub struct QueryJobAccountMsg {
+pub struct QueryAccountUsedByJobMsg {
     pub job_id: Uint64,
 }
 
@@ -97,8 +97,8 @@ pub struct AccountResponse {
 }
 
 #[cw_serde]
-pub struct JobAccountResponse {
-    pub account: Option<Account>,
+pub struct AccountUsedByJobResponse {
+    pub account: Account,
 }
 
 #[cw_serde]

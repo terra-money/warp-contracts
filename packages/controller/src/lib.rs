@@ -6,7 +6,7 @@ use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, UpdateJobMsg,
 };
-use account::{JobAccountResponse, QueryJobAccountMsg};
+use account::{QueryAccountUsedByJobMsg, AccountUsedByJobResponse};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Uint128, Uint64};
 
@@ -67,19 +67,19 @@ pub enum ExecuteMsg {
     UpdateConfig(UpdateConfigMsg),
 
     // create account if not exist, also fund the account
-    // if is_job_account is set to true then always create a new job account and fund it
+    // if is_sub_account is set to true then always create a new sub account and fund it
     CreateAccount(CreateAccountMsg),
     // create account if not exist and fund it
-    // if is_job_account is set to true then always create a new job account and fund it
-    // also create a job, if is_job_account is set to true then tied the job to job account
+    // if is_sub_account is set to true then always create a new sub account and fund it
+    // also create a job, if is_sub_account is set to true then tied the job to sub account
     CreateAccountAndJob(CreateAccountAndJobMsg),
 
-    // create a job, assuming account exist or job account exist
+    // create a job, assuming account exist or sub account exist
     CreateJob(CreateJobMsg),
-    // delete a job, assuming account exist or job account exist
-    // return reward to account or job account if job has a job account
+    // delete a job, assuming account exist or sub account exist
+    // return reward to account or sub account if job has a sub account
     DeleteJob(DeleteJobMsg),
-    // update a job, assuming account exist or job account exist
+    // update a job, assuming account exist or sub account exist
     UpdateJob(UpdateJobMsg),
     // called by keeper, keeper doesn't need to have an account
     // job reward is send directly to keeper wallet
@@ -117,8 +117,8 @@ pub enum QueryMsg {
     #[returns(AccountsResponse)]
     QueryAccounts(QueryAccountsMsg),
 
-    #[returns(JobAccountResponse)]
-    QueryJobAccount(QueryJobAccountMsg),
+    #[returns(AccountUsedByJobResponse)]
+    QueryJobAccount(QueryAccountUsedByJobMsg),
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),

@@ -1,4 +1,4 @@
-use account::GenericMsg;
+use account::{AddInUseSubAccountMsg, GenericMsg};
 use controller::{
     account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg},
     job::Job,
@@ -19,7 +19,7 @@ pub fn create_account_and_job(
     env: Env,
     msg: Reply,
     create_job: bool,
-    create_job_account: bool,
+    create_sub_account: bool,
     attribute_action_value: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -45,7 +45,7 @@ pub fn create_account_and_job(
         .ok_or_else(|| StdError::generic_err("cannot find `owner` attribute"))?
         .value;
 
-    let address = event
+    let account_address = event
         .attributes
         .iter()
         .cloned()
@@ -99,7 +99,6 @@ pub fn create_account_and_job(
     };
 
     let mut msgs_vec: Vec<CosmosMsg> = vec![];
-    let mut reward_send_msgs: Vec<WasmMsg> = vec![];
 
     for cw_fund in &cw_funds_vec {
         msgs_vec.push(CosmosMsg::Wasm(match cw_fund {
@@ -110,7 +109,7 @@ pub fn create_account_and_job(
                     .to_string(),
                 msg: to_binary(&FundTransferMsgs::TransferFrom(TransferFromMsg {
                     owner: owner.clone(),
-                    recipient: address.clone(),
+                    recipient: account_address.clone(),
                     amount: cw20_fund.amount,
                 }))?,
                 funds: vec![],
@@ -121,7 +120,7 @@ pub fn create_account_and_job(
                     .addr_validate(&cw721_fund.contract_addr)?
                     .to_string(),
                 msg: to_binary(&FundTransferMsgs::TransferNft(TransferNftMsg {
-                    recipient: address.clone(),
+                    recipient: account_address.clone(),
                     token_id: cw721_fund.token_id.clone(),
                 }))?,
                 funds: vec![],
@@ -144,7 +143,7 @@ pub fn create_account_and_job(
         let job = PENDING_JOBS().load(deps.storage, job_id)?;
 
         msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: address.clone(),
+            contract_addr: account_address.clone(),
             msg: to_binary(&GenericMsg {
                 job_id: Some(job.id),
                 msgs: msgs_to_execute_at_init,
@@ -152,13 +151,15 @@ pub fn create_account_and_job(
             funds: vec![],
         }));
 
-        // if we are creating a job account, we need to save the job account address to job
-        if create_job_account {
+        // if we are creating a sub account, we need to save the sub account address to job
+        if create_sub_account {
             PENDING_JOBS().update(deps.storage, job.id.u64(), |h| match h {
                 None => Err(ContractError::JobDoesNotExist {}),
                 Some(job) => Ok(Job {
                     id: job.id,
+                    prev_id: None,
                     owner: job.owner,
+                    account: Some(Addr::unchecked(account_address.clone())),
                     last_update_time: job.last_update_time,
                     name: job.name,
                     description: job.description,
@@ -172,19 +173,30 @@ pub fn create_account_and_job(
                     requeue_on_evict: job.requeue_on_evict,
                     reward: job.reward,
                     assets_to_withdraw: job.assets_to_withdraw,
-                    job_account: Some(Addr::unchecked(address.clone())),
                 }),
             })?;
+
+            // Add account to in use account list
+            msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account_address.to_string(),
+                msg: to_binary(&account::ExecuteMsg::AddInUseSubAccount(
+                    AddInUseSubAccountMsg {
+                        sub_account: account_address.to_string(),
+                        job_id: job.id,
+                    },
+                ))?,
+                funds: vec![],
+            }));
         }
 
         // assume reward.amount == warp token allowance
         let config = CONFIG.load(deps.storage)?;
         let fee = job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
-        reward_send_msgs = vec![
+        msgs_vec.append(&mut vec![
             //send reward to controller
-            WasmMsg::Execute {
-                contract_addr: address.clone(),
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account_address.clone(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     job_id: Some(job.id),
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
@@ -193,10 +205,10 @@ pub fn create_account_and_job(
                     })],
                 }))?,
                 funds: vec![],
-            },
+            }),
             // send fee to fee collector
-            WasmMsg::Execute {
-                contract_addr: address.clone(),
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account_address.clone(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     job_id: Some(job.id),
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
@@ -205,11 +217,11 @@ pub fn create_account_and_job(
                     })],
                 }))?,
                 funds: vec![],
-            },
-        ];
+            }),
+        ]);
     } else {
         msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: address.clone(),
+            contract_addr: account_address.clone(),
             msg: to_binary(&GenericMsg {
                 job_id: None,
                 msgs: msgs_to_execute_at_init,
@@ -218,8 +230,8 @@ pub fn create_account_and_job(
         }));
     }
 
-    if !create_job_account {
-        // only save default account to ACCOUNTS, job account is more like 1 time account and is only stored in job struct
+    if !create_sub_account {
+        // only save default account to ACCOUNTS, sub account is stored in default account and job
         if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
             return Err(ContractError::AccountAlreadyExists {});
         }
@@ -229,17 +241,16 @@ pub fn create_account_and_job(
             deps.api.addr_validate(&owner)?,
             &Account {
                 owner: deps.api.addr_validate(&owner.clone())?,
-                account: deps.api.addr_validate(&address)?,
+                account: deps.api.addr_validate(&account_address)?,
             },
         )?;
     }
 
     Ok(Response::new()
+        .add_messages(msgs_vec)
         .add_attribute("action", attribute_action_value)
         .add_attribute("owner", owner)
-        .add_attribute("account_address", address)
+        .add_attribute("account_address", account_address)
         .add_attribute("funds", serde_json_wasm::to_string(&funds)?)
-        .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?)
-        .add_messages(msgs_vec)
-        .add_messages(reward_send_msgs))
+        .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?))
 }

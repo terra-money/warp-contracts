@@ -1,9 +1,9 @@
 use crate::state::{ACCOUNTS, FINISHED_JOBS, PENDING_JOBS, QUERY_PAGE_SIZE};
 use controller::account::{
-    Account, AccountResponse, AccountsResponse, JobAccountResponse, QueryAccountMsg,
-    QueryAccountsMsg, QueryJobAccountMsg,
+    Account, AccountResponse, AccountUsedByJobResponse, AccountsResponse, QueryAccountMsg,
+    QueryAccountUsedByJobMsg, QueryAccountsMsg,
 };
-use cosmwasm_std::{Deps, Env, Order, StdResult};
+use cosmwasm_std::{Deps, Env, Order, StdError, StdResult};
 use cw_storage_plus::Bound;
 
 pub fn query_account(deps: Deps, _env: Env, data: QueryAccountMsg) -> StdResult<AccountResponse> {
@@ -33,24 +33,31 @@ pub fn query_accounts(
     Ok(AccountsResponse { accounts })
 }
 
-pub fn query_job_account(
+pub fn query_account_used_by_job(
     deps: Deps,
     _env: Env,
-    data: QueryJobAccountMsg,
-) -> StdResult<JobAccountResponse> {
+    data: QueryAccountUsedByJobMsg,
+) -> StdResult<AccountUsedByJobResponse> {
     let job = if FINISHED_JOBS().has(deps.storage, data.job_id.u64()) {
         FINISHED_JOBS().load(deps.storage, data.job_id.u64())?
     } else {
         PENDING_JOBS().load(deps.storage, data.job_id.u64())?
     };
-    if job.job_account.is_some() {
-        Ok(JobAccountResponse {
-            account: Some(Account {
+    if job.account.is_some() {
+        Ok(AccountUsedByJobResponse {
+            account: Account {
                 owner: job.owner,
-                account: job.job_account.unwrap(),
-            }),
+                account: job.account.unwrap(),
+            },
         })
     } else {
-        Ok(JobAccountResponse { account: None })
+        if ACCOUNTS().has(deps.storage, job.owner.clone()) {
+            let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
+            Ok(AccountUsedByJobResponse { account })
+        } else {
+            Err(StdError::GenericErr {
+                msg: "Job does not have an associated account, this job is corrupted!".to_string(),
+            })
+        }
     }
 }

@@ -1,4 +1,4 @@
-use account::{GenericMsg, WithdrawAssetsMsg};
+use account::{AddInUseSubAccountMsg, FreeInUseSubAccountMsg, GenericMsg, WithdrawAssetsMsg};
 use controller::job::{Job, JobStatus};
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
@@ -54,7 +54,9 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
     let finished_job = FINISHED_JOBS().update(deps.storage, job_id, |j| match j {
         None => Ok(Job {
             id: job.id,
+            prev_id: job.prev_id,
             owner: job.owner,
+            account: job.account,
             last_update_time: job.last_update_time,
             name: job.name,
             description: job.description,
@@ -68,7 +70,6 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
             requeue_on_evict: job.requeue_on_evict,
             reward: job.reward,
             assets_to_withdraw: job.assets_to_withdraw,
-            job_account: job.job_account,
         }),
         Some(_) => Err(ContractError::JobAlreadyFinished {}),
     })?;
@@ -81,13 +82,26 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         _ => vec![],
     };
 
-    let mut msgs = vec![];
+    let mut msgs_vec = vec![];
     let mut new_job_attrs = vec![];
 
     let account;
-    match finished_job.job_account.clone() {
-        Some(job_account) => {
-            account = job_account;
+    match finished_job.account.clone() {
+        Some(a) => {
+            account = a;
+            msgs_vec.push(
+                // Free account from in use account list
+                // If account is default account, it will be ignored by the account contract
+                CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: account.to_string(),
+                    msg: to_binary(&account::ExecuteMsg::FreeInUseSubAccount(
+                        FreeInUseSubAccountMsg {
+                            sub_account: account.to_string(),
+                        },
+                    ))?,
+                    funds: vec![],
+                }),
+            )
         }
         None => {
             account = ACCOUNTS()
@@ -109,6 +123,9 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         }))?
         .amount
         .amount;
+
+    // Only not withdraw asset when job is recurring and should not terminate
+    let mut should_withdraw_asset = true;
 
     if finished_job.recurring {
         if account_amount < fee + finished_job.reward {
@@ -176,13 +193,16 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
             }
 
             if !should_terminate_job {
+                should_withdraw_asset = false;
                 let new_job = PENDING_JOBS().update(
                     deps.storage,
                     state.current_job_id.u64(),
                     |s| match s {
                         None => Ok(Job {
                             id: state.current_job_id,
+                            prev_id: Some(finished_job.id),
                             owner: finished_job.owner.clone(),
+                            account: finished_job.account.clone(),
                             last_update_time: Uint64::from(env.block.time.seconds()),
                             name: finished_job.name.clone(),
                             description: finished_job.description,
@@ -195,8 +215,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                             recurring: finished_job.recurring,
                             msgs: finished_job.msgs.clone(),
                             reward: finished_job.reward,
-                            assets_to_withdraw: finished_job.assets_to_withdraw,
-                            job_account: finished_job.job_account.clone(),
+                            assets_to_withdraw: finished_job.assets_to_withdraw.clone(),
                         }),
                         Some(_) => Err(ContractError::JobAlreadyExists {}),
                     },
@@ -205,9 +224,9 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                 state.current_job_id = state.current_job_id.checked_add(Uint64::new(1))?;
                 state.q = state.q.checked_add(Uint64::new(1))?;
 
-                msgs.push(
-                    //send reward to controller
-                    WasmMsg::Execute {
+                msgs_vec.push(
+                    //send fee to fee collector
+                    CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: account.to_string(),
                         msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                             job_id: Some(new_job.id),
@@ -217,12 +236,12 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                             })],
                         }))?,
                         funds: vec![],
-                    },
+                    }),
                 );
 
-                msgs.push(
+                msgs_vec.push(
                     //send reward to controller
-                    WasmMsg::Execute {
+                    CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: account.to_string(),
                         msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                             job_id: Some(new_job.id),
@@ -235,19 +254,25 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                             })],
                         }))?,
                         funds: vec![],
-                    },
+                    }),
                 );
 
-                msgs.push(
-                    //withdraw all assets that are listed
-                    WasmMsg::Execute {
-                        contract_addr: account.to_string(),
-                        msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
-                            asset_infos: new_job.assets_to_withdraw,
-                        }))?,
-                        funds: vec![],
-                    },
-                );
+                if new_job.account.is_some() {
+                    msgs_vec.push(
+                        // Add account to in use account list
+                        // If account is default account, it will be ignored by the account contract
+                        CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: account.to_string(),
+                            msg: to_binary(&account::ExecuteMsg::AddInUseSubAccount(
+                                AddInUseSubAccountMsg {
+                                    sub_account: account.to_string(),
+                                    job_id: new_job.id,
+                                },
+                            ))?,
+                            funds: vec![],
+                        }),
+                    )
+                }
 
                 new_job_attrs.push(Attribute::new("action", "create_job"));
                 new_job_attrs.push(Attribute::new("job_id", new_job.id));
@@ -276,12 +301,25 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         }
     }
 
+    if should_withdraw_asset {
+        msgs_vec.push(
+            //withdraw all assets that are listed
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account.to_string(),
+                msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
+                    asset_infos: finished_job.assets_to_withdraw,
+                }))?,
+                funds: vec![],
+            }),
+        );
+    }
+
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
+        .add_messages(msgs_vec)
         .add_attribute("action", "execute_reply")
         .add_attribute("job_id", job.id)
         .add_attributes(res_attrs)
-        .add_attributes(new_job_attrs)
-        .add_messages(msgs))
+        .add_attributes(new_job_attrs))
 }

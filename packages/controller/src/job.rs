@@ -22,7 +22,14 @@ use strum_macros::Display;
 #[cw_serde]
 pub struct Job {
     pub id: Uint64,
+    // Available when the job is the follow up job of a recurring job
+    pub prev_id: Option<Uint64>,
     pub owner: Addr,
+    // Funds used for job execution and protocol fee will be paid by this account
+    // Job creator must be the owner of this account
+    // This account could be the default account or a sub account
+    // If none then use default account
+    pub account: Option<Addr>,
     pub last_update_time: Uint64,
     pub name: String,
     pub description: String,
@@ -36,9 +43,6 @@ pub struct Job {
     pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Vec<AssetInfo>,
-    // if exists, then job execution fund and protocol fee will be paid from this account
-    // otherwise paid from primary account
-    pub job_account: Option<Addr>,
 }
 
 #[cw_serde]
@@ -69,7 +73,9 @@ pub struct CreateJobMsg {
     pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
-    pub job_account: Option<Addr>,
+    // If provided use the account to pay for the job execution and protocol fee
+    // Otherwise use default account
+    pub account: Option<Addr>,
 }
 
 #[cw_serde]
