@@ -8,6 +8,7 @@ use cosmwasm_std::{to_binary, BankQuery, Binary, ContractResult, OwnedDeps};
 use cosmwasm_std::testing::{mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{from_slice, Empty, Querier, QueryRequest, SystemError, SystemResult};
 use std::marker::PhantomData;
+use cosmwasm_schema::cw_serde;
 use resolver::{QueryMsg, QueryValidateJobCreationMsg};
 use resolver::condition::{Condition, Expr, GenExpr, NumEnvValue, NumOp, NumValue};
 use resolver::variable::{QueryExpr, QueryVariable, StaticVariable, Variable, VariableKind};
@@ -145,6 +146,22 @@ fn test_hydrate_vars_nested_variables_binary_json() {
     let deps = mock_dependencies();
     let env = mock_env();
 
+    let var5 = Variable::Static(StaticVariable {
+        kind: VariableKind::String,
+        name: "var5".to_string(),
+        encode: false,
+        value: "contract_addr".to_string(),
+        update_fn: None,
+    });
+
+    let var4 = Variable::Static(StaticVariable {
+        kind: VariableKind::String,
+        name: "var4".to_string(),
+        encode: false,
+        value: "$warp.variable.var5".to_string(),
+        update_fn: None,
+    });
+
     let var3 = Variable::Query(QueryVariable {
         name: "var3".to_string(),
         kind: VariableKind::Json,
@@ -183,7 +200,7 @@ fn test_hydrate_vars_nested_variables_binary_json() {
         init_fn: QueryExpr {
             selector: "$".to_string(),
             query: QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: "contract_addr".to_string(),
+                contract_addr: "$warp.variable.var4".to_string(),
                 msg: Binary::from(r#"{"test":"$warp.variable.var1"}"#.as_bytes()),
             }),
         },
@@ -193,11 +210,11 @@ fn test_hydrate_vars_nested_variables_binary_json() {
         encode: false,
     });
 
-    let vars = vec![var3, var1, var2];
+    let vars = vec![var5, var4, var3, var1, var2];
     let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
 
     assert_eq!(
-        hydrated_vars[2],
+        hydrated_vars[4],
         Variable::Query(QueryVariable {
             name: "var2".to_string(),
             kind: VariableKind::Json,
@@ -323,4 +340,96 @@ fn test_hydrate_vars_nested_variables_non_binary() {
             encode: false,
         })
     );
+}
+
+#[test]
+fn test_hydrate_vars_nested() {
+    let deps = mock_dependencies();
+    let env = mock_env();
+
+    let var1 = Variable::Static(StaticVariable {
+        name: "var1".to_string(),
+        kind: VariableKind::String,
+        value: "static_value_1".to_string(),
+        update_fn: None,
+        encode: false,
+    });
+
+    #[cw_serde]
+    struct AstroportNativeSwapMsg {
+        swap: Swap,
+    }
+
+    #[cw_serde]
+    struct Swap {
+        offer_asset: OfferAsset,
+        max_spread: String,
+        to: String,
+    }
+
+    #[cw_serde]
+    struct OfferAsset {
+        info: Info,
+        amount: String,
+    }
+
+    #[cw_serde]
+    struct Info {
+        native_token: NativeToken,
+    }
+
+    #[cw_serde]
+    struct NativeToken {
+        denom: String,
+    }
+
+    let astroport_native_swap_msg = AstroportNativeSwapMsg {
+        swap: Swap {
+            offer_asset: OfferAsset {
+                info: Info {
+                    native_token: NativeToken {
+                        denom: "example_denom".to_string(),
+                    },
+                },
+                amount: format!("$warp.variable.{}", "var1"),
+            },
+            max_spread: "0.01".to_string(),
+            to: "your_address_here".to_string(),
+        },
+    };
+
+    // Serialize the JSON object to a string
+    let json_str = serde_json_wasm::to_string(&astroport_native_swap_msg).unwrap();
+
+    // Convert the JSON string to bytes
+    let json_bytes = json_str.as_bytes();
+
+    // Base64 encode the bytes
+    let encoded_data = base64::encode(json_bytes);
+
+    // println!("Base64 Encoded Data: {} \n\n\n", encoded_data);
+
+    let var2 = Variable::Static(StaticVariable {
+        name: "var2".to_string(),
+        kind: VariableKind::String,
+        value: encoded_data.clone(),
+        update_fn: None,
+        encode: true,
+    });
+
+    let vars = vec![var1, var2];
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+
+    match hydrated_vars[1].clone() {
+        Variable::Static(static_var) => {
+            let decoded_val = base64::decode(static_var.value).unwrap();
+            println!(
+                "Decoded Val: {}\n\n\n",
+                String::from_utf8(decoded_val).unwrap()
+            );
+            // Decoded Val: {"swap":{"offer_asset":{"info":{"native_token":{"denom":"example_denom"}},"amount":"$warp.variable.var1"},"max_spread":"0.01","to":"your_address_here"}}
+            // as you can see, var1 is not replaced to static_value_1 as expected
+        }
+        _ => panic!("Expected static variable"),
+    }
 }
