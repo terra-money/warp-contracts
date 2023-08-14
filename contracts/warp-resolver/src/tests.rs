@@ -401,18 +401,18 @@ fn test_hydrate_vars_nested() {
     // Serialize the JSON object to a string
     let json_str = serde_json_wasm::to_string(&astroport_native_swap_msg).unwrap();
 
-    // Convert the JSON string to bytes
-    let json_bytes = json_str.as_bytes();
-
-    // Base64 encode the bytes
-    let encoded_data = base64::encode(json_bytes);
+    // // Convert the JSON string to bytes
+    // let json_bytes = json_str.as_bytes();
+    //
+    // // Base64 encode the bytes
+    // let encoded_data = base64::encode(json_bytes);
 
     // println!("Base64 Encoded Data: {} \n\n\n", encoded_data);
 
     let var2 = Variable::Static(StaticVariable {
         name: "var2".to_string(),
         kind: VariableKind::String,
-        value: encoded_data.clone(),
+        value: json_str,
         update_fn: None,
         encode: true,
     });
@@ -422,13 +422,13 @@ fn test_hydrate_vars_nested() {
 
     match hydrated_vars[1].clone() {
         Variable::Static(static_var) => {
-            let decoded_val = base64::decode(static_var.value).unwrap();
+            // let decoded_val = base64::decode(static_var.value).unwrap();
             println!(
                 "Decoded Val: {}\n\n\n",
-                String::from_utf8(decoded_val).unwrap()
+                static_var.value
             );
             // Decoded Val: {"swap":{"offer_asset":{"info":{"native_token":{"denom":"example_denom"}},"amount":"$warp.variable.var1"},"max_spread":"0.01","to":"your_address_here"}}
-            // as you can see, var1 is not replaced to static_value_1 as expected
+            // as you can see, var1 is replaced to static_value_1 as expected
         }
         _ => panic!("Expected static variable"),
     }
