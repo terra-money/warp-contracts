@@ -3,8 +3,8 @@ use crate::ContractError;
 use account::{Config, ExecuteMsg, InstantiateMsg, QueryMsg, SubAccount, WithdrawAssetsMsg};
 use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Order, Response, StdResult, Uint128, Uint64, WasmMsg,
+    entry_point, to_binary, Addr, Attribute, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Order, Response, StdResult, Uint128, Uint64, WasmMsg,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
@@ -24,14 +24,39 @@ pub fn instantiate(
             warp_addr: info.sender,
         },
     )?;
-    Ok(Response::new()
-        .add_attribute("action", "instantiate")
-        .add_attribute("contract_addr", env.contract.address)
-        .add_attribute("owner", msg.owner)
-        .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
-        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
-        .add_attribute("job_id", msg.job_id.unwrap_or(Uint64::zero()))
-        .add_attribute("msgs", msg.msgs.unwrap_or("".to_string())))
+    let mut attributes = vec![
+        Attribute {
+            key: "action".to_string(),
+            value: "instantiate".to_string(),
+        },
+        Attribute {
+            key: "contract_addr".to_string(),
+            value: env.contract.address.to_string(),
+        },
+        Attribute {
+            key: "owner".to_string(),
+            value: msg.owner.to_string(),
+        },
+        Attribute {
+            key: "funds".to_string(),
+            value: serde_json_wasm::to_string(&info.funds)?,
+        },
+        Attribute {
+            key: "cw_funds".to_string(),
+            value: serde_json_wasm::to_string(&msg.funds)?,
+        },
+        Attribute {
+            key: "msgs".to_string(),
+            value: msg.msgs.unwrap_or("".to_string()),
+        },
+    ];
+    if msg.job_id.is_some() {
+        attributes.push(Attribute {
+            key: "job_id".to_string(),
+            value: msg.job_id.unwrap().to_string(),
+        });
+    }
+    Ok(Response::new().add_attributes(attributes))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

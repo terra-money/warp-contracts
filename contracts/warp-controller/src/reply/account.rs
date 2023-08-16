@@ -176,9 +176,13 @@ pub fn create_account_and_job(
                 }),
             })?;
 
-            // Add account to in use account list
+            let default_account_address = ACCOUNTS()
+                .load(deps.storage, deps.api.addr_validate(&owner)?)?
+                .account;
+
+            // Add sub account to in use account list
             msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: account_address.to_string(),
+                contract_addr: default_account_address.to_string(),
                 msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromFreeToInUse(
                     UpdateSubAccountFromFreeToInUseMsg {
                         sub_account: account_address.to_string(),
@@ -244,8 +248,12 @@ pub fn create_account_and_job(
         }));
 
         if create_sub_account {
+            let default_account_address = ACCOUNTS()
+                .load(deps.storage, deps.api.addr_validate(&owner)?)?
+                .account;
+            // Add sub account to free account list
             msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: account_address.to_string(),
+                contract_addr: default_account_address.to_string(),
                 msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
                     UpdateSubAccountFromInUseToFreeMsg {
                         sub_account: account_address.to_string(),
