@@ -42,6 +42,9 @@ pub enum ContractError {
     #[error("Account cannot create an account")]
     AccountCannotCreateAccount {},
 
+    #[error("Creating sub account requires default account")]
+    SubAccountRequiresDefaultAccount {},
+
     #[error("Job already finished")]
     JobAlreadyFinished {},
 

@@ -4,6 +4,8 @@ use cosmwasm_std::{Addr, Uint128, Uint64};
 #[cw_serde]
 pub struct CreateAccountMsg {
     pub funds: Option<Vec<Fund>>,
+    // If is_sub_account sets to true, we always create a new sub account, but user must have a default account first
+    // If is_sub_account sets to false, we create a default account if not exist
     pub is_sub_account: Option<bool>,
     pub msgs: Option<String>,
 }

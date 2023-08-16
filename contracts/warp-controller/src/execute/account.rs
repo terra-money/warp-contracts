@@ -1,5 +1,6 @@
 use crate::contract::{
-    REPLY_ID_CREATE_ACCOUNT, REPLY_ID_CREATE_ACCOUNT_AND_JOB, REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
+    REPLY_ID_CREATE_ACCOUNT, REPLY_ID_CREATE_ACCOUNT_AND_JOB, REPLY_ID_CREATE_SUB_ACCOUNT,
+    REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
 };
 use crate::state::{ACCOUNTS, CONFIG, PENDING_JOBS, STATE};
 use crate::ContractError;
@@ -34,7 +35,49 @@ pub fn create_account(
         return Err(ContractError::AccountCannotCreateAccount {});
     }
 
-    if ACCOUNTS().has(deps.storage, info.sender.clone()) {
+    let is_sub_account: bool = data.is_sub_account.unwrap_or(false);
+
+    // create account if account does not exist or user is creating a sub account
+    if !ACCOUNTS().has(deps.storage, info.sender.clone()) || is_sub_account {
+        if is_sub_account && !ACCOUNTS().has(deps.storage, info.sender.clone()) {
+            return Err(ContractError::SubAccountRequiresDefaultAccount {});
+        }
+
+        let submsg = SubMsg {
+            id: if is_sub_account {
+                REPLY_ID_CREATE_SUB_ACCOUNT
+            } else {
+                REPLY_ID_CREATE_ACCOUNT
+            },
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                admin: Some(env.contract.address.to_string()),
+                code_id: config.warp_account_code_id.u64(),
+                msg: to_binary(&account::InstantiateMsg {
+                    owner: info.sender.to_string(),
+                    funds: data.funds,
+                    job_id: None,
+                    msgs: data.msgs,
+                })?,
+                funds: info.funds,
+                label: format!(
+                    "warp {} account owned by {}",
+                    if is_sub_account { "sub" } else { "default" },
+                    info.sender.to_string()
+                ),
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        };
+
+        Ok(Response::new().add_submessage(submsg).add_attribute(
+            "action",
+            if is_sub_account {
+                "create_sub_account"
+            } else {
+                "create_account"
+            },
+        ))
+    } else {
         let account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
 
         let cw_funds_vec = match data.funds {
@@ -99,33 +142,11 @@ pub fn create_account(
         }));
 
         return Ok(Response::new()
+            .add_messages(msgs_vec)
             .add_attribute("action", "create_account")
             .add_attribute("owner", account.owner)
-            .add_attribute("account_address", account.account)
-            .add_messages(msgs_vec));
+            .add_attribute("account_address", account.account));
     }
-
-    let submsg = SubMsg {
-        id: REPLY_ID_CREATE_ACCOUNT,
-        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            admin: Some(env.contract.address.to_string()),
-            code_id: config.warp_account_code_id.u64(),
-            msg: to_binary(&account::InstantiateMsg {
-                owner: info.sender.to_string(),
-                funds: data.funds,
-                job_id: None,
-                msgs: data.msgs,
-            })?,
-            funds: info.funds,
-            label: format!("warp default account owned by {}", info.sender.to_string()),
-        }),
-        gas_limit: None,
-        reply_on: ReplyOn::Always,
-    };
-
-    Ok(Response::new()
-        .add_submessage(submsg)
-        .add_attribute("action", "create_account"))
 }
 
 pub fn create_account_and_job(
