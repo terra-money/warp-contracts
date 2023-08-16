@@ -55,7 +55,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config => {
             let config = CONFIG.load(deps.storage)?;
-            return to_binary(&config)
+            to_binary(&config)
         }
     }
 }

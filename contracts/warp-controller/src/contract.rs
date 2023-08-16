@@ -327,7 +327,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                                     "creation_status",
                                     format!(
                                         "terminated_due_to_terminate_condition_resolves_to_error. {}",
-                                        e.to_string()
+                                        e
                                     ),
                                 ));
                             } else {
@@ -407,7 +407,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                                         to_address: env.contract.address.to_string(),
                                         amount: vec![Coin::new(
                                             (new_job.reward).u128(),
-                                            config.fee_denom.clone(),
+                                            config.fee_denom,
                                         )],
                                     })],
                                 }))?,

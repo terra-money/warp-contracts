@@ -5,14 +5,14 @@ use crate::util::variable::{all_vector_vars_present, hydrate_vars};
 use cosmwasm_std::{testing::mock_env, WasmQuery};
 use cosmwasm_std::{to_binary, BankQuery, Binary, ContractResult, OwnedDeps};
 
+use crate::contract::query;
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{from_slice, Empty, Querier, QueryRequest, SystemError, SystemResult};
-use std::marker::PhantomData;
-use cosmwasm_schema::cw_serde;
-use resolver::{QueryMsg, QueryValidateJobCreationMsg};
 use resolver::condition::{Condition, Expr, GenExpr, NumEnvValue, NumOp, NumValue};
 use resolver::variable::{QueryExpr, QueryVariable, StaticVariable, Variable, VariableKind};
-use crate::contract::query;
+use resolver::{QueryMsg, QueryValidateJobCreationMsg};
+use std::marker::PhantomData;
 
 #[test]
 fn test() {
@@ -39,7 +39,6 @@ fn test() {
     let test = query(deps.as_ref(), env, QueryMsg::QueryValidateJobCreation(msg)).unwrap();
     println!("{}", test)
 }
-
 
 #[test]
 fn test_vars() {
@@ -108,9 +107,9 @@ impl WasmMockQuerier {
     ) -> SystemResult<ContractResult<Binary>> {
         match &request {
             QueryRequest::Wasm(WasmQuery::Smart {
-                                   contract_addr,
-                                   msg: _,
-                               }) => {
+                contract_addr,
+                msg: _,
+            }) => {
                 // Mock logic for the Wasm::Smart case
                 // Here for simplicity, we return the contract_addr and msg as is.
 
@@ -120,15 +119,15 @@ impl WasmMockQuerier {
                     "address": contract_addr,
                     "msg": "Mock message"
                 })
-                    .to_string();
+                .to_string();
 
                 SystemResult::Ok(ContractResult::Ok(to_binary(&response).unwrap()))
             }
             QueryRequest::Bank(BankQuery::Balance {
-                                   address: contract_addr,
-                                   denom: _,
-                               }) => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&format!("{}", contract_addr)).unwrap(),
+                address: contract_addr,
+                denom: _,
+            }) => SystemResult::Ok(ContractResult::Ok(
+                to_binary(&contract_addr.to_string()).unwrap(),
             )),
             _ => self.base.handle_query(request),
         }
@@ -211,7 +210,7 @@ fn test_hydrate_vars_nested_variables_binary_json() {
     });
 
     let vars = vec![var5, var4, var3, var1, var2];
-    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
 
     assert_eq!(
         hydrated_vars[4],
@@ -267,7 +266,7 @@ fn test_hydrate_vars_nested_variables_binary() {
     });
 
     let vars = vec![var1, var2];
-    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
 
     assert_eq!(
         hydrated_vars[1],
@@ -320,7 +319,7 @@ fn test_hydrate_vars_nested_variables_non_binary() {
     });
 
     let vars = vec![var1, var2];
-    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
 
     assert_eq!(
         hydrated_vars[1],
@@ -418,15 +417,12 @@ fn test_hydrate_vars_nested() {
     });
 
     let vars = vec![var1, var2];
-    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
 
     match hydrated_vars[1].clone() {
         Variable::Static(static_var) => {
             // let decoded_val = base64::decode(static_var.value).unwrap();
-            println!(
-                "Decoded Val: {}\n\n\n",
-                static_var.value
-            );
+            println!("Decoded Val: {}\n\n\n", static_var.value);
             // Decoded Val: {"swap":{"offer_asset":{"info":{"native_token":{"denom":"example_denom"}},"amount":"$warp.variable.var1"},"max_spread":"0.01","to":"your_address_here"}}
             // as you can see, var1 is replaced to static_value_1 as expected
         }
