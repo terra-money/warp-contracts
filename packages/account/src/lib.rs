@@ -35,7 +35,7 @@ pub struct ExecuteWasmMsg {}
 
 #[cw_serde]
 pub enum QueryMsg {
-    Config
+    Config,
 }
 
 #[cw_serde]

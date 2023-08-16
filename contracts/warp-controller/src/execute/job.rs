@@ -183,7 +183,10 @@ pub fn delete_job(
         //send reward minus fee back to account
         BankMsg::Send {
             to_address: account.account.to_string(),
-            amount: vec![Coin::new((job.reward - fee).u128(), config.fee_denom.clone())],
+            amount: vec![Coin::new(
+                (job.reward - fee).u128(),
+                config.fee_denom.clone(),
+            )],
         },
         BankMsg::Send {
             to_address: config.fee_collector.to_string(),
@@ -532,10 +535,13 @@ pub fn evict_job(
             }),
         ]);
 
-        STATE.save(deps.storage, &State {
-            current_job_id: state.current_job_id,
-            q: state.q.checked_sub(Uint64::new(1))?,
-        })?;
+        STATE.save(
+            deps.storage,
+            &State {
+                current_job_id: state.current_job_id,
+                q: state.q.checked_sub(Uint64::new(1))?,
+            },
+        )?;
     }
 
     Ok(Response::new()
