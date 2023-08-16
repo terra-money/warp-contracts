@@ -1,4 +1,7 @@
-use account::{AddInUseSubAccountMsg, FreeInUseSubAccountMsg, GenericMsg, WithdrawAssetsMsg};
+use account::{
+    GenericMsg, UpdateSubAccountFromFreeToInUseMsg, UpdateSubAccountFromInUseToFreeMsg,
+    WithdrawAssetsMsg,
+};
 use controller::job::{Job, JobStatus};
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
@@ -94,8 +97,8 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                 // If account is default account, it will be ignored by the account contract
                 CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: account.to_string(),
-                    msg: to_binary(&account::ExecuteMsg::FreeInUseSubAccount(
-                        FreeInUseSubAccountMsg {
+                    msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
+                        UpdateSubAccountFromInUseToFreeMsg {
                             sub_account: account.to_string(),
                         },
                     ))?,
@@ -263,8 +266,8 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                         // If account is default account, it will be ignored by the account contract
                         CosmosMsg::Wasm(WasmMsg::Execute {
                             contract_addr: account.to_string(),
-                            msg: to_binary(&account::ExecuteMsg::AddInUseSubAccount(
-                                AddInUseSubAccountMsg {
+                            msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromFreeToInUse(
+                                UpdateSubAccountFromFreeToInUseMsg {
                                     sub_account: account.to_string(),
                                     job_id: new_job.id,
                                 },

@@ -51,11 +51,12 @@ pub fn execute(
             .add_attribute("job_id", data.job_id.unwrap_or(Uint64::zero()))
             .add_attribute("action", "generic")),
         ExecuteMsg::WithdrawAssets(data) => withdraw_assets(deps, env, info, data),
-        ExecuteMsg::AddInUseSubAccount(data) => {
+        ExecuteMsg::UpdateSubAccountFromFreeToInUse(data) => {
             // We do not add default account to in use sub accounts
             if data.sub_account == env.contract.address {
                 return Ok(Response::new());
             }
+            FREE_SUB_ACCOUNTS.remove(deps.storage, data.sub_account.clone());
             IN_USE_SUB_ACCOUNTS.update(deps.storage, data.sub_account.clone(), |s| match s {
                 None => Ok(data.job_id.u64()),
                 Some(_) => Err(ContractError::SubAccountAlreadyInUseError {}),
@@ -65,16 +66,10 @@ pub fn execute(
                 .add_attribute("sub_account", data.sub_account)
                 .add_attribute("job_id", data.job_id))
         }
-        ExecuteMsg::FreeInUseSubAccount(data) => {
+        ExecuteMsg::UpdateSubAccountFromInUseToFree(data) => {
             // We do not add default account to free sub accounts
             if data.sub_account == env.contract.address {
                 return Ok(Response::new());
-            }
-            if IN_USE_SUB_ACCOUNTS
-                .may_load(deps.storage, data.sub_account.clone())?
-                .is_none()
-            {
-                return Err(ContractError::SubAccountNotInUseError {});
             }
             IN_USE_SUB_ACCOUNTS.remove(deps.storage, data.sub_account.clone());
             FREE_SUB_ACCOUNTS.update(deps.storage, data.sub_account.clone(), |s| match s {

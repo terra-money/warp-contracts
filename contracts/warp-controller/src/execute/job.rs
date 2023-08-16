@@ -2,7 +2,10 @@ use crate::contract::REPLY_ID_EXECUTE_JOB;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
-use account::{AddInUseSubAccountMsg, FreeInUseSubAccountMsg, GenericMsg, WithdrawAssetsMsg};
+use account::{
+    GenericMsg, UpdateSubAccountFromFreeToInUseMsg, UpdateSubAccountFromInUseToFreeMsg,
+    WithdrawAssetsMsg,
+};
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
@@ -130,8 +133,8 @@ pub fn create_job(
             // If account is default account, it will be ignored by the account contract
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::AddInUseSubAccount(
-                    AddInUseSubAccountMsg {
+                msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromFreeToInUse(
+                    UpdateSubAccountFromFreeToInUseMsg {
                         job_id: job.id,
                         sub_account: account.to_string(),
                     },
@@ -247,8 +250,8 @@ pub fn delete_job(
             // If account is default account, it will be ignored by the account contract
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::FreeInUseSubAccount(
-                    FreeInUseSubAccountMsg {
+                msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
+                    UpdateSubAccountFromInUseToFreeMsg {
                         sub_account: account.to_string(),
                     },
                 ))?,
@@ -463,8 +466,8 @@ pub fn execute_job(
                 // If account is default account, it will be ignored by the account contract
                 CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: account.to_string(),
-                    msg: to_binary(&account::ExecuteMsg::FreeInUseSubAccount(
-                        FreeInUseSubAccountMsg {
+                    msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
+                        UpdateSubAccountFromInUseToFreeMsg {
                             sub_account: account.to_string(),
                         },
                     ))?,
@@ -659,8 +662,8 @@ pub fn evict_job(
                 // If account is default account, it will be ignored by the account contract
                 CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: account.to_string(),
-                    msg: to_binary(&account::ExecuteMsg::FreeInUseSubAccount(
-                        FreeInUseSubAccountMsg {
+                    msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
+                        UpdateSubAccountFromInUseToFreeMsg {
                             sub_account: account.to_string(),
                         },
                     ))?,

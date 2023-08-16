@@ -1,4 +1,4 @@
-use account::{AddInUseSubAccountMsg, GenericMsg};
+use account::{GenericMsg, UpdateSubAccountFromFreeToInUseMsg, UpdateSubAccountFromInUseToFreeMsg};
 use controller::{
     account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg},
     job::Job,
@@ -179,14 +179,28 @@ pub fn create_account_and_job(
             // Add account to in use account list
             msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account_address.to_string(),
-                msg: to_binary(&account::ExecuteMsg::AddInUseSubAccount(
-                    AddInUseSubAccountMsg {
+                msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromFreeToInUse(
+                    UpdateSubAccountFromFreeToInUseMsg {
                         sub_account: account_address.to_string(),
                         job_id: job.id,
                     },
                 ))?,
                 funds: vec![],
             }));
+        } else {
+            // only save default account to ACCOUNTS, sub account is stored in default account and job
+            if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
+                return Err(ContractError::AccountAlreadyExists {});
+            }
+
+            ACCOUNTS().save(
+                deps.storage,
+                deps.api.addr_validate(&owner)?,
+                &Account {
+                    owner: deps.api.addr_validate(&owner.clone())?,
+                    account: deps.api.addr_validate(&account_address)?,
+                },
+            )?;
         }
 
         // assume reward.amount == warp token allowance
@@ -228,22 +242,32 @@ pub fn create_account_and_job(
             })?,
             funds: vec![],
         }));
-    }
 
-    if !create_sub_account {
-        // only save default account to ACCOUNTS, sub account is stored in default account and job
-        if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
-            return Err(ContractError::AccountAlreadyExists {});
+        if create_sub_account {
+            msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account_address.to_string(),
+                msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
+                    UpdateSubAccountFromInUseToFreeMsg {
+                        sub_account: account_address.to_string(),
+                    },
+                ))?,
+                funds: vec![],
+            }))
+        } else {
+            // only save default account to ACCOUNTS, sub account is stored in default account and job
+            if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
+                return Err(ContractError::AccountAlreadyExists {});
+            }
+
+            ACCOUNTS().save(
+                deps.storage,
+                deps.api.addr_validate(&owner)?,
+                &Account {
+                    owner: deps.api.addr_validate(&owner.clone())?,
+                    account: deps.api.addr_validate(&account_address)?,
+                },
+            )?;
         }
-
-        ACCOUNTS().save(
-            deps.storage,
-            deps.api.addr_validate(&owner)?,
-            &Account {
-                owner: deps.api.addr_validate(&owner.clone())?,
-                account: deps.api.addr_validate(&account_address)?,
-            },
-        )?;
     }
 
     Ok(Response::new()

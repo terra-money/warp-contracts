@@ -1,6 +1,6 @@
 use controller::account::{AssetInfo, Fund};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{CosmosMsg, Uint64, Addr};
+use cosmwasm_std::{Addr, CosmosMsg, Uint64};
 
 #[cw_serde]
 pub struct Config {
@@ -26,8 +26,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Generic(GenericMsg),
     WithdrawAssets(WithdrawAssetsMsg),
-    AddInUseSubAccount(AddInUseSubAccountMsg),
-    FreeInUseSubAccount(FreeInUseSubAccountMsg),
+    UpdateSubAccountFromFreeToInUse(UpdateSubAccountFromFreeToInUseMsg),
+    UpdateSubAccountFromInUseToFree(UpdateSubAccountFromInUseToFreeMsg),
 }
 
 #[cw_serde]
@@ -45,13 +45,13 @@ pub struct WithdrawAssetsMsg {
 pub struct ExecuteWasmMsg {}
 
 #[cw_serde]
-pub struct AddInUseSubAccountMsg {
+pub struct UpdateSubAccountFromFreeToInUseMsg {
     pub sub_account: String,
     pub job_id: Uint64,
 }
 
 #[cw_serde]
-pub struct FreeInUseSubAccountMsg {
+pub struct UpdateSubAccountFromInUseToFreeMsg {
     pub sub_account: String,
 }
 
