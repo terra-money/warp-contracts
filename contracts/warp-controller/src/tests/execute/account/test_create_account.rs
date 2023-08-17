@@ -46,9 +46,9 @@ fn test_create_account_success() {
                     code_id: 0,
                     msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
-                        funds: None,
+                        cw_funds: vec![],
                         job_id: None,
-                        msgs: None,
+                        msgs_to_execute_at_init: "[]".to_string(),
                     })
                     .unwrap(),
                     funds: vec![],
@@ -115,9 +115,9 @@ fn test_create_account_exists() {
                     code_id: 0,
                     msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
-                        funds: None,
+                        cw_funds: vec![],
                         job_id: None,
-                        msgs: None,
+                        msgs_to_execute_at_init: "[]".to_string(),
                     })
                     .unwrap(),
                     funds: vec![],

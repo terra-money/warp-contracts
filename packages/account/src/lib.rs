@@ -17,9 +17,17 @@ pub struct SubAccount {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub funds: Option<Vec<Fund>>,
+    // if the account is created together with a job, the job_id will be passed to the account
+    // but you shouldn't assume the account is always tied to the job
+    // we do not force account to have 1 to 1 mapping with job
     pub job_id: Option<Uint64>,
-    pub msgs: Option<String>,
+    // cw20 / cw721 fund to deposit to the account right after init,
+    // controller will parse it in the reply of account init and deposit the funds
+    // native fund is passed to the account init by info.funds so it's not part of InstantiateMsg
+    pub cw_funds: Vec<Fund>,
+    // Stringified array of messages to execute right after init, "[]" if no messages to execute
+    // It will be sent to account for executing in the reply of the init message in the controller
+    pub msgs_to_execute_at_init: String,
 }
 
 #[cw_serde]

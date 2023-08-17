@@ -54,9 +54,11 @@ pub fn create_account(
                 code_id: config.warp_account_code_id.u64(),
                 msg: to_binary(&account::InstantiateMsg {
                     owner: info.sender.to_string(),
-                    funds: data.funds,
+                    cw_funds: data.cw_funds.unwrap_or(vec![]),
                     job_id: None,
-                    msgs: data.msgs,
+                    msgs_to_execute_at_init: data
+                        .msgs_to_execute
+                        .unwrap_or("[]".to_string()),
                 })?,
                 funds: info.funds,
                 label: format!(
@@ -80,7 +82,7 @@ pub fn create_account(
     } else {
         let account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
 
-        let cw_funds_vec = match data.funds {
+        let cw_funds_vec = match data.cw_funds {
             None => {
                 vec![]
             }
@@ -124,13 +126,17 @@ pub fn create_account(
             }))
         }
 
-        let msgs_to_execute_at_init: Vec<CosmosMsg> = deps.querier.query_wasm_smart(
-            config.resolver_address,
-            &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
-                vars: "".to_string(),
-                msgs: data.msgs.unwrap_or("".to_string()),
-            }),
-        )?;
+        let msgs_to_execute_at_init: Vec<CosmosMsg> = if data.msgs_to_execute.is_none() {
+            vec![]
+        } else {
+            deps.querier.query_wasm_smart(
+                config.resolver_address,
+                &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                    vars: "".to_string(),
+                    msgs: data.msgs_to_execute.unwrap_or("[]".to_string()),
+                }),
+            )?
+        };
 
         msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: account.account.to_string(),
@@ -205,9 +211,11 @@ pub fn create_account_and_job(
                 code_id: config.warp_account_code_id.u64(),
                 msg: to_binary(&account::InstantiateMsg {
                     owner: info.sender.to_string(),
-                    funds: data.funds,
+                    cw_funds: data.cw_funds.unwrap_or(vec![]),
                     job_id: Some(current_job_id),
-                    msgs: data.initial_msgs,
+                    msgs_to_execute_at_init: data
+                        .msgs_to_execute
+                        .unwrap_or("[]".to_string()),
                 })?,
                 funds: info.funds,
                 label: format!("warp sub account owned by {}", info.sender.to_string()),
@@ -223,7 +231,7 @@ pub fn create_account_and_job(
         if ACCOUNTS().has(deps.storage, info.sender.clone()) {
             let account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
 
-            let cw_funds = match data.funds {
+            let cw_funds = match data.cw_funds {
                 None => {
                     vec![]
                 }
@@ -265,23 +273,6 @@ pub fn create_account_and_job(
                 }))
             }
 
-            let msgs_to_execute_at_init: Vec<CosmosMsg> = deps.querier.query_wasm_smart(
-                config.resolver_address,
-                &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
-                    vars: "".to_string(),
-                    msgs: data.initial_msgs.unwrap_or("".to_string()),
-                }),
-            )?;
-
-            msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: account.account.to_string(),
-                msg: to_binary(&GenericMsg {
-                    job_id: None,
-                    msgs: msgs_to_execute_at_init,
-                })?,
-                funds: vec![],
-            }));
-
             attrs.push(Attribute::new("action", "create_account_and_job"));
             attrs.push(Attribute::new("owner", account.owner));
             attrs.push(Attribute::new("account_address", account.account.clone()));
@@ -314,6 +305,23 @@ pub fn create_account_and_job(
                     funds: vec![],
                 }),
             ]);
+
+            let msgs_to_execute_at_init: Vec<CosmosMsg> = deps.querier.query_wasm_smart(
+                config.resolver_address,
+                &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                    vars: "".to_string(),
+                    msgs: data.msgs_to_execute.unwrap_or("[]".to_string()),
+                }),
+            )?;
+
+            msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: account.account.to_string(),
+                msg: to_binary(&GenericMsg {
+                    job_id: None,
+                    msgs: msgs_to_execute_at_init,
+                })?,
+                funds: vec![],
+            }));
         }
         // account does not exist, create account
         else {
@@ -324,9 +332,11 @@ pub fn create_account_and_job(
                     code_id: config.warp_account_code_id.u64(),
                     msg: to_binary(&account::InstantiateMsg {
                         owner: info.sender.to_string(),
-                        funds: data.funds,
+                        cw_funds: data.cw_funds.unwrap_or(vec![]),
                         job_id: Some(current_job_id),
-                        msgs: data.initial_msgs,
+                        msgs_to_execute_at_init: data
+                            .msgs_to_execute
+                            .unwrap_or("[]".to_string()),
                     })?,
                     funds: info.funds,
                     label: format!("warp default account owned by {}", info.sender.to_string()),

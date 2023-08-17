@@ -3,11 +3,17 @@ use cosmwasm_std::{Addr, Uint128, Uint64};
 
 #[cw_serde]
 pub struct CreateAccountMsg {
-    pub funds: Option<Vec<Fund>>,
     // If is_sub_account sets to true, we always create a new sub account, but user must have a default account first
     // If is_sub_account sets to false, we create a default account if not exist
     pub is_sub_account: Option<bool>,
-    pub msgs: Option<String>,
+    // cw20 / cw721 fund to deposit to the account right after init,
+    // controller will parse it in the reply of account init and deposit the funds
+    // native fund is passed to the account init by info.funds so it's not part of InstantiateMsg
+    pub cw_funds: Option<Vec<Fund>>,
+    // Stringified array of messages to execute, "[]" if no messages to execute
+    // If the account exists then execute the messages right away
+    // Otherwise call the account to execute in the reply of account init
+    pub msgs_to_execute: Option<String>,
 }
 
 #[cw_serde]
@@ -23,10 +29,12 @@ pub struct CreateAccountAndJobMsg {
     pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
-    pub funds: Option<Vec<Fund>>,
     pub is_sub_account: Option<bool>,
-    // optional msgs for account to run when job first created
-    pub initial_msgs: Option<String>,
+    pub cw_funds: Option<Vec<Fund>>,
+    // Stringified array of messages to execute on account, "[]" if no messages to execute
+    // If the account exists then execute the messages right away
+    // Otherwise call the account to execute in the reply of account init
+    pub msgs_to_execute: Option<String>,
 }
 
 #[cw_serde]

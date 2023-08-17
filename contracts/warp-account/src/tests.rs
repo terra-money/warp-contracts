@@ -19,9 +19,9 @@ fn test_execute_controller() {
         info.clone(),
         InstantiateMsg {
             owner: "vlad".to_string(),
-            funds: None,
+            cw_funds: vec![],
             job_id: None,
-            msgs: None,
+            msgs_to_execute_at_init: "[]".to_string(),
         },
     );
 
@@ -145,9 +145,9 @@ fn test_execute_owner() {
         info,
         InstantiateMsg {
             owner: "vlad".to_string(),
-            funds: None,
+            cw_funds: vec![],
             job_id: None,
-            msgs: None,
+            msgs_to_execute_at_init: "[]".to_string(),
         },
     );
 
@@ -273,9 +273,9 @@ fn test_execute_unauth() {
         info,
         InstantiateMsg {
             owner: "vlad".to_string(),
-            funds: None,
+            cw_funds: vec![],
             job_id: None,
-            msgs: None,
+            msgs_to_execute_at_init: "[]".to_string(),
         },
     );
 

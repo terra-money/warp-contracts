@@ -35,7 +35,7 @@ pub fn instantiate(
         },
         Attribute {
             key: "owner".to_string(),
-            value: msg.owner.to_string(),
+            value: msg.owner,
         },
         Attribute {
             key: "funds".to_string(),
@@ -43,11 +43,11 @@ pub fn instantiate(
         },
         Attribute {
             key: "cw_funds".to_string(),
-            value: serde_json_wasm::to_string(&msg.funds)?,
+            value: serde_json_wasm::to_string(&msg.cw_funds)?,
         },
         Attribute {
             key: "msgs".to_string(),
-            value: msg.msgs.unwrap_or("".to_string()),
+            value: msg.msgs_to_execute_at_init,
         },
     ];
     if msg.job_id.is_some() {

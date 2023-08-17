@@ -61,9 +61,9 @@ pub fn create_warp_account(
         env.clone(),
         info.clone(),
         CreateAccountMsg {
-            funds: None,
+            cw_funds: None,
             is_sub_account: None,
-            msgs: None,
+            msgs_to_execute: None,
         },
     );
 
