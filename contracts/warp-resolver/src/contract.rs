@@ -11,7 +11,8 @@ use cosmwasm_std::{
 use resolver::condition::Condition;
 use resolver::variable::{QueryExpr, Variable};
 use resolver::{
-    ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, SimulateQueryMsg, SimulateResponse,
+    ExecuteMsg, ExecuteSimulateQueryMsg, InstantiateMsg, MigrateMsg, QueryMsg, SimulateQueryMsg,
+    SimulateResponse,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -26,12 +27,31 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    _msg: ExecuteMsg,
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    Err(ContractError::Unauthorized {})
+    match msg {
+        ExecuteMsg::ExecuteSimulateQuery(msg) => execute_simulate_query(deps, env, info, msg),
+    }
+}
+
+pub fn execute_simulate_query(
+    deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    msg: ExecuteSimulateQueryMsg,
+) -> Result<Response, ContractError> {
+    let result = query_simulate_query(
+        deps.as_ref(),
+        env.clone(),
+        SimulateQueryMsg { query: msg.query },
+    )?;
+
+    Ok(Response::new()
+        .add_attribute("action", "execute_simulate_query")
+        .add_attribute("response", result.response))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
