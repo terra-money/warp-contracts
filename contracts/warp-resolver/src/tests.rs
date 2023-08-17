@@ -356,14 +356,15 @@ fn test_hydrate_vars_nested() {
 
     #[cw_serde]
     struct TestStruct {
-        var1_val: String,
+        var_val: String,
     }
 
+    // ============ TEST HYDRATED VALUE IS ENCODED ============
+
     let test_msg = TestStruct {
-        var1_val: format!("$warp.variable.{}", "var1"),
+        var_val: format!("$warp.variable.{}", "var1"),
     };
 
-    // Serialize the JSON object to a string
     let json_str = serde_json_wasm::to_string(&test_msg).unwrap();
 
     let var2 = Variable::Static(StaticVariable {
@@ -371,21 +372,52 @@ fn test_hydrate_vars_nested() {
         kind: VariableKind::String,
         value: json_str,
         update_fn: None,
-        // when encode is true, value will be encoded after hydration
+        // when encode is true, value will be base64 encoded after hydration
         encode: true,
     });
 
-    let vars = vec![var1, var2];
-    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
+    let vars = vec![var1.clone(), var2];
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
 
     match hydrated_vars[1].clone() {
         Variable::Static(static_var) => {
             let decoded_val = base64::decode(static_var.value).unwrap();
             assert_eq!(
                 String::from_utf8(decoded_val).unwrap(),
-                r#"{"var1_val":"static_value_1"}"#
+                r#"{"var_val":"static_value_1"}"#
             );
         }
         _ => panic!("Expected static variable"),
-    }
+    };
+
+    // ============ TEST HYDRATED VALUE IS NOT ENCODED ============
+
+    let test_msg = TestStruct {
+        var_val: format!("$warp.variable.{}", "var1"),
+    };
+
+    // Serialize the JSON object to a string
+    let json_str = serde_json_wasm::to_string(&test_msg).unwrap();
+
+    let var3 = Variable::Static(StaticVariable {
+        name: "var3".to_string(),
+        kind: VariableKind::String,
+        value: json_str,
+        update_fn: None,
+        // when encode is true, value will not be base64 encoded after hydration
+        encode: false,
+    });
+
+    let vars = vec![var1, var3];
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
+
+    match hydrated_vars[1].clone() {
+        Variable::Static(static_var) => {
+            assert_eq!(
+                String::from_utf8(static_var.value.into()).unwrap(),
+                r#"{"var_val":"static_value_1"}"#
+            );
+        }
+        _ => panic!("Expected static variable"),
+    };
 }
