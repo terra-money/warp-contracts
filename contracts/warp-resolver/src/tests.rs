@@ -127,7 +127,7 @@ impl WasmMockQuerier {
                 address: contract_addr,
                 denom: _,
             }) => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&format!("{}", contract_addr)).unwrap(),
+                to_binary(&contract_addr.to_string()).unwrap(),
             )),
             _ => self.base.handle_query(request),
         }
@@ -210,7 +210,7 @@ fn test_hydrate_vars_nested_variables_binary_json() {
     });
 
     let vars = vec![var5, var4, var3, var1, var2];
-    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
 
     assert_eq!(
         hydrated_vars[4],
@@ -266,7 +266,7 @@ fn test_hydrate_vars_nested_variables_binary() {
     });
 
     let vars = vec![var1, var2];
-    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
 
     assert_eq!(
         hydrated_vars[1],
@@ -319,7 +319,7 @@ fn test_hydrate_vars_nested_variables_non_binary() {
     });
 
     let vars = vec![var1, var2];
-    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
 
     assert_eq!(
         hydrated_vars[1],
@@ -376,7 +376,7 @@ fn test_hydrate_vars_nested() {
     });
 
     let vars = vec![var1, var2];
-    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
 
     match hydrated_vars[1].clone() {
         Variable::Static(static_var) => {

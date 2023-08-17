@@ -11,7 +11,7 @@ use cosmwasm_std::{
 fn test_execute_controller() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad_controller", &vec![]);
+    let info = mock_info("vlad_controller", &[]);
 
     let _instantiate_res = instantiate(
         deps.as_mut(),
@@ -137,12 +137,12 @@ fn test_execute_controller() {
 fn test_execute_owner() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad_controller", &vec![]);
+    let info = mock_info("vlad_controller", &[]);
 
     let _instantiate_res = instantiate(
         deps.as_mut(),
         env.clone(),
-        info.clone(),
+        info,
         InstantiateMsg {
             owner: "vlad".to_string(),
             funds: None,
@@ -202,7 +202,7 @@ fn test_execute_owner() {
         ],
     });
 
-    let info2 = mock_info("vlad", &vec![]);
+    let info2 = mock_info("vlad", &[]);
 
     let execute_res = execute(deps.as_mut(), env, info2, execute_msg).unwrap();
 
@@ -265,12 +265,12 @@ fn test_execute_owner() {
 fn test_execute_unauth() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("vlad_controller", &vec![]);
+    let info = mock_info("vlad_controller", &[]);
 
     let _instantiate_res = instantiate(
         deps.as_mut(),
         env.clone(),
-        info.clone(),
+        info,
         InstantiateMsg {
             owner: "vlad".to_string(),
             funds: None,
@@ -330,7 +330,7 @@ fn test_execute_unauth() {
         ],
     });
 
-    let info2 = mock_info("vlad2", &vec![]);
+    let info2 = mock_info("vlad2", &[]);
 
     let execute_res = execute(deps.as_mut(), env, info2, execute_msg).unwrap_err();
 

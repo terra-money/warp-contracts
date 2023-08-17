@@ -114,7 +114,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config => {
             let config = CONFIG.load(deps.storage)?;
-            return to_binary(&config);
+            to_binary(&config)
         }
         QueryMsg::QueryInUseSubAccounts(data) => {
             let sub_accounts = IN_USE_SUB_ACCOUNTS
