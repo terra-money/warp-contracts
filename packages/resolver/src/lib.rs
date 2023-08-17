@@ -8,7 +8,14 @@ use cosmwasm_std::QueryRequest;
 pub struct InstantiateMsg {}
 
 #[cw_serde]
-pub enum ExecuteMsg {}
+pub enum ExecuteMsg {
+    ExecuteSimulateQuery(ExecuteSimulateQueryMsg),
+}
+
+#[cw_serde]
+pub struct ExecuteSimulateQueryMsg {
+  pub query: QueryRequest<String>,
+}
 
 #[derive(QueryResponses)]
 #[cw_serde]
