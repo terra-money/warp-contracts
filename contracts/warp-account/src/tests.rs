@@ -21,7 +21,7 @@ fn test_execute_controller() {
             owner: "vlad".to_string(),
             cw_funds: vec![],
             job_id: None,
-            msgs_to_execute_at_init: "[]".to_string(),
+            msgs_to_execute_after_init: "[]".to_string(),
         },
     );
 
@@ -147,7 +147,7 @@ fn test_execute_owner() {
             owner: "vlad".to_string(),
             cw_funds: vec![],
             job_id: None,
-            msgs_to_execute_at_init: "[]".to_string(),
+            msgs_to_execute_after_init: "[]".to_string(),
         },
     );
 
@@ -275,7 +275,7 @@ fn test_execute_unauth() {
             owner: "vlad".to_string(),
             cw_funds: vec![],
             job_id: None,
-            msgs_to_execute_at_init: "[]".to_string(),
+            msgs_to_execute_after_init: "[]".to_string(),
         },
     );
 

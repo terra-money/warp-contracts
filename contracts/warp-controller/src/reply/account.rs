@@ -57,8 +57,8 @@ pub fn create_account_and_job(
         .attributes
         .iter()
         .cloned()
-        .find(|attr| attr.key == "msgs")
-        .ok_or_else(|| StdError::generic_err("cannot find `msgs` attribute"))?
+        .find(|attr| attr.key == "msgs_to_execute_after_init")
+        .ok_or_else(|| StdError::generic_err("cannot find `msgs_to_execute_after_init` attribute"))?
         .value;
 
     // another option is to store this as part of job so we don't need to pass it to account and to reply
@@ -66,7 +66,7 @@ pub fn create_account_and_job(
     let msgs_to_execute_at_init: Vec<CosmosMsg> = deps.querier.query_wasm_smart(
         config.resolver_address.clone(),
         &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
-            vars: "".to_string(),
+            vars: "[]".to_string(),
             msgs: msgs_string,
         }),
     )?;
@@ -144,10 +144,10 @@ pub fn create_account_and_job(
 
         msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: account_address.clone(),
-            msg: to_binary(&GenericMsg {
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 job_id: Some(job.id),
                 msgs: msgs_to_execute_at_init,
-            })?,
+            }))?,
             funds: vec![],
         }));
 
@@ -185,7 +185,7 @@ pub fn create_account_and_job(
                 contract_addr: default_account_address.to_string(),
                 msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromFreeToInUse(
                     UpdateSubAccountFromFreeToInUseMsg {
-                        sub_account: account_address.to_string(),
+                        sub_account_addr: account_address.to_string(),
                         job_id: job.id,
                     },
                 ))?,
@@ -212,7 +212,7 @@ pub fn create_account_and_job(
         let fee = job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
         msgs_vec.append(&mut vec![
-            //send reward to controller
+            // send reward to controller
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account_address.clone(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
@@ -240,10 +240,10 @@ pub fn create_account_and_job(
     } else {
         msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: account_address.clone(),
-            msg: to_binary(&GenericMsg {
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 job_id: None,
                 msgs: msgs_to_execute_at_init,
-            })?,
+            }))?,
             funds: vec![],
         }));
 
@@ -256,7 +256,7 @@ pub fn create_account_and_job(
                 contract_addr: default_account_address.to_string(),
                 msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
                     UpdateSubAccountFromInUseToFreeMsg {
-                        sub_account: account_address.to_string(),
+                        sub_account_addr: account_address.to_string(),
                     },
                 ))?,
                 funds: vec![],

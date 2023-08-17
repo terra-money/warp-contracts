@@ -58,12 +58,30 @@ pub fn create_job(
             match account_record {
                 None => ACCOUNTS()
                     .load(deps.storage, info.sender.clone())
-                    .map_err(|_e| ContractError::AccountDoesNotExist {})?,
+                    .map_err(|_e| ContractError::DefaultAccountDoesNotExist {})?,
                 Some(record) => record.1,
             }
             .account
         }
-        Some(account) => account,
+        Some(account) => {
+            let default_account = ACCOUNTS()
+                .load(deps.storage, info.sender.clone())
+                .unwrap()
+                .account;
+            // Check if sub account is owned by the sender and is free
+            let is_sub_account_free: bool = deps.querier.query_wasm_smart(
+                default_account,
+                &account::QueryMsg::QueryIsSubAccountOwnedAndFree(
+                    account::QueryIsSubAccountOwnedAndFreeMsg {
+                        sub_account_addr: account.clone().to_string(),
+                    },
+                ),
+            )?;
+            if !is_sub_account_free {
+                return Err(ContractError::SubAccountNotOwnedBySenderOrInUse {});
+            }
+            account
+        }
     };
 
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
@@ -127,7 +145,13 @@ pub fn create_job(
         }),
     ];
 
-    if data.account.is_some() {
+    if data.account.is_some()
+        && data.account.clone().unwrap()
+            != ACCOUNTS()
+                .load(deps.storage, info.sender.clone())
+                .unwrap()
+                .account
+    {
         msgs_vec.push(
             // Add account to in use account list
             // If account is default account, it will be ignored by the account contract
@@ -136,7 +160,7 @@ pub fn create_job(
                 msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromFreeToInUse(
                     UpdateSubAccountFromFreeToInUseMsg {
                         job_id: job.id,
-                        sub_account: account.to_string(),
+                        sub_account_addr: account.to_string(),
                     },
                 ))?,
                 funds: vec![],
@@ -252,7 +276,7 @@ pub fn delete_job(
                 contract_addr: account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
                     UpdateSubAccountFromInUseToFreeMsg {
-                        sub_account: account.to_string(),
+                        sub_account_addr: account.to_string(),
                     },
                 ))?,
                 funds: vec![],
@@ -468,7 +492,7 @@ pub fn execute_job(
                     contract_addr: account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
                         UpdateSubAccountFromInUseToFreeMsg {
-                            sub_account: account.to_string(),
+                            sub_account_addr: account.to_string(),
                         },
                     ))?,
                     funds: vec![],
@@ -664,7 +688,7 @@ pub fn evict_job(
                     contract_addr: account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
                         UpdateSubAccountFromInUseToFreeMsg {
-                            sub_account: account.to_string(),
+                            sub_account_addr: account.to_string(),
                         },
                     ))?,
                     funds: vec![],

@@ -10,6 +10,8 @@ use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
 use cw_storage_plus::Bound;
 
+const QUERY_LIMIT: u32 = 50;
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -46,8 +48,8 @@ pub fn instantiate(
             value: serde_json_wasm::to_string(&msg.cw_funds)?,
         },
         Attribute {
-            key: "msgs".to_string(),
-            value: msg.msgs_to_execute_at_init,
+            key: "msgs_to_execute_after_init".to_string(),
+            value: msg.msgs_to_execute_after_init,
         },
     ];
     if msg.job_id.is_some() {
@@ -78,33 +80,37 @@ pub fn execute(
         ExecuteMsg::WithdrawAssets(data) => withdraw_assets(deps, env, info, data),
         ExecuteMsg::UpdateSubAccountFromFreeToInUse(data) => {
             // We do not add default account to in use sub accounts
-            if data.sub_account == env.contract.address {
+            if data.sub_account_addr == env.contract.address {
                 return Ok(Response::new());
             }
-            FREE_SUB_ACCOUNTS.remove(deps.storage, data.sub_account.clone());
-            IN_USE_SUB_ACCOUNTS.update(deps.storage, data.sub_account.clone(), |s| match s {
-                None => Ok(data.job_id.u64()),
-                Some(_) => Err(ContractError::SubAccountAlreadyInUseError {}),
-            })?;
+            FREE_SUB_ACCOUNTS.remove(deps.storage, data.sub_account_addr.clone());
+            IN_USE_SUB_ACCOUNTS.update(
+                deps.storage,
+                data.sub_account_addr.clone(),
+                |s| match s {
+                    None => Ok(data.job_id.u64()),
+                    Some(_) => Err(ContractError::SubAccountAlreadyInUseError {}),
+                },
+            )?;
             Ok(Response::new()
                 .add_attribute("action", "add_in_use_sub_account")
-                .add_attribute("sub_account", data.sub_account)
+                .add_attribute("sub_account", data.sub_account_addr)
                 .add_attribute("job_id", data.job_id))
         }
         ExecuteMsg::UpdateSubAccountFromInUseToFree(data) => {
             // We do not add default account to free sub accounts
-            if data.sub_account == env.contract.address {
+            if data.sub_account_addr == env.contract.address {
                 return Ok(Response::new());
             }
-            IN_USE_SUB_ACCOUNTS.remove(deps.storage, data.sub_account.clone());
-            FREE_SUB_ACCOUNTS.update(deps.storage, data.sub_account.clone(), |s| match s {
+            IN_USE_SUB_ACCOUNTS.remove(deps.storage, data.sub_account_addr.clone());
+            FREE_SUB_ACCOUNTS.update(deps.storage, data.sub_account_addr.clone(), |s| match s {
                 // value is a dummy data because there is no built in support for set in cosmwasm
                 None => Ok(0),
                 Some(_) => Err(ContractError::SubAccountAlreadyFreeError {}),
             })?;
             Ok(Response::new()
                 .add_attribute("action", "free_in_use_sub_account")
-                .add_attribute("sub_account", data.sub_account))
+                .add_attribute("sub_account", data.sub_account_addr))
         }
     }
 }
@@ -124,7 +130,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                     None,
                     Order::Descending,
                 )
-                .take(data.limit.unwrap_or(0) as usize)
+                .take(data.limit.unwrap_or(QUERY_LIMIT) as usize)
                 .map(|item| {
                     item.map(|(k, v)| SubAccount {
                         addr: k,
@@ -132,7 +138,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                     })
                 })
                 .collect::<StdResult<Vec<SubAccount>>>()?;
-            return to_binary(&sub_accounts);
+            to_binary(&sub_accounts)
         }
         QueryMsg::QueryFreeSubAccounts(data) => {
             let sub_accounts = FREE_SUB_ACCOUNTS
@@ -142,7 +148,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                     None,
                     Order::Descending,
                 )
-                .take(data.limit.unwrap_or(0) as usize)
+                .take(data.limit.unwrap_or(QUERY_LIMIT) as usize)
                 .map(|item| {
                     item.map(|(k, _)| SubAccount {
                         addr: k,
@@ -150,7 +156,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                     })
                 })
                 .collect::<StdResult<Vec<SubAccount>>>()?;
-            return to_binary(&sub_accounts);
+            to_binary(&sub_accounts)
         }
         QueryMsg::QueryFirstFreeSubAccount {} => {
             let sub_account = FREE_SUB_ACCOUNTS
@@ -163,7 +169,19 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                     })
                 })
                 .unwrap()?;
-            return to_binary(&sub_account);
+            to_binary(&sub_account)
+        }
+        QueryMsg::QueryIsSubAccountOwnedAndFree(data) => {
+            let is_free = FREE_SUB_ACCOUNTS
+                .may_load(deps.storage, data.sub_account_addr)?
+                .is_some();
+            to_binary(&is_free)
+        }
+        QueryMsg::QueryIsSubAccountOwnedAndInUse(data) => {
+            let is_in_use = IN_USE_SUB_ACCOUNTS
+                .may_load(deps.storage, data.sub_account_addr)?
+                .is_some();
+            to_binary(&is_in_use)
         }
     }
 }

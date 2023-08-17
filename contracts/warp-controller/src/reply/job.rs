@@ -99,7 +99,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                     contract_addr: account.to_string(),
                     msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
                         UpdateSubAccountFromInUseToFreeMsg {
-                            sub_account: account.to_string(),
+                            sub_account_addr: account.to_string(),
                         },
                     ))?,
                     funds: vec![],
@@ -268,7 +268,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                             contract_addr: account.to_string(),
                             msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromFreeToInUse(
                                 UpdateSubAccountFromFreeToInUseMsg {
-                                    sub_account: account.to_string(),
+                                    sub_account_addr: account.to_string(),
                                     job_id: new_job.id,
                                 },
                             ))?,

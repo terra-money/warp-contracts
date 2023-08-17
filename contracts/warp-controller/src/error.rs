@@ -33,8 +33,8 @@ pub enum ContractError {
     #[error("Invalid arguments")]
     InvalidArguments {},
 
-    #[error("Account does not exist")]
-    AccountDoesNotExist {},
+    #[error("Default account does not exist")]
+    DefaultAccountDoesNotExist {},
 
     #[error("Account already exists")]
     AccountAlreadyExists {},
@@ -44,6 +44,9 @@ pub enum ContractError {
 
     #[error("Creating sub account requires default account")]
     SubAccountRequiresDefaultAccount {},
+
+    #[error("Sub account is either not owned by sender or in use")]
+    SubAccountNotOwnedBySenderOrInUse {},
 
     #[error("Job already finished")]
     JobAlreadyFinished {},

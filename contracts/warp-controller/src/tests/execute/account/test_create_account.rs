@@ -48,7 +48,7 @@ fn test_create_account_success() {
                         owner: info.sender.to_string(),
                         cw_funds: vec![],
                         job_id: None,
-                        msgs_to_execute_at_init: "[]".to_string(),
+                        msgs_to_execute_after_init: "[]".to_string(),
                     })
                     .unwrap(),
                     funds: vec![],
@@ -117,7 +117,7 @@ fn test_create_account_exists() {
                         owner: info.sender.to_string(),
                         cw_funds: vec![],
                         job_id: None,
-                        msgs_to_execute_at_init: "[]".to_string(),
+                        msgs_to_execute_after_init: "[]".to_string(),
                     })
                     .unwrap(),
                     funds: vec![],

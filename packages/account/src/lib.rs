@@ -27,7 +27,7 @@ pub struct InstantiateMsg {
     pub cw_funds: Vec<Fund>,
     // Stringified array of messages to execute right after init, "[]" if no messages to execute
     // It will be sent to account for executing in the reply of the init message in the controller
-    pub msgs_to_execute_at_init: String,
+    pub msgs_to_execute_after_init: String,
 }
 
 #[cw_serde]
@@ -54,13 +54,13 @@ pub struct ExecuteWasmMsg {}
 
 #[cw_serde]
 pub struct UpdateSubAccountFromFreeToInUseMsg {
-    pub sub_account: String,
+    pub sub_account_addr: String,
     pub job_id: Uint64,
 }
 
 #[cw_serde]
 pub struct UpdateSubAccountFromInUseToFreeMsg {
-    pub sub_account: String,
+    pub sub_account_addr: String,
 }
 
 #[derive(QueryResponses)]
@@ -74,6 +74,10 @@ pub enum QueryMsg {
     QueryFreeSubAccounts(QueryFreeSubAccountsMsg),
     #[returns(QueryFirstFreeSubAccountsResponse)]
     QueryFirstFreeSubAccount {},
+    #[returns(QueryIsSubAccountOwnedAndInUseResponse)]
+    QueryIsSubAccountOwnedAndInUse(QueryIsSubAccountOwnedAndInUseMsg),
+    #[returns(QueryIsSubAccountOwnedAndFreeResponse)]
+    QueryIsSubAccountOwnedAndFree(QueryIsSubAccountOwnedAndFreeMsg),
 }
 
 #[cw_serde]
@@ -106,6 +110,26 @@ pub struct QueryFreeSubAccountsResponse {
 #[cw_serde]
 pub struct QueryFirstFreeSubAccountsResponse {
     pub sub_account: SubAccount,
+}
+
+#[cw_serde]
+pub struct QueryIsSubAccountOwnedAndInUseMsg {
+    pub sub_account_addr: String,
+}
+
+#[cw_serde]
+pub struct QueryIsSubAccountOwnedAndInUseResponse {
+    pub is_in_use: bool,
+}
+
+#[cw_serde]
+pub struct QueryIsSubAccountOwnedAndFreeMsg {
+    pub sub_account_addr: String,
+}
+
+#[cw_serde]
+pub struct QueryIsSubAccountOwnedAndFreeResponse {
+    pub is_free: bool,
 }
 
 #[cw_serde]
