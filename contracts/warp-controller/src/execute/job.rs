@@ -309,7 +309,7 @@ pub fn execute_job(
     info: MessageInfo,
     data: ExecuteJobMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let _config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
