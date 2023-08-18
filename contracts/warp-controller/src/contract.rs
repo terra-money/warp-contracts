@@ -5,7 +5,6 @@ use account::{GenericMsg, WithdrawAssetsMsg};
 use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use controller::job::{Job, JobStatus};
 
-
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 use cosmwasm_std::{
     entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,

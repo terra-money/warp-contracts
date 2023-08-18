@@ -4,7 +4,7 @@ use std::fs::create_dir_all;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use templates::{
     template::{TemplateResponse, TemplatesResponse},
-    Config, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
+    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, Config,
 };
 
 fn main() {

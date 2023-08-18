@@ -3,10 +3,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use cosmwasm_std::{CosmosMsg, QueryRequest};
-use resolver::{
-    condition::Condition, variable::Variable, ExecuteMsg, InstantiateMsg, QueryMsg,
-    ResolveResponse, SimulateResponse,
-};
+use resolver::{ExecuteMsg, InstantiateMsg, QueryMsg, variable::Variable, condition::Condition, SimulateResponse, ResolveResponse};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

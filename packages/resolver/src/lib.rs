@@ -14,7 +14,7 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub struct ExecuteSimulateQueryMsg {
-    pub query: QueryRequest<String>,
+  pub query: QueryRequest<String>,
 }
 
 #[derive(QueryResponses)]
