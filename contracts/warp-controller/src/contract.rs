@@ -2,15 +2,14 @@ use crate::error::map_contract_error;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
-use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
+use controller::account::{Account, AssetInfo, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use controller::job::{Job, JobStatus};
 
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
-use cosmwasm_std::{
-    entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
-    CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
-    SubMsgResult, Uint128, Uint64, WasmMsg,
-};
+use cosmwasm_std::{entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg, Addr};
+use cw_storage_plus::{Index, IndexedMap, IndexList, Item, MultiIndex, UniqueIndex};
+use resolver::condition::Condition;
+use resolver::variable::{ExternalExpr, QueryExpr, UpdateFn, Variable, VariableKind};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -108,7 +107,132 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    //CONFIG
+    #[cw_serde]
+    pub struct V1Config {
+        pub owner: Addr,
+        pub fee_denom: String,
+        pub fee_collector: Addr,
+        pub warp_account_code_id: Uint64,
+        pub minimum_reward: Uint128,
+        pub creation_fee_percentage: Uint64,
+        pub cancellation_fee_percentage: Uint64,
+        pub resolver_address: Addr,
+        // maximum time for evictions
+        pub t_max: Uint64,
+        // minimum time for evictions
+        pub t_min: Uint64,
+        // maximum fee for evictions
+        pub a_max: Uint128,
+        // minimum fee for evictions
+        pub a_min: Uint128,
+        // maximum length of queue modifier for evictions
+        pub q_max: Uint64,
+    }
+
+    const V1CONFIG: Item<V1Config> = Item::new("config");
+
+    let v1_config = V1CONFIG.load(deps.storage)?;
+
+    CONFIG.save(deps.storage, &Config {
+        owner: v1_config.owner,
+        fee_denom: v1_config.fee_denom,
+        fee_collector: v1_config.fee_collector,
+        warp_account_code_id: v1_config.warp_account_code_id,
+        minimum_reward: v1_config.minimum_reward,
+        creation_fee_percentage: v1_config.creation_fee_percentage,
+        cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
+        resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
+        t_max: v1_config.t_max,
+        t_min: v1_config.t_min,
+        a_max: v1_config.a_max,
+        a_min: v1_config.a_min,
+        q_max: v1_config.q_max,
+    })?;
+
+    //JOBS
+    #[cw_serde]
+    pub struct V1Job {
+        pub id: Uint64,
+        pub owner: Addr,
+        pub last_update_time: Uint64,
+        pub name: String,
+        pub description: String,
+        pub labels: Vec<String>,
+        pub status: JobStatus,
+        pub condition: Condition,
+        pub msgs: Vec<String>,
+        pub vars: Vec<Variable>,
+        pub recurring: bool,
+        pub requeue_on_evict: bool,
+        pub reward: Uint128,
+        pub assets_to_withdraw: Vec<AssetInfo>,
+    }
+
+    #[cw_serde]
+    pub enum V1Variable {
+        Static(V1StaticVariable),
+        External(V1ExternalVariable),
+        Query(V1QueryVariable),
+    }
+
+    #[cw_serde]
+    pub struct V1StaticVariable {
+        pub kind: VariableKind,
+        pub name: String,
+        pub value: String,
+        pub update_fn: Option<UpdateFn>,
+    }
+
+    #[cw_serde]
+    pub struct V1ExternalVariable {
+        pub kind: VariableKind,
+        pub name: String,
+        pub init_fn: ExternalExpr,
+        pub reinitialize: bool,
+        pub value: Option<String>, //none if uninitialized
+        pub update_fn: Option<UpdateFn>,
+    }
+
+    #[cw_serde]
+    pub struct V1QueryVariable {
+        pub kind: VariableKind,
+        pub name: String,
+        pub init_fn: QueryExpr,
+        pub reinitialize: bool,
+        pub value: Option<String>, //none if uninitialized
+        pub update_fn: Option<UpdateFn>,
+    }
+
+    pub struct V1JobIndexes<'a> {
+        pub reward: UniqueIndex<'a, (u128, u64), V1Job>,
+        pub publish_time: MultiIndex<'a, u64, V1Job, u64>,
+    }
+
+    impl IndexList<V1Job> for V1JobIndexes<'_> {
+        fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<V1Job>> + '_> {
+            let v: Vec<&dyn Index<V1Job>> = vec![&self.reward, &self.publish_time];
+            Box::new(v.into_iter())
+        }
+    }
+
+    #[allow(non_snake_case)]
+    pub fn V1_PENDING_JOBS<'a>() -> IndexedMap<'a, u64, V1Job, V1JobIndexes<'a>> {
+        let indexes = V1JobIndexes {
+            reward: UniqueIndex::new(
+                |job| (job.reward.u128(), job.id.u64()),
+                "pending_jobs__reward_v2",
+            ),
+            publish_time: MultiIndex::new(
+                |_pk, job| job.last_update_time.u64(),
+                "pending_jobs_v2",
+                "pending_jobs__publish_timestamp_v2",
+            ),
+        };
+        IndexedMap::new("pending_jobs_v2", indexes)
+    }
+
     Ok(Response::new())
 }
 

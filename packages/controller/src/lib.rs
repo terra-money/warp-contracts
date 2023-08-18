@@ -117,5 +117,5 @@ pub struct ConfigResponse {
 //migrate
 #[cw_serde]
 pub struct MigrateMsg {
-    pub fee_denom: String,
+    pub resolver_address: String,
 }
