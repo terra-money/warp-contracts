@@ -1,4 +1,4 @@
-use account::{GenericMsg, UpdateSubAccountFromFreeToInUseMsg, UpdateSubAccountFromInUseToFreeMsg};
+use account::{GenericMsg, MarkSubAccountAsFreeMsg, MarkSubAccountAsInUseMsg};
 use controller::{
     account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg},
     job::Job,
@@ -183,8 +183,8 @@ pub fn create_account_and_job(
             // Add sub account to in use account list
             msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: default_account_address.to_string(),
-                msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromFreeToInUse(
-                    UpdateSubAccountFromFreeToInUseMsg {
+                msg: to_binary(&account::ExecuteMsg::MarkSubAccountAsInUse(
+                    MarkSubAccountAsInUseMsg {
                         sub_account_addr: account_address.to_string(),
                         job_id: job.id,
                     },
@@ -254,8 +254,8 @@ pub fn create_account_and_job(
             // Add sub account to free account list
             msgs_vec.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: default_account_address.to_string(),
-                msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
-                    UpdateSubAccountFromInUseToFreeMsg {
+                msg: to_binary(&account::ExecuteMsg::MarkSubAccountAsFree(
+                    MarkSubAccountAsFreeMsg {
                         sub_account_addr: account_address.to_string(),
                     },
                 ))?,

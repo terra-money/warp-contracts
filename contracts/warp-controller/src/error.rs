@@ -33,8 +33,8 @@ pub enum ContractError {
     #[error("Invalid arguments")]
     InvalidArguments {},
 
-    #[error("Default account does not exist")]
-    DefaultAccountDoesNotExist {},
+    #[error("Default account is required to create a job")]
+    DefaultAccountIsRequiredToCreateJob {},
 
     #[error("Account already exists")]
     AccountAlreadyExists {},

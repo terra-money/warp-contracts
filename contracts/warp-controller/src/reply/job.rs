@@ -1,7 +1,4 @@
-use account::{
-    GenericMsg, UpdateSubAccountFromFreeToInUseMsg, UpdateSubAccountFromInUseToFreeMsg,
-    WithdrawAssetsMsg,
-};
+use account::{GenericMsg, MarkSubAccountAsFreeMsg, MarkSubAccountAsInUseMsg, WithdrawAssetsMsg};
 use controller::job::{Job, JobStatus};
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
@@ -85,34 +82,34 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         _ => vec![],
     };
 
+    let config = CONFIG.load(deps.storage)?;
+
     let mut msgs_vec = vec![];
     let mut new_job_attrs = vec![];
 
-    let account;
-    match finished_job.account.clone() {
-        Some(a) => {
-            account = a;
-            msgs_vec.push(
-                // Free account from in use account list
-                // If account is default account, it will be ignored by the account contract
-                CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: account.to_string(),
-                    msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromInUseToFree(
-                        UpdateSubAccountFromInUseToFreeMsg {
-                            sub_account_addr: account.to_string(),
-                        },
-                    ))?,
-                    funds: vec![],
-                }),
-            )
-        }
-        None => {
-            account = ACCOUNTS()
-                .load(deps.storage, finished_job.owner.clone())?
-                .account;
-        }
+    let default_account = ACCOUNTS()
+        .load(deps.storage, finished_job.owner.clone())?
+        .account;
+    let job_account = match finished_job.account.clone() {
+        Some(sub_account) => sub_account,
+        None => default_account.clone(),
+    };
+
+    if job_account != default_account {
+        msgs_vec.push(
+            // Free account from in use account list
+            // If account is default account, it will be ignored by the account contract
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: default_account.to_string(),
+                msg: to_binary(&account::ExecuteMsg::MarkSubAccountAsFree(
+                    MarkSubAccountAsFreeMsg {
+                        sub_account_addr: job_account.to_string(),
+                    },
+                ))?,
+                funds: vec![],
+            }),
+        )
     }
-    let config = CONFIG.load(deps.storage)?;
 
     //assume reward.amount == warp token allowance
     let fee =
@@ -121,7 +118,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
     let account_amount = deps
         .querier
         .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-            address: account.to_string(),
+            address: job_account.to_string(),
             denom: config.fee_denom.clone(),
         }))?
         .amount
@@ -228,9 +225,9 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                 state.q = state.q.checked_add(Uint64::new(1))?;
 
                 msgs_vec.push(
-                    //send fee to fee collector
+                    // send fee to fee collector
                     CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: account.to_string(),
+                        contract_addr: job_account.to_string(),
                         msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                             job_id: Some(new_job.id),
                             msgs: vec![CosmosMsg::Bank(BankMsg::Send {
@@ -243,9 +240,9 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                 );
 
                 msgs_vec.push(
-                    //send reward to controller
+                    // send reward to controller
                     CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: account.to_string(),
+                        contract_addr: job_account.to_string(),
                         msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                             job_id: Some(new_job.id),
                             msgs: vec![CosmosMsg::Bank(BankMsg::Send {
@@ -260,15 +257,15 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
                     }),
                 );
 
-                if new_job.account.is_some() {
+                if job_account != default_account {
                     msgs_vec.push(
                         // Add account to in use account list
                         // If account is default account, it will be ignored by the account contract
                         CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: account.to_string(),
-                            msg: to_binary(&account::ExecuteMsg::UpdateSubAccountFromFreeToInUse(
-                                UpdateSubAccountFromFreeToInUseMsg {
-                                    sub_account_addr: account.to_string(),
+                            contract_addr: default_account.to_string(),
+                            msg: to_binary(&account::ExecuteMsg::MarkSubAccountAsInUse(
+                                MarkSubAccountAsInUseMsg {
+                                    sub_account_addr: job_account.to_string(),
                                     job_id: new_job.id,
                                 },
                             ))?,
@@ -308,7 +305,7 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         msgs_vec.push(
             //withdraw all assets that are listed
             CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: account.to_string(),
+                contract_addr: job_account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
                     asset_infos: finished_job.assets_to_withdraw,
                 }))?,

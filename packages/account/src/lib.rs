@@ -11,7 +11,9 @@ pub struct Config {
 #[cw_serde]
 pub struct SubAccount {
     pub addr: String,
-    pub job_id: Option<Uint64>,
+    pub owner: Addr,
+    pub default_account_addr: Addr,
+    pub in_use_by_job_id: Option<Uint64>,
 }
 
 #[cw_serde]
@@ -34,8 +36,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Generic(GenericMsg),
     WithdrawAssets(WithdrawAssetsMsg),
-    UpdateSubAccountFromFreeToInUse(UpdateSubAccountFromFreeToInUseMsg),
-    UpdateSubAccountFromInUseToFree(UpdateSubAccountFromInUseToFreeMsg),
+    MarkSubAccountAsInUse(MarkSubAccountAsInUseMsg),
+    MarkSubAccountAsFree(MarkSubAccountAsFreeMsg),
 }
 
 #[cw_serde]
@@ -53,13 +55,13 @@ pub struct WithdrawAssetsMsg {
 pub struct ExecuteWasmMsg {}
 
 #[cw_serde]
-pub struct UpdateSubAccountFromFreeToInUseMsg {
+pub struct MarkSubAccountAsInUseMsg {
     pub sub_account_addr: String,
     pub job_id: Uint64,
 }
 
 #[cw_serde]
-pub struct UpdateSubAccountFromInUseToFreeMsg {
+pub struct MarkSubAccountAsFreeMsg {
     pub sub_account_addr: String,
 }
 

@@ -78,7 +78,7 @@ pub fn execute(
             .add_attribute("job_id", data.job_id.unwrap_or(Uint64::zero()))
             .add_attribute("action", "generic")),
         ExecuteMsg::WithdrawAssets(data) => withdraw_assets(deps, env, info, data),
-        ExecuteMsg::UpdateSubAccountFromFreeToInUse(data) => {
+        ExecuteMsg::MarkSubAccountAsInUse(data) => {
             // We do not add default account to in use sub accounts
             if data.sub_account_addr == env.contract.address {
                 return Ok(Response::new());
@@ -93,11 +93,11 @@ pub fn execute(
                 },
             )?;
             Ok(Response::new()
-                .add_attribute("action", "add_in_use_sub_account")
+                .add_attribute("action", "mark_sub_account_as_in_use")
                 .add_attribute("sub_account", data.sub_account_addr)
                 .add_attribute("job_id", data.job_id))
         }
-        ExecuteMsg::UpdateSubAccountFromInUseToFree(data) => {
+        ExecuteMsg::MarkSubAccountAsFree(data) => {
             // We do not add default account to free sub accounts
             if data.sub_account_addr == env.contract.address {
                 return Ok(Response::new());
@@ -109,19 +109,17 @@ pub fn execute(
                 Some(_) => Err(ContractError::SubAccountAlreadyFreeError {}),
             })?;
             Ok(Response::new()
-                .add_attribute("action", "free_in_use_sub_account")
+                .add_attribute("action", "mark_sub_account_as_free")
                 .add_attribute("sub_account", data.sub_account_addr))
         }
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    let config = CONFIG.load(deps.storage)?;
     match msg {
-        QueryMsg::Config => {
-            let config = CONFIG.load(deps.storage)?;
-            to_binary(&config)
-        }
+        QueryMsg::Config => to_binary(&config),
         QueryMsg::QueryInUseSubAccounts(data) => {
             let sub_accounts = IN_USE_SUB_ACCOUNTS
                 .range(
@@ -134,7 +132,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 .map(|item| {
                     item.map(|(k, v)| SubAccount {
                         addr: k,
-                        job_id: Some(Uint64::from(v)),
+                        owner: config.owner.clone(),
+                        default_account_addr: env.contract.address.clone(),
+                        in_use_by_job_id: Some(Uint64::from(v)),
                     })
                 })
                 .collect::<StdResult<Vec<SubAccount>>>()?;
@@ -152,7 +152,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 .map(|item| {
                     item.map(|(k, _)| SubAccount {
                         addr: k,
-                        job_id: Option::None,
+                        owner: config.owner.clone(),
+                        default_account_addr: env.contract.address.clone(),
+                        in_use_by_job_id: Option::None,
                     })
                 })
                 .collect::<StdResult<Vec<SubAccount>>>()?;
@@ -165,7 +167,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 .map(|item| {
                     item.map(|(k, _)| SubAccount {
                         addr: k,
-                        job_id: Option::None,
+                        owner: config.owner.clone(),
+                        default_account_addr: env.contract.address.clone(),
+                        in_use_by_job_id: Option::None,
                     })
                 })
                 .unwrap()?;
