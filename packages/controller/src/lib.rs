@@ -22,16 +22,22 @@ pub struct Config {
     pub creation_fee_percentage: Uint64,
     pub cancellation_fee_percentage: Uint64,
     pub resolver_address: Addr,
+    // maximum time for evictions
     pub t_max: Uint64,
+    // minimum time for evictions
     pub t_min: Uint64,
+    // maximum fee for evictions
     pub a_max: Uint128,
+    // minimum fee for evictions
     pub a_min: Uint128,
+    // maximum length of queue modifier for evictions
     pub q_max: Uint64,
 }
 
 #[cw_serde]
 pub struct State {
     pub current_job_id: Uint64,
+    // queue length
     pub q: Uint64,
 }
 
@@ -70,7 +76,6 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub owner: Option<String>,
-    pub fee_denom: Option<String>,
     pub fee_collector: Option<String>,
     pub minimum_reward: Option<Uint128>,
     pub creation_fee_percentage: Option<Uint64>,

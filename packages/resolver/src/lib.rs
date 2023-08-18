@@ -8,22 +8,29 @@ use cosmwasm_std::QueryRequest;
 pub struct InstantiateMsg {}
 
 #[cw_serde]
-pub enum ExecuteMsg {}
+pub enum ExecuteMsg {
+    ExecuteSimulateQuery(ExecuteSimulateQueryMsg),
+}
+
+#[cw_serde]
+pub struct ExecuteSimulateQueryMsg {
+  pub query: QueryRequest<String>,
+}
 
 #[derive(QueryResponses)]
 #[cw_serde]
 pub enum QueryMsg {
     #[returns(SimulateResponse)]
     SimulateQuery(SimulateQueryMsg),
-    #[returns(SimulateResponse)]
+    #[returns(ResolveResponse)]
     QueryValidateJobCreation(QueryValidateJobCreationMsg),
-    #[returns(SimulateResponse)]
+    #[returns(ResolveResponse)]
     QueryHydrateVars(QueryHydrateVarsMsg),
-    #[returns(SimulateResponse)]
+    #[returns(ResolveResponse)]
     QueryResolveCondition(QueryResolveConditionMsg),
-    #[returns(SimulateResponse)]
+    #[returns(ResolveResponse)]
     QueryApplyVarFn(QueryApplyVarFnMsg),
-    #[returns(SimulateResponse)]
+    #[returns(ResolveResponse)]
     QueryHydrateMsgs(QueryHydrateMsgsMsg),
 }
 
@@ -73,4 +80,6 @@ pub struct SimulateResponse {
 }
 
 #[cw_serde]
-pub struct ResolveResponse {}
+pub struct ResolveResponse {
+    pub response: String,
+}

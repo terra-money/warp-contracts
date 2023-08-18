@@ -34,7 +34,9 @@ pub struct WithdrawAssetsMsg {
 pub struct ExecuteWasmMsg {}
 
 #[cw_serde]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    Config,
+}
 
 #[cw_serde]
 pub struct MigrateMsg {}
