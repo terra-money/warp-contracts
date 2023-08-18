@@ -1,3 +1,5 @@
+use std::ops::Deref;
+use cosmwasm_schema::cw_serde;
 use crate::error::map_contract_error;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::{execute, query, state::STATE, ContractError};
@@ -6,10 +8,10 @@ use controller::account::{Account, AssetInfo, Fund, FundTransferMsgs, TransferFr
 use controller::job::{Job, JobStatus};
 
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
-use cosmwasm_std::{entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg, Addr};
+use cosmwasm_std::{entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg, Addr, Order};
 use cw_storage_plus::{Index, IndexedMap, IndexList, Item, MultiIndex, UniqueIndex};
 use resolver::condition::Condition;
-use resolver::variable::{ExternalExpr, QueryExpr, UpdateFn, Variable, VariableKind};
+use resolver::variable::{ExternalExpr, ExternalVariable, QueryExpr, QueryVariable, StaticVariable, UpdateFn, Variable, VariableKind};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -163,7 +165,7 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
         pub status: JobStatus,
         pub condition: Condition,
         pub msgs: Vec<String>,
-        pub vars: Vec<Variable>,
+        pub vars: Vec<V1Variable>,
         pub recurring: bool,
         pub requeue_on_evict: bool,
         pub reward: Uint128,
@@ -231,6 +233,64 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
             ),
         };
         IndexedMap::new("pending_jobs_v2", indexes)
+    }
+
+    let job_keys = V1_PENDING_JOBS().keys(deps.storage, None, None, Order::Ascending);
+    for job_key in job_keys {
+        let v1_job = V1_PENDING_JOBS().load(deps.storage, job_key?)?;
+        let mut new_vars = vec![];
+        for var in v1_job.vars {
+            new_vars.push(match var {
+                V1Variable::Static(v) => {
+                    serde_json_wasm::to_string(&Variable::Static(StaticVariable {
+                        kind: v.kind,
+                        name: v.name,
+                        encode: false,
+                        value: v.value,
+                        update_fn: v.update_fn,
+                    }))?
+                }
+                V1Variable::External(v) => {
+                    serde_json_wasm::to_string(&Variable::External(ExternalVariable {
+                        kind: v.kind,
+                        name: v.name,
+                        encode: false,
+                        init_fn: v.init_fn,
+                        reinitialize: v.reinitialize,
+                        value: v.value,
+                        update_fn: v.update_fn,
+                    }))?
+                }
+                V1Variable::Query(v) => {
+                    serde_json_wasm::to_string(&Variable::Query(QueryVariable {
+                        kind: v.kind,
+                        name: v.name,
+                        encode: false,
+                        init_fn: v.init_fn,
+                        reinitialize: v.reinitialize,
+                        value: v.value,
+                        update_fn: v.update_fn,
+                    }))?
+                }
+            })
+        }
+        PENDING_JOBS().save(deps.storage, job_key?, &Job {
+            id: v1_job.id,
+            owner: v1_job.owner,
+            last_update_time: v1_job.last_update_time,
+            name: v1_job.name,
+            description: v1_job.description,
+            labels: v1_job.labels,
+            status: v1_job.status,
+            condition: serde_json_wasm::to_string(&v1_job.condition)?,
+            terminate_condition: None,
+            msgs: serde_json_wasm::to_string(&v1_job.msgs)?,
+            vars: serde_json_wasm::to_string(&new_vars)?,
+            recurring: v1_job.recurring,
+            requeue_on_evict: v1_job.requeue_on_evict,
+            reward: v1_job.reward,
+            assets_to_withdraw: v1_job.assets_to_withdraw,
+        })?;
     }
 
     Ok(Response::new())
