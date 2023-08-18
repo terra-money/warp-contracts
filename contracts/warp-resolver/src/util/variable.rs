@@ -25,11 +25,7 @@ pub fn hydrate_vars(
     for var in vars {
         let hydrated_var = match var {
             Variable::Static(mut v) => {
-                if v.encode {
-                    v.value = base64::encode(replace_in_string(v.value.clone(), &hydrated_vars)?);
-                } else {
-                    v.value = replace_in_string(v.value, &hydrated_vars)?;
-                }
+                v.value = replace_in_string(v.value, &hydrated_vars)?;
                 Variable::Static(v)
             }
             Variable::External(mut v) => {
