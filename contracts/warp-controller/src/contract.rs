@@ -110,6 +110,22 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    //STATE
+    #[cw_serde]
+    pub struct V1State {
+        pub current_job_id: Uint64,
+        pub current_template_id: Uint64,
+        pub q: Uint64,
+    }
+
+    const V1STATE: Item<V1State> = Item::new("state");
+    let v1_state = V1STATE.load(deps.storage)?;
+
+    STATE.save(deps.storage, &State {
+        current_job_id: v1_state.current_job_id,
+        q: v1_state.q,
+    })?;
+
     //CONFIG
     #[cw_serde]
     pub struct V1Config {
@@ -235,9 +251,10 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
         IndexedMap::new("pending_jobs_v2", indexes)
     }
 
-    let job_keys = V1_PENDING_JOBS().keys(deps.storage, None, None, Order::Ascending);
+    let job_keys: Result<Vec<_>, _> = V1_PENDING_JOBS().keys(deps.storage, None, None, Order::Ascending).collect();
+    let job_keys = job_keys?;
     for job_key in job_keys {
-        let v1_job = V1_PENDING_JOBS().load(deps.storage, job_key?)?;
+        let v1_job = V1_PENDING_JOBS().load(deps.storage, job_key)?;
         let mut new_vars = vec![];
         for var in v1_job.vars {
             new_vars.push(match var {
@@ -274,7 +291,82 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
                 }
             })
         }
-        PENDING_JOBS().save(deps.storage, job_key?, &Job {
+        PENDING_JOBS().save(deps.storage, job_key, &Job {
+            id: v1_job.id,
+            owner: v1_job.owner,
+            last_update_time: v1_job.last_update_time,
+            name: v1_job.name,
+            description: v1_job.description,
+            labels: v1_job.labels,
+            status: v1_job.status,
+            condition: serde_json_wasm::to_string(&v1_job.condition)?,
+            terminate_condition: None,
+            msgs: serde_json_wasm::to_string(&v1_job.msgs)?,
+            vars: serde_json_wasm::to_string(&new_vars)?,
+            recurring: v1_job.recurring,
+            requeue_on_evict: v1_job.requeue_on_evict,
+            reward: v1_job.reward,
+            assets_to_withdraw: v1_job.assets_to_withdraw,
+        })?;
+    }
+
+    #[allow(non_snake_case)]
+    pub fn V1_FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, V1Job, V1JobIndexes<'a>> {
+        let indexes = V1JobIndexes {
+            reward: UniqueIndex::new(
+                |job| (job.reward.u128(), job.id.u64()),
+                "finished_jobs__reward_v2",
+            ),
+            publish_time: MultiIndex::new(
+                |_pk, job| job.last_update_time.u64(),
+                "finished_jobs_v2",
+                "finished_jobs__publish_timestamp_v2",
+            ),
+        };
+        IndexedMap::new("finished_jobs_v2", indexes)
+    }
+
+    let job_keys: Result<Vec<_>, _> = V1_FINISHED_JOBS().keys(deps.storage, None, None, Order::Ascending).collect();
+    let job_keys = job_keys?;
+    for job_key in job_keys {
+        let v1_job = V1_FINISHED_JOBS().load(deps.storage, job_key)?;
+        let mut new_vars = vec![];
+        for var in v1_job.vars {
+            new_vars.push(match var {
+                V1Variable::Static(v) => {
+                    serde_json_wasm::to_string(&Variable::Static(StaticVariable {
+                        kind: v.kind,
+                        name: v.name,
+                        encode: false,
+                        value: v.value,
+                        update_fn: v.update_fn,
+                    }))?
+                }
+                V1Variable::External(v) => {
+                    serde_json_wasm::to_string(&Variable::External(ExternalVariable {
+                        kind: v.kind,
+                        name: v.name,
+                        encode: false,
+                        init_fn: v.init_fn,
+                        reinitialize: v.reinitialize,
+                        value: v.value,
+                        update_fn: v.update_fn,
+                    }))?
+                }
+                V1Variable::Query(v) => {
+                    serde_json_wasm::to_string(&Variable::Query(QueryVariable {
+                        kind: v.kind,
+                        name: v.name,
+                        encode: false,
+                        init_fn: v.init_fn,
+                        reinitialize: v.reinitialize,
+                        value: v.value,
+                        update_fn: v.update_fn,
+                    }))?
+                }
+            })
+        }
+        FINISHED_JOBS().save(deps.storage, job_key, &Job {
             id: v1_job.id,
             owner: v1_job.owner,
             last_update_time: v1_job.last_update_time,
