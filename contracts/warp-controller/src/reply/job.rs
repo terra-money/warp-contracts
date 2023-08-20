@@ -111,11 +111,11 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         )
     }
 
-    //assume reward.amount == warp token allowance
+    // assume reward.amount == warp token allowance
     let fee =
         finished_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
-    let account_amount = deps
+    let job_account_amount = deps
         .querier
         .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
             address: job_account.to_string(),
@@ -124,11 +124,11 @@ pub fn execute_job(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Cont
         .amount
         .amount;
 
-    // Only not withdraw asset when job is recurring and should not terminate
+    // Only skip withdrawing asset when job is recurring and should not terminate
     let mut should_withdraw_asset = true;
 
     if finished_job.recurring {
-        if account_amount < fee + finished_job.reward {
+        if job_account_amount < fee + finished_job.reward {
             new_job_attrs.push(Attribute::new("action", "recur_job"));
             new_job_attrs.push(Attribute::new("creation_status", "failed_insufficient_fee"))
         } else if !(finished_job.status == JobStatus::Executed

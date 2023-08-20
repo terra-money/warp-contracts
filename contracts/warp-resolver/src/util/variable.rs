@@ -7,8 +7,9 @@ use crate::ContractError;
 use cosmwasm_schema::serde::de::DeserializeOwned;
 use cosmwasm_schema::serde::Serialize;
 use cosmwasm_std::{
-    Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, Uint128, Uint256, WasmQuery,
+    Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, StdError, Uint128, Uint256, WasmQuery,
 };
+use std::collections::hash_map;
 use std::str::FromStr;
 
 use controller::job::{ExternalInput, JobStatus};
@@ -523,6 +524,7 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                         VariableKind::Bool => "true",
                         VariableKind::Amount => "\"0\"",
                         VariableKind::Asset => "\"test\"",
+                        // TODO: maybe we need to differentiate json array and json object
                         VariableKind::Json => "true",
                     },
                 ),
@@ -555,12 +557,29 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                     },
                 ),
             };
-            replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), replacement);
             if replacement.contains("$warp.variable") {
                 return Err(ContractError::HydrationError {
                     msg: "Attempt to inject warp variable.".to_string(),
                 });
             }
+            let replacement_with_encode = match var {
+                Variable::Static(v) => match v.encode {
+                    true => format!("\"{}\"", base64::encode(replacement)),
+                    false => replacement.to_string(),
+                },
+                Variable::External(v) => match v.encode {
+                    true => format!("\"{}\"", base64::encode(replacement)),
+                    false => replacement.to_string(),
+                },
+                Variable::Query(v) => match v.encode {
+                    true => format!("\"{}\"", base64::encode(replacement)),
+                    false => replacement.to_string(),
+                },
+            };
+            replaced_msg = replaced_msg.replace(
+                &format!("\"$warp.variable.{}\"", name),
+                &replacement_with_encode,
+            );
         }
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
     }

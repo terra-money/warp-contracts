@@ -65,17 +65,17 @@ pub struct CreateJobMsg {
     pub name: String,
     pub description: String,
     pub labels: Vec<String>,
+    // If provided use the account to pay for the job execution and protocol fee
+    // Otherwise use default account
+    pub account: Option<Addr>,
+    pub vars: String,
     pub condition: String,
     pub terminate_condition: Option<String>,
     pub msgs: String,
-    pub vars: String,
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
-    // If provided use the account to pay for the job execution and protocol fee
-    // Otherwise use default account
-    pub account: Option<Addr>,
 }
 
 #[cw_serde]

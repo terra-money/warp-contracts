@@ -96,6 +96,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 ));
             }
 
+            // TODO: if a var is only used by another var but not used by condition ro msgs
+            // it will be considered as excess, but it is not, so we need to fix this
+            // until then, maybe we should commented this out as excessive vars won't break job creation and execution
             if !all_vector_vars_present(
                 &vars,
                 format!("{}{}{}", data.condition, terminate_condition_str, data.msgs),
