@@ -43,11 +43,7 @@ pub fn execute_simulate_query(
     _info: MessageInfo,
     msg: ExecuteSimulateQueryMsg,
 ) -> Result<Response, ContractError> {
-    let result = query_simulate_query(
-        deps.as_ref(),
-        env.clone(),
-        SimulateQueryMsg { query: msg.query },
-    )?;
+    let result = query_simulate_query(deps.as_ref(), env, SimulateQueryMsg { query: msg.query })?;
 
     Ok(Response::new()
         .add_attribute("action", "execute_simulate_query")
