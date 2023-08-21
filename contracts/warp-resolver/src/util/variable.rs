@@ -555,12 +555,29 @@ pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, Cont
                     },
                 ),
             };
-            replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), replacement);
             if replacement.contains("$warp.variable") {
                 return Err(ContractError::HydrationError {
                     msg: "Attempt to inject warp variable.".to_string(),
                 });
             }
+            let replacement_with_encode = match var {
+                Variable::Static(v) => match v.encode {
+                    true => format!("\"{}\"", base64::encode(replacement)),
+                    false => replacement.to_string(),
+                },
+                Variable::External(v) => match v.encode {
+                    true => format!("\"{}\"", base64::encode(replacement)),
+                    false => replacement.to_string(),
+                },
+                Variable::Query(v) => match v.encode {
+                    true => format!("\"{}\"", base64::encode(replacement)),
+                    false => replacement.to_string(),
+                },
+            };
+            replaced_msg = replaced_msg.replace(
+                &format!("\"$warp.variable.{}\"", name),
+                &replacement_with_encode,
+            );
         }
         parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
     }
