@@ -141,7 +141,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryHydrateMsgs(data) => {
             let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
                 .map_err(|e| StdError::generic_err(e.to_string()))?;
-            to_binary(&hydrate_msgs(data.msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))?)
+            to_binary(
+                &hydrate_msgs(data.msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))?,
+            )
         }
     }
 }

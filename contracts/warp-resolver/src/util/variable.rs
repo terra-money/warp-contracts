@@ -134,11 +134,8 @@ pub fn hydrate_vars(
     Ok(hydrated_vars)
 }
 
-pub fn hydrate_msgs(
-    msgs: String,
-    vars: Vec<Variable>,
-) -> Result<Vec<CosmosMsg>, ContractError> {
-    let mut replaced_msgs = msgs.clone();
+pub fn hydrate_msgs(msgs: String, vars: Vec<Variable>) -> Result<Vec<CosmosMsg>, ContractError> {
+    let mut replaced_msgs = msgs;
     for var in &vars {
         let (name, replacement) = get_replacement_in_struct(var)?;
         replaced_msgs =
@@ -502,8 +499,8 @@ fn replace_in_string(value: String, vars: &[Variable]) -> Result<String, Contrac
     Ok(replaced_value)
 }
 
-pub fn msgs_valid(msgs: &String, vars: &Vec<Variable>) -> Result<bool, ContractError> {
-    let mut replaced_msgs = msgs.clone();
+pub fn msgs_valid(msgs: &str, vars: &Vec<Variable>) -> Result<bool, ContractError> {
+    let mut replaced_msgs = msgs.to_owned();
     for var in vars {
         let (name, replacement) = match var {
             Variable::Static(v) => (

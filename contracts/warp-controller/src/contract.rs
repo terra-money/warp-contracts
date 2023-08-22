@@ -307,7 +307,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             new_msgs.push_str(msg.as_str());
         }
 
-        new_msgs.push_str("]");
+        new_msgs.push(']');
 
         PENDING_JOBS().save(
             deps.storage,
@@ -391,7 +391,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             new_msgs.push_str(msg.as_str());
         }
 
-        new_msgs.push_str("]");
+        new_msgs.push(']');
 
         FINISHED_JOBS().save(
             deps.storage,
