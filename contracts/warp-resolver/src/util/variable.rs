@@ -7,9 +7,8 @@ use crate::ContractError;
 use cosmwasm_schema::serde::de::DeserializeOwned;
 use cosmwasm_schema::serde::Serialize;
 use cosmwasm_std::{
-    Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, StdError, Uint128, Uint256, WasmQuery,
+    Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, Uint128, Uint256, WasmQuery,
 };
-use std::collections::hash_map;
 use std::str::FromStr;
 
 use controller::job::{ExternalInput, JobStatus};

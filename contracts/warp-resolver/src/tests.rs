@@ -420,12 +420,10 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
 
     let encoded_val = base64::encode(raw_str.clone());
     assert_eq!(encoded_val, "eyJ0ZXN0Ijoic3RhdGljX3ZhbHVlXzEifQ==");
-    let msgs = vec![
-        r#"{"wasm":{"execute":{"contract_addr":"$warp.variable.var1","msg":"eyJ0ZXN0Ijoic3RhdGljX3ZhbHVlXzEifQ==","funds":[]}}}"#
-            .to_string(),
-        r#"{"wasm":{"execute":{"contract_addr":"$warp.variable.var3","msg":"$warp.variable.var3","funds":[]}}}"#
-            .to_string(),
-    ];
+    let msgs = 
+        r#"[{"wasm":{"execute":{"contract_addr":"$warp.variable.var1","msg":"eyJ0ZXN0Ijoic3RhdGljX3ZhbHVlXzEifQ==","funds":[]}}},
+        {"wasm":{"execute":{"contract_addr":"$warp.variable.var3","msg":"$warp.variable.var3","funds":[]}}}]"#
+            .to_string();
 
     let hydrated_msgs =
         hydrate_msgs(msgs, vec![hydrated_var1, hydrated_var2, hydrated_var3]).unwrap();
