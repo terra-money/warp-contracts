@@ -429,3 +429,8 @@ fn test_hydrate_vars_nested() {
         _ => panic!("Expected static variable"),
     }
 }
+
+#[test]
+fn test_test() {
+    println!{"{}", "[\"{\\\"wasm\\\":{\\\"execute\\\":{\\\"contract_addr\\\":\\\"terra1na348k6rvwxje9jj6ftpsapfeyaejxjeq6tuzdmzysps20l6z23smnlv64\\\",\\\"msg\\\":\\\"eyJleGVjdXRlX3N3YXBfb3BlcmF0aW9ucyI6eyJtYXhfc3ByZWFkIjoiMC4xNSIsIm9wZXJhdGlvbnMiOlt7ImFzdHJvX3N3YXAiOnsib2ZmZXJfYXNzZXRfaW5mbyI6eyJuYXRpdmVfdG9rZW4iOnsiZGVub20iOiJ1bHVuYSJ9fSwiYXNrX2Fzc2V0X2luZm8iOnsidG9rZW4iOnsiY29udHJhY3RfYWRkciI6InRlcnJhMXhndnA2cDBxbWw1M3JlcWR5eGdjbDh0dGwwcGtoMG4ybXR4Mm43dHpmYWhuNmUwdmNhN3MwZzdzZzYifX19fSx7ImFzdHJvX3N3YXAiOnsib2ZmZXJfYXNzZXRfaW5mbyI6eyJ0b2tlbiI6eyJjb250cmFjdF9hZGRyIjoidGVycmExeGd2cDZwMHFtbDUzcmVxZHl4Z2NsOHR0bDBwa2gwbjJtdHgybjd0emZhaG42ZTB2Y2E3czBnN3NnNiJ9fSwiYXNrX2Fzc2V0X2luZm8iOnsidG9rZW4iOnsiY29udHJhY3RfYWRkciI6InRlcnJhMTY3ZHNxa2gyYWx1cng5OTd3bXljdzl5ZGt5dTU0Z3lzd2UzeWdtcnM0bHd1bWUzdm13a3M4cnVxbnYifX19fV0sIm1pbmltdW1fcmVjZWl2ZSI6IjIzNTM2NjEifX0=\\\",\\\"funds\\\":[{\\\"denom\\\":\\\"uluna\\\",\\\"amount\\\":\\\"10000\\\"}]}}}\"]".replace("terra", "terra")}
+}
