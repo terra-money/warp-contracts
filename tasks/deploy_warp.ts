@@ -21,6 +21,7 @@ task(async ({ deployer, signer, refs }) => {
     owner: signer.key.accAddress,
     fee_collector: signer.key.accAddress,
     templates: [],
+    fee_denom: "uluna",
   }
 
   await deployer.instantiate("warp-templates", instantiateTemplatesMsg, {
