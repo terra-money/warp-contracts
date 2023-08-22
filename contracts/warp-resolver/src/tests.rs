@@ -1,9 +1,9 @@
 use schemars::_serde_json::json;
 
-use crate::util::variable::{all_vector_vars_present, hydrate_vars};
+use crate::util::variable::{all_vector_vars_present, hydrate_msgs, hydrate_vars};
 
 use cosmwasm_std::{testing::mock_env, WasmQuery};
-use cosmwasm_std::{to_binary, BankQuery, Binary, ContractResult, OwnedDeps};
+use cosmwasm_std::{to_binary, BankQuery, Binary, ContractResult, CosmosMsg, OwnedDeps, WasmMsg};
 
 use crate::contract::query;
 use cosmwasm_schema::cw_serde;
@@ -342,7 +342,7 @@ fn test_hydrate_vars_nested_variables_non_binary() {
 }
 
 #[test]
-fn test_hydrate_vars_nested() {
+fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
     let deps = mock_dependencies();
     let env = mock_env();
 
@@ -355,79 +355,99 @@ fn test_hydrate_vars_nested() {
     });
 
     #[cw_serde]
-    struct AstroportNativeSwapMsg {
-        swap: Swap,
+    struct TestStruct {
+        test: String,
     }
 
-    #[cw_serde]
-    struct Swap {
-        offer_asset: OfferAsset,
-        max_spread: String,
-        to: String,
-    }
+    // ============ TEST HYDRATED VALUE  ============
 
-    #[cw_serde]
-    struct OfferAsset {
-        info: Info,
-        amount: String,
-    }
-
-    #[cw_serde]
-    struct Info {
-        native_token: NativeToken,
-    }
-
-    #[cw_serde]
-    struct NativeToken {
-        denom: String,
-    }
-
-    let astroport_native_swap_msg = AstroportNativeSwapMsg {
-        swap: Swap {
-            offer_asset: OfferAsset {
-                info: Info {
-                    native_token: NativeToken {
-                        denom: "example_denom".to_string(),
-                    },
-                },
-                amount: format!("$warp.variable.{}", "var1"),
-            },
-            max_spread: "0.01".to_string(),
-            to: "your_address_here".to_string(),
-        },
+    let test_msg = TestStruct {
+        test: format!("$warp.variable.{}", "var1"),
     };
 
-    // Serialize the JSON object to a string
-    let json_str = serde_json_wasm::to_string(&astroport_native_swap_msg).unwrap();
+    let json_str = serde_json_wasm::to_string(&test_msg).unwrap();
 
-    // // Convert the JSON string to bytes
-    // let json_bytes = json_str.as_bytes();
-    //
-    // // Base64 encode the bytes
-    // let encoded_data = base64::encode(json_bytes);
-
-    // println!("Base64 Encoded Data: {} \n\n\n", encoded_data);
+    let raw_str = r#"{"test":"static_value_1"}"#.to_string();
 
     let var2 = Variable::Static(StaticVariable {
         name: "var2".to_string(),
         kind: VariableKind::String,
+        value: json_str.clone(),
+        update_fn: None,
+        // when encode is false, value will not be base64 encoded after msgs hydration
+        encode: false,
+    });
+
+    let vars = vec![var1.clone(), var2];
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env.clone(), vars, None).unwrap();
+    let hydrated_var1 = hydrated_vars[0].clone();
+    let hydrated_var2 = hydrated_vars[1].clone();
+    match hydrated_var2.clone() {
+        Variable::Static(static_var) => {
+            // var3.encode = false doesn't matter here, it only matters when injecting to msgs during msg hydration
+            assert_eq!(
+                String::from_utf8(static_var.value.into()).unwrap(),
+                raw_str.clone()
+            )
+        }
+        _ => panic!("Expected static variable"),
+    };
+
+    let var3 = Variable::Static(StaticVariable {
+        name: "var3".to_string(),
+        kind: VariableKind::String,
         value: json_str,
         update_fn: None,
+        // when encode is true, value will be base64 encoded after msgs hydration
         encode: true,
     });
 
-    let vars = vec![var1, var2];
+    let vars = vec![var1, var3];
     let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None).unwrap();
-
-    match hydrated_vars[1].clone() {
+    let hydrated_var3 = hydrated_vars[1].clone();
+    match hydrated_var3.clone() {
         Variable::Static(static_var) => {
-            // let decoded_val = base64::decode(static_var.value).unwrap();
-            println!("Decoded Val: {}\n\n\n", static_var.value);
-            // Decoded Val: {"swap":{"offer_asset":{"info":{"native_token":{"denom":"example_denom"}},"amount":"$warp.variable.var1"},"max_spread":"0.01","to":"your_address_here"}}
-            // as you can see, var1 is replaced to static_value_1 as expected
+            // var3.encode = true doesn't matter here, it only matters when injecting to msgs during msg hydration
+            assert_eq!(
+                String::from_utf8(static_var.value.into()).unwrap(),
+                raw_str.clone()
+            );
         }
         _ => panic!("Expected static variable"),
-    }
+    };
+
+    // ============ TEST HYDRATED MSG AND VAR VALUE SHOULD BE ENCODED ACCORDINGLY ============
+
+    let encoded_val = base64::encode(raw_str.clone());
+    assert_eq!(encoded_val, "eyJ0ZXN0Ijoic3RhdGljX3ZhbHVlXzEifQ==");
+    let msgs = 
+        r#"[{"wasm":{"execute":{"contract_addr":"$warp.variable.var1","msg":"eyJ0ZXN0Ijoic3RhdGljX3ZhbHVlXzEifQ==","funds":[]}}},
+        {"wasm":{"execute":{"contract_addr":"$warp.variable.var3","msg":"$warp.variable.var3","funds":[]}}}]"#
+            .to_string();
+
+    let hydrated_msgs =
+        hydrate_msgs(msgs, vec![hydrated_var1, hydrated_var2, hydrated_var3]).unwrap();
+
+    assert_eq!(
+        hydrated_msgs[0],
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            // Because var1.encode = false, contract_addr should use the plain text value
+            contract_addr: "static_value_1".to_string(),
+            msg: Binary::from(raw_str.clone().as_bytes()),
+            funds: vec![]
+        })
+    );
+
+    assert_eq!(
+        hydrated_msgs[1],
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            // Because var3.encode = true, contract_addr should use the encoded value
+            contract_addr: encoded_val,
+            // msg is not Binary::from(encoded_val.as_bytes()) appears to be a cosmos msg thing, not a warp thing
+            msg: Binary::from(raw_str.as_bytes()),
+            funds: vec![]
+        })
+    )
 }
 
 #[test]
