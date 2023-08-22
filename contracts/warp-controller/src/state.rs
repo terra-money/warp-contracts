@@ -22,15 +22,15 @@ pub fn PENDING_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
     let indexes = JobIndexes {
         reward: UniqueIndex::new(
             |job| (job.reward.u128(), job.id.u64()),
-            "pending_jobs__reward_v2",
+            "pending_jobs__reward_v3",
         ),
         publish_time: MultiIndex::new(
             |_pk, job| job.last_update_time.u64(),
-            "pending_jobs_v2",
-            "pending_jobs__publish_timestamp_v2",
+            "pending_jobs_v3",
+            "pending_jobs__publish_timestamp_v3",
         ),
     };
-    IndexedMap::new("pending_jobs_v2", indexes)
+    IndexedMap::new("pending_jobs_v3", indexes)
 }
 
 #[allow(non_snake_case)]
@@ -38,15 +38,15 @@ pub fn FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
     let indexes = JobIndexes {
         reward: UniqueIndex::new(
             |job| (job.reward.u128(), job.id.u64()),
-            "finished_jobs__reward_v2",
+            "finished_jobs__reward_v3",
         ),
         publish_time: MultiIndex::new(
             |_pk, job| job.last_update_time.u64(),
-            "finished_jobs_v2",
-            "finished_jobs__publish_timestamp_v2",
+            "finished_jobs_v3",
+            "finished_jobs__publish_timestamp_v3",
         ),
     };
-    IndexedMap::new("finished_jobs_v2", indexes)
+    IndexedMap::new("finished_jobs_v3", indexes)
 }
 
 pub struct AccountIndexes<'a> {
