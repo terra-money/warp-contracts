@@ -23,7 +23,7 @@ fn test() {
         condition: "{\"expr\":{\"decimal\":{\"op\":\"gte\",\"left\":{\"ref\":\"$warp.variable.return_amount\"},\"right\":{\"simple\":\"620000\"}}}}".parse().unwrap(),
         terminate_condition: None,
         vars: "[{\"query\":{\"kind\":\"decimal\",\"name\":\"return_amount\",\"init_fn\":{\"query\":{\"wasm\":{\"smart\":{\"msg\":\"eyJzaW11bGF0aW9uIjp7Im9mZmVyX2Fzc2V0Ijp7ImFtb3VudCI6IjEwMDAwMDAiLCJpbmZvIjp7Im5hdGl2ZV90b2tlbiI6eyJkZW5vbSI6ImliYy9CMzUwNEUwOTI0NTZCQTYxOENDMjhBQzY3MUE3MUZCMDhDNkNBMEZEMEJFN0M4QTVCNUEzRTJERDkzM0NDOUU0In19fX19\",\"contract_addr\":\"terra1fd68ah02gr2y8ze7tm9te7m70zlmc7vjyyhs6xlhsdmqqcjud4dql4wpxr\"}}},\"selector\":\"$.return_amount\"},\"reinitialize\":false,\"encode\":false}}]".to_string(),
-        msgs: "[\"{\\\"wasm\\\":{\\\"execute\\\":{\\\"contract_addr\\\":\\\"terra1fd68ah02gr2y8ze7tm9te7m70zlmc7vjyyhs6xlhsdmqqcjud4dql4wpxr\\\",\\\"msg\\\":\\\"eyJzd2FwIjp7Im9mZmVyX2Fzc2V0Ijp7ImluZm8iOnsibmF0aXZlX3Rva2VuIjp7ImRlbm9tIjoiaWJjL0IzNTA0RTA5MjQ1NkJBNjE4Q0MyOEFDNjcxQTcxRkIwOEM2Q0EwRkQwQkU3QzhBNUI1QTNFMkREOTMzQ0M5RTQifX0sImFtb3VudCI6IjEwMDAwMDAifSwibWF4X3NwcmVhZCI6IjAuNSIsImJlbGllZl9wcmljZSI6IjAuNjEwMzg3MzI3MzgyNDYzODE2In19\\\",\\\"funds\\\":[{\\\"denom\\\":\\\"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4\\\",\\\"amount\\\":\\\"1000000\\\"}]}}}\"]".to_string(),
+        msgs: "[{\"wasm\":{\"execute\":{\"contract_addr\":\"terra1fd68ah02gr2y8ze7tm9te7m70zlmc7vjyyhs6xlhsdmqqcjud4dql4wpxr\",\"msg\":\"eyJzd2FwIjp7Im9mZmVyX2Fzc2V0Ijp7ImluZm8iOnsibmF0aXZlX3Rva2VuIjp7ImRlbm9tIjoiaWJjL0IzNTA0RTA5MjQ1NkJBNjE4Q0MyOEFDNjcxQTcxRkIwOEM2Q0EwRkQwQkU3QzhBNUI1QTNFMkREOTMzQ0M5RTQifX0sImFtb3VudCI6IjEwMDAwMDAifSwibWF4X3NwcmVhZCI6IjAuNSIsImJlbGllZl9wcmljZSI6IjAuNjEwMzg3MzI3MzgyNDYzODE2In19\",\"funds\":[{\"denom\":\"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4\",\"amount\":\"1000000\"}]}}}]".to_string(),
     };
     let obj = serde_json_wasm::to_string(&vec!["{\"wasm\":{\"execute\":{\"contract_addr\":\"terra1fd68ah02gr2y8ze7tm9te7m70zlmc7vjyyhs6xlhsdmqqcjud4dql4wpxr\",\"msg\":\"eyJzd2FwIjp7Im9mZmVyX2Fzc2V0Ijp7ImluZm8iOnsibmF0aXZlX3Rva2VuIjp7ImRlbm9tIjoiaWJjL0IzNTA0RTA5MjQ1NkJBNjE4Q0MyOEFDNjcxQTcxRkIwOEM2Q0EwRkQwQkU3QzhBNUI1QTNFMkREOTMzQ0M5RTQifX0sImFtb3VudCI6IjEwMDAwMDAifSwibWF4X3NwcmVhZCI6IjAuNSIsImJlbGllZl9wcmljZSI6IjAuNjEwMzg3MzI3MzgyNDYzODE2In19\",\"funds\":[{\"denom\":\"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4\",\"amount\":\"1000000\"}]}}}"]).unwrap();
 
@@ -67,7 +67,7 @@ fn test_all_vector_vars_present() {
         update_fn: None,
     });
 
-    assert_eq!(all_vector_vars_present(&vec![var], cond_string), true);
+    assert!(all_vector_vars_present(&vec![var], cond_string));
 }
 
 pub fn mock_dependencies() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
@@ -428,4 +428,9 @@ fn test_hydrate_vars_nested() {
         }
         _ => panic!("Expected static variable"),
     }
+}
+
+#[test]
+fn test_test() {
+    println! {"{}", "[\"{\\\"wasm\\\":{\\\"execute\\\":{\\\"contract_addr\\\":\\\"terra1na348k6rvwxje9jj6ftpsapfeyaejxjeq6tuzdmzysps20l6z23smnlv64\\\",\\\"msg\\\":\\\"eyJleGVjdXRlX3N3YXBfb3BlcmF0aW9ucyI6eyJtYXhfc3ByZWFkIjoiMC4xNSIsIm9wZXJhdGlvbnMiOlt7ImFzdHJvX3N3YXAiOnsib2ZmZXJfYXNzZXRfaW5mbyI6eyJuYXRpdmVfdG9rZW4iOnsiZGVub20iOiJ1bHVuYSJ9fSwiYXNrX2Fzc2V0X2luZm8iOnsidG9rZW4iOnsiY29udHJhY3RfYWRkciI6InRlcnJhMXhndnA2cDBxbWw1M3JlcWR5eGdjbDh0dGwwcGtoMG4ybXR4Mm43dHpmYWhuNmUwdmNhN3MwZzdzZzYifX19fSx7ImFzdHJvX3N3YXAiOnsib2ZmZXJfYXNzZXRfaW5mbyI6eyJ0b2tlbiI6eyJjb250cmFjdF9hZGRyIjoidGVycmExeGd2cDZwMHFtbDUzcmVxZHl4Z2NsOHR0bDBwa2gwbjJtdHgybjd0emZhaG42ZTB2Y2E3czBnN3NnNiJ9fSwiYXNrX2Fzc2V0X2luZm8iOnsidG9rZW4iOnsiY29udHJhY3RfYWRkciI6InRlcnJhMTY3ZHNxa2gyYWx1cng5OTd3bXljdzl5ZGt5dTU0Z3lzd2UzeWdtcnM0bHd1bWUzdm13a3M4cnVxbnYifX19fV0sIm1pbmltdW1fcmVjZWl2ZSI6IjIzNTM2NjEifX0=\\\",\\\"funds\\\":[{\\\"denom\\\":\\\"uluna\\\",\\\"amount\\\":\\\"10000\\\"}]}}}\"]".replace("\\\\", "")}
 }

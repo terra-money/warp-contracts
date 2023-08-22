@@ -68,8 +68,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             }
             let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
                 .map_err(|e| StdError::generic_err(format!("Vars input invalid: {}", e)))?;
-            let msgs: Vec<String> = serde_json_wasm::from_str(&data.msgs)
-                .map_err(|e| StdError::generic_err(format!("Msgs input invalid: {}", e)))?;
 
             if !vars_valid(&vars) {
                 return Err(StdError::generic_err(
@@ -101,7 +99,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 ));
             }
 
-            if !msgs_valid(&msgs, &vars).map_err(|e| StdError::generic_err(e.to_string()))? {
+            if !msgs_valid(&data.msgs, &vars).map_err(|e| StdError::generic_err(e.to_string()))? {
                 return Err(StdError::generic_err(
                     ContractError::MsgError {
                         msg: "msgs are invalid".to_string(),
@@ -143,9 +141,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryHydrateMsgs(data) => {
             let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
                 .map_err(|e| StdError::generic_err(e.to_string()))?;
-            let msgs: Vec<String> = serde_json_wasm::from_str(&data.msgs)
-                .map_err(|e| StdError::generic_err(e.to_string()))?;
-            to_binary(&hydrate_msgs(msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))?)
+            to_binary(
+                &hydrate_msgs(data.msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))?,
+            )
         }
     }
 }

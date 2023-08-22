@@ -273,39 +273,42 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         let mut new_vars = vec![];
         for var in v1_job.vars {
             new_vars.push(match var {
-                V1Variable::Static(v) => {
-                    serde_json_wasm::to_string(&Variable::Static(StaticVariable {
-                        kind: v.kind,
-                        name: v.name,
-                        encode: false,
-                        value: v.value,
-                        update_fn: v.update_fn,
-                    }))?
-                }
-                V1Variable::External(v) => {
-                    serde_json_wasm::to_string(&Variable::External(ExternalVariable {
-                        kind: v.kind,
-                        name: v.name,
-                        encode: false,
-                        init_fn: v.init_fn,
-                        reinitialize: v.reinitialize,
-                        value: v.value,
-                        update_fn: v.update_fn,
-                    }))?
-                }
-                V1Variable::Query(v) => {
-                    serde_json_wasm::to_string(&Variable::Query(QueryVariable {
-                        kind: v.kind,
-                        name: v.name,
-                        encode: false,
-                        init_fn: v.init_fn,
-                        reinitialize: v.reinitialize,
-                        value: v.value,
-                        update_fn: v.update_fn,
-                    }))?
-                }
+                V1Variable::Static(v) => Variable::Static(StaticVariable {
+                    kind: v.kind,
+                    name: v.name,
+                    encode: false,
+                    value: v.value,
+                    update_fn: v.update_fn,
+                }),
+                V1Variable::External(v) => Variable::External(ExternalVariable {
+                    kind: v.kind,
+                    name: v.name,
+                    encode: false,
+                    init_fn: v.init_fn,
+                    reinitialize: v.reinitialize,
+                    value: v.value,
+                    update_fn: v.update_fn,
+                }),
+                V1Variable::Query(v) => Variable::Query(QueryVariable {
+                    kind: v.kind,
+                    name: v.name,
+                    encode: false,
+                    init_fn: v.init_fn,
+                    reinitialize: v.reinitialize,
+                    value: v.value,
+                    update_fn: v.update_fn,
+                }),
             })
         }
+
+        let mut new_msgs = "[".to_string();
+
+        for msg in v1_job.msgs {
+            new_msgs.push_str(msg.as_str());
+        }
+
+        new_msgs.push(']');
+
         PENDING_JOBS().save(
             deps.storage,
             job_key,
@@ -319,7 +322,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                 status: v1_job.status,
                 condition: serde_json_wasm::to_string(&v1_job.condition)?,
                 terminate_condition: None,
-                msgs: serde_json_wasm::to_string(&v1_job.msgs)?,
+                msgs: new_msgs.to_string(),
                 vars: serde_json_wasm::to_string(&new_vars)?,
                 recurring: v1_job.recurring,
                 requeue_on_evict: v1_job.requeue_on_evict,
@@ -354,39 +357,42 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         let mut new_vars = vec![];
         for var in v1_job.vars {
             new_vars.push(match var {
-                V1Variable::Static(v) => {
-                    serde_json_wasm::to_string(&Variable::Static(StaticVariable {
-                        kind: v.kind,
-                        name: v.name,
-                        encode: false,
-                        value: v.value,
-                        update_fn: v.update_fn,
-                    }))?
-                }
-                V1Variable::External(v) => {
-                    serde_json_wasm::to_string(&Variable::External(ExternalVariable {
-                        kind: v.kind,
-                        name: v.name,
-                        encode: false,
-                        init_fn: v.init_fn,
-                        reinitialize: v.reinitialize,
-                        value: v.value,
-                        update_fn: v.update_fn,
-                    }))?
-                }
-                V1Variable::Query(v) => {
-                    serde_json_wasm::to_string(&Variable::Query(QueryVariable {
-                        kind: v.kind,
-                        name: v.name,
-                        encode: false,
-                        init_fn: v.init_fn,
-                        reinitialize: v.reinitialize,
-                        value: v.value,
-                        update_fn: v.update_fn,
-                    }))?
-                }
+                V1Variable::Static(v) => Variable::Static(StaticVariable {
+                    kind: v.kind,
+                    name: v.name,
+                    encode: false,
+                    value: v.value,
+                    update_fn: v.update_fn,
+                }),
+                V1Variable::External(v) => Variable::External(ExternalVariable {
+                    kind: v.kind,
+                    name: v.name,
+                    encode: false,
+                    init_fn: v.init_fn,
+                    reinitialize: v.reinitialize,
+                    value: v.value,
+                    update_fn: v.update_fn,
+                }),
+                V1Variable::Query(v) => Variable::Query(QueryVariable {
+                    kind: v.kind,
+                    name: v.name,
+                    encode: false,
+                    init_fn: v.init_fn,
+                    reinitialize: v.reinitialize,
+                    value: v.value,
+                    update_fn: v.update_fn,
+                }),
             })
         }
+
+        let mut new_msgs = "[".to_string();
+
+        for msg in v1_job.msgs {
+            new_msgs.push_str(msg.as_str());
+        }
+
+        new_msgs.push(']');
+
         FINISHED_JOBS().save(
             deps.storage,
             job_key,
@@ -400,7 +406,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                 status: v1_job.status,
                 condition: serde_json_wasm::to_string(&v1_job.condition)?,
                 terminate_condition: None,
-                msgs: serde_json_wasm::to_string(&v1_job.msgs)?,
+                msgs: new_msgs,
                 vars: serde_json_wasm::to_string(&new_vars)?,
                 recurring: v1_job.recurring,
                 requeue_on_evict: v1_job.requeue_on_evict,
