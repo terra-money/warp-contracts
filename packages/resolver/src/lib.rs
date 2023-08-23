@@ -10,11 +10,11 @@ pub struct InstantiateMsg {}
 #[cw_serde]
 pub enum ExecuteMsg {
     ExecuteSimulateQuery(ExecuteSimulateQueryMsg),
-}
-
-#[cw_serde]
-pub struct ExecuteSimulateQueryMsg {
-    pub query: QueryRequest<String>,
+    ExecuteValidateJobCreation(ExecuteValidateJobCreationMsg),
+    ExecuteHydrateVars(ExecuteHydrateVarsMsg),
+    ExecuteResolveCondition(ExecuteResolveConditionMsg),
+    ExecuteApplyVarFn(ExecuteApplyVarFnMsg),
+    ExecuteHydrateMsgs(ExecuteHydrateMsgsMsg),
 }
 
 #[derive(QueryResponses)]
@@ -36,6 +36,43 @@ pub enum QueryMsg {
 
 #[cw_serde]
 pub struct MigrateMsg {}
+
+#[cw_serde]
+pub struct ExecuteSimulateQueryMsg {
+    pub query: QueryRequest<String>,
+}
+
+#[cw_serde]
+pub struct ExecuteHydrateMsgsMsg {
+    pub msgs: String,
+    pub vars: String,
+}
+
+#[cw_serde]
+pub struct ExecuteHydrateVarsMsg {
+    pub vars: String,
+    pub external_inputs: Option<Vec<ExternalInput>>,
+}
+
+#[cw_serde]
+pub struct ExecuteResolveConditionMsg {
+    pub condition: String,
+    pub vars: String,
+}
+
+#[cw_serde]
+pub struct ExecuteApplyVarFnMsg {
+    pub vars: String,
+    pub status: JobStatus,
+}
+
+#[cw_serde]
+pub struct ExecuteValidateJobCreationMsg {
+    pub condition: String,
+    pub terminate_condition: Option<String>,
+    pub vars: String,
+    pub msgs: String,
+}
 
 #[cw_serde]
 pub struct QueryValidateJobCreationMsg {
