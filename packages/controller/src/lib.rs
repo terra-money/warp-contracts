@@ -117,5 +117,6 @@ pub struct ConfigResponse {
 //migrate
 #[cw_serde]
 pub struct MigrateMsg {
+    pub warp_account_code_id: Uint64,
     pub resolver_address: String,
 }
