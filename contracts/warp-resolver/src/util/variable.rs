@@ -1127,16 +1127,6 @@ pub fn string_vars_in_vector(vars: &Vec<Variable>, s: &String) -> bool {
     true
 }
 
-pub fn all_vector_vars_present(vars: &Vec<Variable>, s: String) -> bool {
-    for var in vars {
-        let name = get_var_name(var);
-        if !s.contains(format!("$warp.variable.{}", name.as_str()).as_str()) {
-            return false;
-        }
-    }
-    true
-}
-
 fn get_var_name(var: &Variable) -> String {
     match var.clone() {
         Variable::Static(v) => v.name,

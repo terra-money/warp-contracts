@@ -1,6 +1,5 @@
 use crate::util::condition::{resolve_cond, resolve_query_expr};
-use crate::util::variable::{
-    all_vector_vars_present, apply_var_fn, has_duplicates, hydrate_msgs, hydrate_vars, msgs_valid,
+use crate::util::variable::{ apply_var_fn, has_duplicates, hydrate_msgs, hydrate_vars, msgs_valid,
     string_vars_in_vector, vars_valid,
 };
 use crate::ContractError;
@@ -87,15 +86,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             {
                 return Err(StdError::generic_err(
                     ContractError::VariablesMissingFromVector {}.to_string(),
-                ));
-            }
-
-            if !all_vector_vars_present(
-                &vars,
-                format!("{}{}{}", data.condition, terminate_condition_str, data.msgs),
-            ) {
-                return Err(StdError::generic_err(
-                    ContractError::ExcessVariablesInVector {}.to_string(),
                 ));
             }
 

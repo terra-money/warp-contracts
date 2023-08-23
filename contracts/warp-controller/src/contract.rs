@@ -169,7 +169,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             owner: v1_config.owner,
             fee_denom: v1_config.fee_denom,
             fee_collector: v1_config.fee_collector,
-            warp_account_code_id: v1_config.warp_account_code_id,
+            warp_account_code_id: msg.warp_account_code_id,
             minimum_reward: v1_config.minimum_reward,
             creation_fee_percentage: v1_config.creation_fee_percentage,
             cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
