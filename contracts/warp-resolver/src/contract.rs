@@ -5,7 +5,8 @@ use crate::util::variable::{
 };
 use crate::ContractError;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult,
 };
 
 use resolver::condition::Condition;
@@ -121,7 +122,7 @@ pub fn execute_resolve_condition(
 
     Ok(Response::new()
         .add_attribute("action", "execute_resolve_condition")
-        .add_attribute("response", &result))
+        .add_attribute("response", result.to_string()))
 }
 
 pub fn execute_apply_var_fn(
@@ -160,7 +161,7 @@ pub fn execute_hydrate_msgs(
 
     Ok(Response::new()
         .add_attribute("action", "execute_hydrate_msgs")
-        .add_attribute("response", &result))
+        .add_attribute("response", serde_json_wasm::to_string(&result)?))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -243,38 +244,31 @@ fn query_resolve_condition(
     deps: Deps,
     env: Env,
     data: QueryResolveConditionMsg,
-) -> StdResult<String> {
+) -> StdResult<bool> {
     let condition: Condition = serde_json_wasm::from_str(&data.condition)
         .map_err(|e| StdError::generic_err(e.to_string()))?;
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    serde_json_wasm::to_string(
-        &resolve_cond(deps, env, condition, &vars)
-            .map_err(|e| StdError::generic_err(e.to_string()))?,
-    )
-    .map_err(|e| StdError::generic_err(e.to_string()))
+    resolve_cond(deps, env, condition, &vars).map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 fn query_apply_var_fn(deps: Deps, env: Env, data: QueryApplyVarFnMsg) -> StdResult<String> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    serde_json_wasm::to_string(
-        &apply_var_fn(deps, env, vars, data.status)
-            .map_err(|e| StdError::generic_err(e.to_string()))?,
-    )
-    .map_err(|e| StdError::generic_err(e.to_string()))
+    apply_var_fn(deps, env, vars, data.status).map_err(|e| StdError::generic_err(e.to_string()))
 }
 
-fn query_hydrate_msgs(_deps: Deps, _env: Env, data: QueryHydrateMsgsMsg) -> StdResult<String> {
+fn query_hydrate_msgs(
+    _deps: Deps,
+    _env: Env,
+    data: QueryHydrateMsgsMsg,
+) -> StdResult<Vec<CosmosMsg>> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    serde_json_wasm::to_string(
-        &hydrate_msgs(data.msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))?,
-    )
-    .map_err(|e| StdError::generic_err(e.to_string()))
+    hydrate_msgs(data.msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 pub fn query_simulate_query(

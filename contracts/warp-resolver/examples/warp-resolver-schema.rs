@@ -5,7 +5,7 @@ use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use cosmwasm_std::{CosmosMsg, QueryRequest};
 use resolver::{
     condition::Condition, variable::Variable, ExecuteMsg, InstantiateMsg, QueryMsg,
-    ResolveResponse, SimulateResponse,
+    SimulateResponse,
 };
 
 fn main() {
@@ -20,7 +20,6 @@ fn main() {
     export_schema(&schema_for!(Variable), &out_dir);
     export_schema(&schema_for!(Condition), &out_dir);
     export_schema(&schema_for!(SimulateResponse), &out_dir);
-    export_schema(&schema_for!(ResolveResponse), &out_dir);
     export_schema(&schema_for!(CosmosMsg), &out_dir);
     export_schema(&schema_for!(QueryRequest<String>), &out_dir);
 }

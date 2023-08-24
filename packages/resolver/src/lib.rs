@@ -3,7 +3,7 @@ pub mod variable;
 
 use controller::job::{ExternalInput, JobStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::QueryRequest;
+use cosmwasm_std::{QueryRequest, CosmosMsg};
 #[cw_serde]
 pub struct InstantiateMsg {}
 
@@ -22,15 +22,15 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(SimulateResponse)]
     SimulateQuery(SimulateQueryMsg),
-    #[returns(ResolveResponse)]
+    #[returns(String)]
     QueryValidateJobCreation(QueryValidateJobCreationMsg),
-    #[returns(ResolveResponse)]
+    #[returns(String)]
     QueryHydrateVars(QueryHydrateVarsMsg),
-    #[returns(ResolveResponse)]
+    #[returns(bool)]
     QueryResolveCondition(QueryResolveConditionMsg),
-    #[returns(ResolveResponse)]
+    #[returns(String)]
     QueryApplyVarFn(QueryApplyVarFnMsg),
-    #[returns(ResolveResponse)]
+    #[returns(Vec<CosmosMsg>)]
     QueryHydrateMsgs(QueryHydrateMsgsMsg),
 }
 
@@ -113,10 +113,5 @@ pub struct SimulateQueryMsg {
 
 #[cw_serde]
 pub struct SimulateResponse {
-    pub response: String,
-}
-
-#[cw_serde]
-pub struct ResolveResponse {
     pub response: String,
 }
