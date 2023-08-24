@@ -82,7 +82,14 @@ pub fn execute_validate_job_creation(
 
     Ok(Response::new()
         .add_attribute("action", "execute_validate_job_creation")
-        .add_attribute("response", &result))
+        .add_attribute(
+            "response",
+            if result.is_empty() {
+                "valid"
+            } else {
+                "invalid"
+            },
+        ))
 }
 
 pub fn execute_hydrate_vars(
