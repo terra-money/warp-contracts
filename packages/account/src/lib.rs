@@ -5,7 +5,6 @@ use prost::Message;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-
 #[cw_serde]
 pub struct Config {
     pub owner: Addr,
