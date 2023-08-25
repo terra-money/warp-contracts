@@ -1,13 +1,16 @@
 use crate::state::CONFIG;
 use crate::ContractError;
-use account::{Config, ExecuteMsg, InstantiateMsg, QueryMsg, WithdrawAssetsMsg};
+use account::{Config, ExecuteMsg, IbcTransferMsg, InstantiateMsg, QueryMsg, TimeoutBlock, WithdrawAssetsMsg};
 use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::{
     entry_point, to_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Response, StdResult, Uint128, WasmMsg,
 };
+use cosmwasm_std::CosmosMsg::Stargate;
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
+use prost::Message;
+
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -47,6 +50,7 @@ pub fn execute(
             .add_messages(data.msgs)
             .add_attribute("action", "generic")),
         ExecuteMsg::WithdrawAssets(data) => withdraw_assets(deps, env, info, data),
+        ExecuteMsg::IbcTransfer(data) => ibc_transfer(deps, env, info, data),
     }
 }
 
@@ -67,6 +71,33 @@ pub fn migrate(
     _msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     Ok(Response::new())
+}
+
+pub fn ibc_transfer(
+    _deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    msg: IbcTransferMsg,
+) -> Result<Response, ContractError> {
+    let mut transfer_msg = msg.transfer_msg.clone();
+
+    if msg.timeout_block_delta.is_some() && msg.transfer_msg.timeout_block.is_some() {
+        let block = transfer_msg.timeout_block.unwrap();
+        transfer_msg.timeout_block = Some(TimeoutBlock {revision_number: Some(block.revision_number()), revision_height: Some(env.block.height + msg.timeout_block_delta.unwrap()) })
+    }
+
+    if msg.timeout_timestamp_seconds_delta.is_some() {
+        transfer_msg.timeout_timestamp = Some(env.block.time.plus_seconds(env.block.time.nanos() + msg.timeout_timestamp_seconds_delta.unwrap()).nanos());
+    }
+
+    Ok(Response::new()
+        .add_message(
+            Stargate {
+                type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
+                value: transfer_msg.encode_to_vec().into()
+            }
+        )
+    )
 }
 
 pub fn withdraw_assets(
