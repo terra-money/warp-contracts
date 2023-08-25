@@ -314,6 +314,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             job_key,
             &Job {
                 id: v1_job.id,
+                prev_id: None,
                 owner: v1_job.owner,
                 last_update_time: v1_job.last_update_time,
                 name: v1_job.name,
@@ -398,6 +399,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             job_key,
             &Job {
                 id: v1_job.id,
+                prev_id: None,
                 owner: v1_job.owner,
                 last_update_time: v1_job.last_update_time,
                 name: v1_job.name,
@@ -545,6 +547,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let finished_job = FINISHED_JOBS().update(deps.storage, msg.id, |j| match j {
                 None => Ok(Job {
                     id: job.id,
+                    prev_id: job.prev_id,
                     owner: job.owner,
                     last_update_time: job.last_update_time,
                     name: job.name,
@@ -666,6 +669,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             |s| match s {
                                 None => Ok(Job {
                                     id: state.current_job_id,
+                                    prev_id: Some(finished_job.id),
                                     owner: finished_job.owner.clone(),
                                     last_update_time: Uint64::from(env.block.time.seconds()),
                                     name: finished_job.name.clone(),

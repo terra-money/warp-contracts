@@ -60,6 +60,7 @@ pub fn create_job(
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
         None => Ok(Job {
             id: state.current_job_id,
+            prev_id: None,
             owner: account.owner,
             last_update_time: Uint64::from(env.block.time.seconds()),
             name: data.name,
@@ -151,6 +152,7 @@ pub fn delete_job(
     let _new_job = FINISHED_JOBS().update(deps.storage, data.id.u64(), |h| match h {
         None => Ok(Job {
             id: job.id,
+            prev_id: job.prev_id,
             owner: job.owner,
             last_update_time: job.last_update_time,
             name: job.name,
@@ -231,6 +233,7 @@ pub fn update_job(
         None => Err(ContractError::JobDoesNotExist {}),
         Some(job) => Ok(Job {
             id: job.id,
+            prev_id: job.prev_id,
             owner: job.owner,
             last_update_time: if added_reward > config.minimum_reward {
                 Uint64::new(env.block.time.seconds())
@@ -353,6 +356,7 @@ pub fn execute_job(
             data.id.u64(),
             &Job {
                 id: job.id,
+                prev_id: job.prev_id,
                 owner: job.owner,
                 last_update_time: job.last_update_time,
                 name: job.name,
@@ -481,6 +485,7 @@ pub fn evict_job(
                 None => Err(ContractError::JobDoesNotExist {}),
                 Some(job) => Ok(Job {
                     id: job.id,
+                    prev_id: job.prev_id,
                     owner: job.owner,
                     last_update_time: Uint64::new(env.block.time.seconds()),
                     name: job.name,
@@ -504,6 +509,7 @@ pub fn evict_job(
             .update(deps.storage, data.id.u64(), |j| match j {
                 None => Ok(Job {
                     id: job.id,
+                    prev_id: job.prev_id,
                     owner: job.owner,
                     last_update_time: Uint64::new(env.block.time.seconds()),
                     name: job.name,
