@@ -94,7 +94,7 @@ pub fn ibc_transfer(
         transfer_msg.timeout_timestamp = Some(
             env.block
                 .time
-                .plus_seconds(env.block.time.nanos() + msg.timeout_timestamp_seconds_delta.unwrap())
+                .plus_seconds(env.block.time.seconds() + msg.timeout_timestamp_seconds_delta.unwrap())
                 .nanos(),
         );
     }
