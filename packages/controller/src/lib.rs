@@ -73,6 +73,8 @@ pub enum ExecuteMsg {
     UpdateConfig(UpdateConfigMsg),
 
     MigrateAccounts(MigrateAccountsMsg),
+    MigratePendingJobs(MigrateJobsMsg),
+    MigrateFinishedJobs(MigrateJobsMsg),
 }
 
 #[cw_serde]
@@ -93,6 +95,13 @@ pub struct UpdateConfigMsg {
 pub struct MigrateAccountsMsg {
     pub warp_account_code_id: Uint64,
     pub start_after: Option<String>,
+    pub limit: u8,
+}
+
+#[cw_serde]
+pub struct MigrateJobsMsg {
+    pub start_after: Option<Uint64>,
+    pub limit: u8,
 }
 
 //query
