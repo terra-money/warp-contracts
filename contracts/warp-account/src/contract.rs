@@ -1,6 +1,9 @@
 use crate::state::CONFIG;
 use crate::ContractError;
-use account::{Config, ExecuteMsg, IbcTransferMsg, InstantiateMsg, MigrateMsg, QueryMsg, TimeoutBlock, WithdrawAssetsMsg};
+use account::{
+    Config, ExecuteMsg, IbcTransferMsg, InstantiateMsg, MigrateMsg, QueryMsg, TimeoutBlock,
+    WithdrawAssetsMsg,
+};
 use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::CosmosMsg::Stargate;
 use cosmwasm_std::{
@@ -64,11 +67,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(
-    _deps: DepsMut,
-    _env: Env,
-    _msg: MigrateMsg,
-) -> Result<Response, ContractError> {
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::new())
 }
 
@@ -92,7 +91,9 @@ pub fn ibc_transfer(
         transfer_msg.timeout_timestamp = Some(
             env.block
                 .time
-                .plus_seconds(env.block.time.seconds() + msg.timeout_timestamp_seconds_delta.unwrap())
+                .plus_seconds(
+                    env.block.time.seconds() + msg.timeout_timestamp_seconds_delta.unwrap(),
+                )
                 .nanos(),
         );
     }

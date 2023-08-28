@@ -1,8 +1,8 @@
 use crate::state::{ACCOUNTS, CONFIG};
 use crate::ContractError;
 use controller::{MigrateAccountsMsg, UpdateConfigMsg};
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Order, Response, to_binary, WasmMsg};
-use cosmwasm_std::ReplyOn::Error;
+
+use cosmwasm_std::{to_binary, DepsMut, Env, MessageInfo, Order, Response, WasmMsg};
 use cw_storage_plus::Bound;
 
 pub fn update_config(
@@ -85,11 +85,11 @@ pub fn migrate_accounts(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: MigrateAccountsMsg
+    msg: MigrateAccountsMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {})
+        return Err(ContractError::Unauthorized {});
     }
 
     let start_after = match msg.start_after {
@@ -109,12 +109,9 @@ pub fn migrate_accounts(
         migration_msgs.push(WasmMsg::Migrate {
             contract_addr: account_address.to_string(),
             new_code_id: msg.warp_account_code_id.u64(),
-            msg: to_binary(&account::MigrateMsg{})?,
+            msg: to_binary(&account::MigrateMsg {})?,
         })
     }
 
-    Ok(
-        Response::new()
-            .add_messages(migration_msgs)
-    )
+    Ok(Response::new().add_messages(migration_msgs))
 }

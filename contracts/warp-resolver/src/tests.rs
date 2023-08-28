@@ -364,10 +364,7 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
     match hydrated_var2.clone() {
         Variable::Static(static_var) => {
             // var3.encode = false doesn't matter here, it only matters when injecting to msgs during msg hydration
-            assert_eq!(
-                String::from_utf8(static_var.value.into()).unwrap(),
-                raw_str
-            )
+            assert_eq!(String::from_utf8(static_var.value.into()).unwrap(), raw_str)
         }
         _ => panic!("Expected static variable"),
     };
@@ -387,10 +384,7 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
     match hydrated_var3.clone() {
         Variable::Static(static_var) => {
             // var3.encode = true doesn't matter here, it only matters when injecting to msgs during msg hydration
-            assert_eq!(
-                String::from_utf8(static_var.value.into()).unwrap(),
-                raw_str
-            );
+            assert_eq!(String::from_utf8(static_var.value.into()).unwrap(), raw_str);
         }
         _ => panic!("Expected static variable"),
     };
