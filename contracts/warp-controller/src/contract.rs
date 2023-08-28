@@ -96,6 +96,8 @@ pub fn execute(
         ExecuteMsg::CreateAccount(data) => execute::account::create_account(deps, env, info, data),
 
         ExecuteMsg::UpdateConfig(data) => execute::controller::update_config(deps, env, info, data),
+
+        ExecuteMsg::MigrateAccounts(data) => execute::controller::migrate_accounts(deps, env, info, data),
     }
 }
 
@@ -416,7 +418,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         )?;
     }
 
-    Ok(Response::new())
+    Ok(
+        Response::new()
+    )
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

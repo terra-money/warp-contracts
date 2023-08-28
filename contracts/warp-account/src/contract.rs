@@ -1,8 +1,6 @@
 use crate::state::CONFIG;
 use crate::ContractError;
-use account::{
-    Config, ExecuteMsg, IbcTransferMsg, InstantiateMsg, QueryMsg, TimeoutBlock, WithdrawAssetsMsg,
-};
+use account::{Config, ExecuteMsg, IbcTransferMsg, InstantiateMsg, MigrateMsg, QueryMsg, TimeoutBlock, WithdrawAssetsMsg};
 use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::CosmosMsg::Stargate;
 use cosmwasm_std::{
@@ -65,11 +63,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(
     _deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
-    _msg: ExecuteMsg,
+    _msg: MigrateMsg,
 ) -> Result<Response, ContractError> {
     Ok(Response::new())
 }

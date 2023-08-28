@@ -1,7 +1,9 @@
-use crate::state::CONFIG;
+use crate::state::{ACCOUNTS, CONFIG};
 use crate::ContractError;
-use controller::UpdateConfigMsg;
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
+use controller::{MigrateAccountsMsg, UpdateConfigMsg};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Order, Response, to_binary, WasmMsg};
+use cosmwasm_std::ReplyOn::Error;
+use cw_storage_plus::Bound;
 
 pub fn update_config(
     deps: DepsMut,
@@ -77,4 +79,42 @@ pub fn update_config(
         .add_attribute("config_t_max", config.t_max)
         .add_attribute("config_t_min", config.t_min)
         .add_attribute("config_q_max", config.q_max))
+}
+
+pub fn migrate_accounts(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: MigrateAccountsMsg
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {})
+    }
+
+    let start_after = match msg.start_after {
+        None => None,
+        Some(s) => Some(deps.api.addr_validate(s.as_str())?),
+    };
+    let start_after = start_after.map(Bound::exclusive);
+
+    let account_keys: Result<Vec<_>, _> = ACCOUNTS()
+        .keys(deps.storage, start_after, None, Order::Ascending)
+        .collect();
+    let account_keys = account_keys?;
+    let mut migration_msgs = vec![];
+
+    for account_key in account_keys {
+        let account_address = ACCOUNTS().load(deps.storage, account_key)?.account;
+        migration_msgs.push(WasmMsg::Migrate {
+            contract_addr: account_address.to_string(),
+            new_code_id: msg.warp_account_code_id.u64(),
+            msg: to_binary(&account::MigrateMsg{})?,
+        })
+    }
+
+    Ok(
+        Response::new()
+            .add_messages(migration_msgs)
+    )
 }
