@@ -288,7 +288,7 @@ pub fn execute_job(
     if let Err(e) = resolution {
         attrs.push(Attribute::new("job_condition_status", "invalid"));
         attrs.push(Attribute::new("error", e.to_string()));
-        JobQueueInstance::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Failed);
+        JobQueueInstance::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Failed)?;
     } else {
         attrs.push(Attribute::new("job_condition_status", "valid"));
         if !resolution? {

@@ -308,7 +308,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                 SubMsgResult::Err(_) => JobStatus::Failed,
             };
 
-            let finished_job = JobQueueInstance::finalize(&mut deps, msg.id, new_status)?;
+            let finished_job = JobQueueInstance::finalize(&mut deps, env.clone(), msg.id, new_status)?;
 
             let res_attrs = match msg.result {
                 SubMsgResult::Err(e) => vec![Attribute::new(
