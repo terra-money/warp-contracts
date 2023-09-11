@@ -306,8 +306,8 @@ pub fn update_job(
 }
 
 pub fn execute_job(
-    deps: DepsMut,
-    _env: Env,
+    mut deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     data: ExecuteJobMsg,
 ) -> Result<Response, ContractError> {
@@ -349,36 +349,7 @@ pub fn execute_job(
     if let Err(e) = resolution {
         attrs.push(Attribute::new("job_condition_status", "invalid"));
         attrs.push(Attribute::new("error", e.to_string()));
-        let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
-        FINISHED_JOBS().save(
-            deps.storage,
-            data.id.u64(),
-            &Job {
-                id: job.id,
-                owner: job.owner,
-                last_update_time: job.last_update_time,
-                name: job.name,
-                description: job.description,
-                labels: job.labels,
-                status: JobStatus::Failed,
-                condition: job.condition,
-                terminate_condition: job.terminate_condition,
-                msgs: job.msgs,
-                vars,
-                recurring: job.recurring,
-                requeue_on_evict: job.requeue_on_evict,
-                reward: job.reward,
-                assets_to_withdraw: job.assets_to_withdraw,
-            },
-        )?;
-        PENDING_JOBS().remove(deps.storage, data.id.u64())?;
-        STATE.save(
-            deps.storage,
-            &State {
-                current_job_id: state.current_job_id,
-                q: state.q.checked_sub(Uint64::new(1))?,
-            },
-        )?;
+        JobQueueInstance::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Failed);
     } else {
         attrs.push(Attribute::new("job_condition_status", "valid"));
         if !resolution? {
