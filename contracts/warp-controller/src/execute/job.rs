@@ -130,8 +130,8 @@ pub fn create_job(
 }
 
 pub fn delete_job(
-    deps: DepsMut,
-    _env: Env,
+    mut deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     data: DeleteJobMsg,
 ) -> Result<Response, ContractError> {
@@ -149,35 +149,8 @@ pub fn delete_job(
 
     let account = ACCOUNTS().load(deps.storage, info.sender)?;
 
-    PENDING_JOBS().remove(deps.storage, data.id.u64())?;
-    let _new_job = FINISHED_JOBS().update(deps.storage, data.id.u64(), |h| match h {
-        None => Ok(Job {
-            id: job.id,
-            owner: job.owner,
-            last_update_time: job.last_update_time,
-            name: job.name,
-            status: JobStatus::Cancelled,
-            condition: job.condition,
-            terminate_condition: job.terminate_condition,
-            msgs: job.msgs,
-            vars: job.vars,
-            recurring: job.recurring,
-            requeue_on_evict: job.requeue_on_evict,
-            reward: job.reward,
-            description: job.description,
-            labels: job.labels,
-            assets_to_withdraw: job.assets_to_withdraw,
-        }),
-        Some(_job) => Err(ContractError::JobAlreadyFinished {}),
-    })?;
-
-    STATE.save(
-        deps.storage,
-        &State {
-            current_job_id: state.current_job_id,
-            q: state.q.checked_sub(Uint64::new(1))?,
-        },
-    )?;
+    let _new_job =
+        JobQueueInstance::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Cancelled)?;
 
     let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
 

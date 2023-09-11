@@ -85,7 +85,6 @@ pub trait JobQueue {
         job_id: u64,
         status: JobStatus,
     ) -> Result<Job, ContractError>;
-    fn remove(deps: &mut DepsMut, job_id: u64) -> Result<(), ContractError>;
 }
 
 pub struct JobQueueInstance;
@@ -216,21 +215,5 @@ impl JobQueue for JobQueueInstance {
         )?;
 
         Ok(new_job)
-    }
-
-    fn remove(deps: &mut DepsMut, job_id: u64) -> Result<(), ContractError> {
-        PENDING_JOBS().remove(deps.storage, job_id)?;
-
-        let state = STATE.load(deps.storage)?;
-
-        STATE.save(
-            deps.storage,
-            &State {
-                current_job_id: state.current_job_id,
-                q: state.q.checked_sub(Uint64::new(1))?,
-            },
-        )?;
-
-        Ok(())
     }
 }
