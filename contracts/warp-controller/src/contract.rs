@@ -1,5 +1,5 @@
 use crate::error::map_contract_error;
-use crate::state::{JobQueue, JobQueueInstance, ACCOUNTS, CONFIG};
+use crate::state::{JobQueue, ACCOUNTS, CONFIG};
 use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
 use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
@@ -308,7 +308,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                 SubMsgResult::Err(_) => JobStatus::Failed,
             };
 
-            let finished_job = JobQueueInstance::finalize(&mut deps, env.clone(), msg.id, new_status)?;
+            let finished_job = JobQueue::finalize(&mut deps, env.clone(), msg.id, new_status)?;
 
             let res_attrs = match msg.result {
                 SubMsgResult::Err(e) => vec![Attribute::new(
@@ -407,7 +407,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                     }
 
                     if !should_terminate_job {
-                        let new_job = JobQueueInstance::add(
+                        let new_job = JobQueue::add(
                             &mut deps,
                             Job {
                                 id: state.current_job_id,

@@ -74,23 +74,10 @@ pub const QUERY_PAGE_SIZE: u32 = 50;
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 
-pub trait JobQueue {
-    fn add(deps: &mut DepsMut, job: Job) -> Result<Job, ContractError>;
-    fn get(deps: &DepsMut, job_id: u64) -> Result<Job, ContractError>;
-    fn sync(deps: &mut DepsMut, env: Env, job: Job) -> Result<Job, ContractError>;
-    fn update(deps: &mut DepsMut, env: Env, data: UpdateJobMsg) -> Result<Job, ContractError>;
-    fn finalize(
-        deps: &mut DepsMut,
-        env: Env,
-        job_id: u64,
-        status: JobStatus,
-    ) -> Result<Job, ContractError>;
-}
+pub struct JobQueue;
 
-pub struct JobQueueInstance;
-
-impl JobQueue for JobQueueInstance {
-    fn add(deps: &mut DepsMut, job: Job) -> Result<Job, ContractError> {
+impl JobQueue {
+    pub fn add(deps: &mut DepsMut, job: Job) -> Result<Job, ContractError> {
         let state = STATE.load(deps.storage)?;
 
         let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
@@ -109,13 +96,13 @@ impl JobQueue for JobQueueInstance {
         Ok(job)
     }
 
-    fn get(deps: &DepsMut, job_id: u64) -> Result<Job, ContractError> {
+    pub fn get(deps: &DepsMut, job_id: u64) -> Result<Job, ContractError> {
         let job = PENDING_JOBS().load(deps.storage, job_id)?;
 
         Ok(job)
     }
 
-    fn sync(deps: &mut DepsMut, env: Env, job: Job) -> Result<Job, ContractError> {
+    pub fn sync(deps: &mut DepsMut, env: Env, job: Job) -> Result<Job, ContractError> {
         PENDING_JOBS().update(deps.storage, job.id.u64(), |j| match j {
             None => Err(ContractError::JobDoesNotExist {}),
             Some(job) => Ok(Job {
@@ -138,7 +125,7 @@ impl JobQueue for JobQueueInstance {
         })
     }
 
-    fn update(deps: &mut DepsMut, env: Env, data: UpdateJobMsg) -> Result<Job, ContractError> {
+    pub fn update(deps: &mut DepsMut, env: Env, data: UpdateJobMsg) -> Result<Job, ContractError> {
         let config = CONFIG.load(deps.storage)?;
         let added_reward: Uint128 = data.added_reward.unwrap_or(Uint128::new(0));
 
@@ -168,7 +155,7 @@ impl JobQueue for JobQueueInstance {
         })
     }
 
-    fn finalize(
+    pub fn finalize(
         deps: &mut DepsMut,
         env: Env,
         job_id: u64,

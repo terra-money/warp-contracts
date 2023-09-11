@@ -1,4 +1,4 @@
-use crate::state::{JobQueue, JobQueueInstance, ACCOUNTS, CONFIG, STATE};
+use crate::state::{JobQueue, ACCOUNTS, CONFIG, STATE};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
 use account::GenericMsg;
@@ -56,7 +56,7 @@ pub fn create_job(
         Some(record) => record.1,
     };
 
-    let job = JobQueueInstance::add(
+    let job = JobQueue::add(
         &mut deps,
         Job {
             id: state.current_job_id,
@@ -125,8 +125,7 @@ pub fn delete_job(
     data: DeleteJobMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let state = STATE.load(deps.storage)?;
-    let job = JobQueueInstance::get(&deps, data.id.into())?;
+    let job = JobQueue::get(&deps, data.id.into())?;
 
     if job.status != JobStatus::Pending {
         return Err(ContractError::JobNotActive {});
@@ -139,7 +138,7 @@ pub fn delete_job(
     let account = ACCOUNTS().load(deps.storage, info.sender)?;
 
     let _new_job =
-        JobQueueInstance::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Cancelled)?;
+        JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Cancelled)?;
 
     let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
 
@@ -172,7 +171,7 @@ pub fn update_job(
     info: MessageInfo,
     data: UpdateJobMsg,
 ) -> Result<Response, ContractError> {
-    let job = JobQueueInstance::get(&deps, data.id.into())?;
+    let job = JobQueue::get(&deps, data.id.into())?;
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender != job.owner {
@@ -191,7 +190,7 @@ pub fn update_job(
         return Err(ContractError::NameTooShort {});
     }
 
-    let job = JobQueueInstance::update(&mut deps, env.clone(), data)?;
+    let job = JobQueue::update(&mut deps, env.clone(), data)?;
 
     let fee = added_reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
@@ -251,9 +250,8 @@ pub fn execute_job(
     data: ExecuteJobMsg,
 ) -> Result<Response, ContractError> {
     let _config = CONFIG.load(deps.storage)?;
-    let state = STATE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
-    let job = JobQueueInstance::get(&deps, data.id.into())?;
+    let job = JobQueue::get(&deps, data.id.into())?;
     let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
     if !ACCOUNTS().has(deps.storage, info.sender.clone()) {
@@ -288,7 +286,7 @@ pub fn execute_job(
     if let Err(e) = resolution {
         attrs.push(Attribute::new("job_condition_status", "invalid"));
         attrs.push(Attribute::new("error", e.to_string()));
-        JobQueueInstance::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Failed)?;
+        JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Failed)?;
     } else {
         attrs.push(Attribute::new("job_condition_status", "valid"));
         if !resolution? {
@@ -338,7 +336,7 @@ pub fn evict_job(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
-    let job = JobQueueInstance::get(&deps, data.id.into())?;
+    let job = JobQueue::get(&deps, data.id.into())?;
     let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
     let account_amount = deps
@@ -388,10 +386,10 @@ pub fn evict_job(
                 funds: vec![],
             }),
         );
-        job_status = JobQueueInstance::sync(&mut deps, env.clone(), job.clone())?.status;
+        job_status = JobQueue::sync(&mut deps, env.clone(), job.clone())?.status;
     } else {
         job_status =
-            JobQueueInstance::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Evicted)?
+            JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Evicted)?
                 .status;
 
         cosmos_msgs.append(&mut vec![
