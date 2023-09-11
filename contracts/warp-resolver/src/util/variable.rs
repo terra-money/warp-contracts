@@ -12,7 +12,7 @@ use cosmwasm_std::{
 use std::str::FromStr;
 
 use controller::job::{ExternalInput, JobStatus};
-use controller::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
+use resolver::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
 
 pub fn hydrate_vars(
     deps: Deps,
@@ -24,7 +24,10 @@ pub fn hydrate_vars(
 
     for var in vars {
         let hydrated_var = match var {
-            Variable::Static(v) => Variable::Static(v),
+            Variable::Static(mut v) => {
+                v.value = replace_in_string(v.value, &hydrated_vars)?;
+                Variable::Static(v)
+            }
             Variable::External(mut v) => {
                 if v.reinitialize || v.value.is_none() {
                     match external_inputs {
@@ -131,43 +134,269 @@ pub fn hydrate_vars(
     Ok(hydrated_vars)
 }
 
-pub fn hydrate_msgs(
-    msgs: Vec<String>,
-    vars: Vec<Variable>,
-) -> Result<Vec<CosmosMsg>, ContractError> {
-    let mut parsed_msgs: Vec<CosmosMsg> = vec![];
-    for msg in msgs {
-        let mut replaced_msg = msg.clone();
-        for var in &vars {
-            let (name, replacement) = get_replacement_in_struct(var)?;
-            replaced_msg =
-                replaced_msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
-            if replacement.contains("$warp.variable") {
-                return Err(ContractError::HydrationError {
-                    msg: "Attempt to inject warp variable.".to_string(),
-                });
-            }
+pub fn hydrate_msgs(msgs: String, vars: Vec<Variable>) -> Result<Vec<CosmosMsg>, ContractError> {
+    let mut replaced_msgs = msgs;
+    for var in &vars {
+        let (name, replacement) = get_replacement_in_struct(var)?;
+        replaced_msgs =
+            replaced_msgs.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
+        if replacement.contains("$warp.variable") {
+            return Err(ContractError::HydrationError {
+                msg: "Attempt to inject warp variable.".to_string(),
+            });
         }
-        parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
     }
 
-    Ok(parsed_msgs)
+    Ok(serde_json_wasm::from_str::<Vec<CosmosMsg>>(&replaced_msgs)?)
 }
 
 fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), ContractError> {
     let (name, replacement) = match var {
+        Variable::Static(v) => (v.name.clone(), {
+            match v.kind {
+                VariableKind::String => format!(
+                    "\"{}\"",
+                    match v.encode {
+                        true => {
+                            base64::encode(v.value.clone())
+                        }
+                        false => v.value.clone(),
+                    }
+                ),
+                VariableKind::Uint => format!(
+                    "\"{}\"",
+                    match v.encode {
+                        true => {
+                            base64::encode(v.value.clone())
+                        }
+                        false => v.value.clone(),
+                    }
+                ),
+                VariableKind::Int => match v.encode {
+                    true => {
+                        format!("\"{}\"", base64::encode(v.value.clone()))
+                    }
+                    false => v.value.clone(),
+                },
+                VariableKind::Decimal => format!(
+                    "\"{}\"",
+                    match v.encode {
+                        true => {
+                            base64::encode(v.value.clone())
+                        }
+                        false => v.value.clone(),
+                    }
+                ),
+                VariableKind::Timestamp => match v.encode {
+                    true => {
+                        format!("\"{}\"", base64::encode(v.value.clone()))
+                    }
+                    false => v.value.clone(),
+                },
+                VariableKind::Bool => match v.encode {
+                    true => {
+                        format!("\"{}\"", base64::encode(v.value.clone()))
+                    }
+                    false => v.value.clone(),
+                },
+                VariableKind::Amount => format!(
+                    "\"{}\"",
+                    match v.encode {
+                        true => {
+                            base64::encode(v.value.clone())
+                        }
+                        false => v.value.clone(),
+                    }
+                ),
+                VariableKind::Asset => format!(
+                    "\"{}\"",
+                    match v.encode {
+                        true => {
+                            base64::encode(v.value.clone())
+                        }
+                        false => v.value.clone(),
+                    }
+                ),
+                VariableKind::Json => match v.encode {
+                    true => {
+                        format!("\"{}\"", base64::encode(v.value.clone()))
+                    }
+                    false => v.value.clone(),
+                },
+            }
+        }),
+        Variable::External(v) => match v.value.clone() {
+            None => {
+                return Err(ContractError::HydrationError {
+                    msg: "External msg value is none.".to_string(),
+                });
+            }
+            Some(val) => (v.name.clone(), {
+                match v.kind {
+                    VariableKind::String => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Uint => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Int => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(val))
+                        }
+                        false => val,
+                    },
+                    VariableKind::Decimal => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Timestamp => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(val))
+                        }
+                        false => val,
+                    },
+                    VariableKind::Bool => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(val))
+                        }
+                        false => val,
+                    },
+                    VariableKind::Amount => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Asset => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Json => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(val))
+                        }
+                        false => val,
+                    },
+                }
+            }),
+        },
+        Variable::Query(v) => match v.value.clone() {
+            None => {
+                return Err(ContractError::HydrationError {
+                    msg: "Query msg value is none.".to_string(),
+                });
+            }
+            Some(val) => (v.name.clone(), {
+                match v.kind {
+                    VariableKind::String => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Uint => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Int => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(val))
+                        }
+                        false => val,
+                    },
+                    VariableKind::Decimal => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Timestamp => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(val))
+                        }
+                        false => val,
+                    },
+                    VariableKind::Bool => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(val))
+                        }
+                        false => val,
+                    },
+                    VariableKind::Amount => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Asset => format!(
+                        "\"{}\"",
+                        match v.encode {
+                            true => {
+                                base64::encode(val)
+                            }
+                            false => val,
+                        }
+                    ),
+                    VariableKind::Json => match v.encode {
+                        true => {
+                            format!("\"{}\"", base64::encode(val))
+                        }
+                        false => val,
+                    },
+                }
+            }),
+        },
+    };
+
+    Ok((name, replacement))
+}
+
+fn get_replacement_in_string(var: &Variable) -> Result<(String, String), ContractError> {
+    let (name, replacement) = match var {
         Variable::Static(v) => (
             v.name.clone(),
-            match v.kind {
-                VariableKind::String => format!("\"{}\"", v.value),
-                VariableKind::Uint => format!("\"{}\"", v.value),
-                VariableKind::Int => v.value.clone(),
-                VariableKind::Decimal => format!("\"{}\"", v.value),
-                VariableKind::Timestamp => v.value.clone(),
-                VariableKind::Bool => v.value.clone(),
-                VariableKind::Amount => format!("\"{}\"", v.value),
-                VariableKind::Asset => format!("\"{}\"", v.value),
-                VariableKind::Json => v.value.clone(),
+            match v.encode {
+                true => base64::encode(v.value.clone()),
+                false => v.value.clone(),
             },
         ),
         Variable::External(v) => match v.value.clone() {
@@ -178,16 +407,9 @@ fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), Contrac
             }
             Some(val) => (
                 v.name.clone(),
-                match v.kind {
-                    VariableKind::String => format!("\"{}\"", val),
-                    VariableKind::Uint => format!("\"{}\"", val),
-                    VariableKind::Int => val,
-                    VariableKind::Decimal => format!("\"{}\"", val),
-                    VariableKind::Timestamp => val,
-                    VariableKind::Bool => val,
-                    VariableKind::Amount => format!("\"{}\"", val),
-                    VariableKind::Asset => format!("\"{}\"", val),
-                    VariableKind::Json => val,
+                match v.encode {
+                    true => base64::encode(val),
+                    false => val,
                 },
             ),
         },
@@ -199,42 +421,11 @@ fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), Contrac
             }
             Some(val) => (
                 v.name.clone(),
-                match v.kind {
-                    VariableKind::String => format!("\"{}\"", val),
-                    VariableKind::Uint => format!("\"{}\"", val),
-                    VariableKind::Int => val,
-                    VariableKind::Decimal => format!("\"{}\"", val),
-                    VariableKind::Timestamp => val,
-                    VariableKind::Bool => val,
-                    VariableKind::Amount => format!("\"{}\"", val),
-                    VariableKind::Asset => format!("\"{}\"", val),
-                    VariableKind::Json => val,
+                match v.encode {
+                    true => base64::encode(val),
+                    false => val,
                 },
             ),
-        },
-    };
-
-    Ok((name, replacement))
-}
-
-fn get_replacement_in_string(var: &Variable) -> Result<(String, String), ContractError> {
-    let (name, replacement) = match var {
-        Variable::Static(v) => (v.name.clone(), v.value.clone()),
-        Variable::External(v) => match v.value.clone() {
-            None => {
-                return Err(ContractError::HydrationError {
-                    msg: "External msg value is none.".to_string(),
-                });
-            }
-            Some(val) => (v.name.clone(), val),
-        },
-        Variable::Query(v) => match v.value.clone() {
-            None => {
-                return Err(ContractError::HydrationError {
-                    msg: "Query msg value is none.".to_string(),
-                });
-            }
-            Some(val) => (v.name.clone(), val),
         },
     };
 
@@ -308,64 +499,79 @@ fn replace_in_string(value: String, vars: &[Variable]) -> Result<String, Contrac
     Ok(replaced_value)
 }
 
-pub fn msgs_valid(msgs: &Vec<String>, vars: &Vec<Variable>) -> Result<bool, ContractError> {
-    let mut parsed_msgs: Vec<CosmosMsg> = vec![];
-    for msg in msgs {
-        let mut replaced_msg = msg.clone();
-        for var in vars {
-            let (name, replacement) = match var {
-                Variable::Static(v) => (
-                    v.name.clone(),
-                    match v.kind {
-                        VariableKind::String => "\"test\"",
-                        VariableKind::Uint => "\"0\"",
-                        VariableKind::Int => "0",
-                        VariableKind::Decimal => "\"0.0\"",
-                        VariableKind::Timestamp => "0",
-                        VariableKind::Bool => "true",
-                        VariableKind::Amount => "\"0\"",
-                        VariableKind::Asset => "\"test\"",
-                        VariableKind::Json => "true",
-                    },
-                ),
-                Variable::External(v) => (
-                    v.name.clone(),
-                    match v.kind {
-                        VariableKind::String => "\"test\"",
-                        VariableKind::Uint => "\"0\"",
-                        VariableKind::Int => "0",
-                        VariableKind::Decimal => "\"0.0\"",
-                        VariableKind::Timestamp => "0",
-                        VariableKind::Bool => "true",
-                        VariableKind::Amount => "\"0\"",
-                        VariableKind::Asset => "\"test\"",
-                        VariableKind::Json => "true",
-                    },
-                ),
-                Variable::Query(v) => (
-                    v.name.clone(),
-                    match v.kind {
-                        VariableKind::String => "\"test\"",
-                        VariableKind::Uint => "\"0\"",
-                        VariableKind::Int => "0",
-                        VariableKind::Decimal => "\"0.0\"",
-                        VariableKind::Timestamp => "0",
-                        VariableKind::Bool => "true",
-                        VariableKind::Amount => "\"0\"",
-                        VariableKind::Asset => "\"test\"",
-                        VariableKind::Json => "true",
-                    },
-                ),
-            };
-            replaced_msg = msg.replace(&format!("\"$warp.variable.{}\"", name), replacement);
-            if replacement.contains("$warp.variable") {
-                return Err(ContractError::HydrationError {
-                    msg: "Attempt to inject warp variable.".to_string(),
-                });
-            }
+pub fn msgs_valid(msgs: &str, vars: &Vec<Variable>) -> Result<bool, ContractError> {
+    let mut replaced_msgs = msgs.to_owned();
+    for var in vars {
+        let (name, replacement) = match var {
+            Variable::Static(v) => (
+                v.name.clone(),
+                match v.kind {
+                    VariableKind::String => "\"test\"",
+                    VariableKind::Uint => "\"0\"",
+                    VariableKind::Int => "0",
+                    VariableKind::Decimal => "\"0.0\"",
+                    VariableKind::Timestamp => "0",
+                    VariableKind::Bool => "true",
+                    VariableKind::Amount => "\"0\"",
+                    VariableKind::Asset => "\"test\"",
+                    VariableKind::Json => "true",
+                },
+            ),
+            Variable::External(v) => (
+                v.name.clone(),
+                match v.kind {
+                    VariableKind::String => "\"test\"",
+                    VariableKind::Uint => "\"0\"",
+                    VariableKind::Int => "0",
+                    VariableKind::Decimal => "\"0.0\"",
+                    VariableKind::Timestamp => "0",
+                    VariableKind::Bool => "true",
+                    VariableKind::Amount => "\"0\"",
+                    VariableKind::Asset => "\"test\"",
+                    VariableKind::Json => "true",
+                },
+            ),
+            Variable::Query(v) => (
+                v.name.clone(),
+                match v.kind {
+                    VariableKind::String => "\"test\"",
+                    VariableKind::Uint => "\"0\"",
+                    VariableKind::Int => "0",
+                    VariableKind::Decimal => "\"0.0\"",
+                    VariableKind::Timestamp => "0",
+                    VariableKind::Bool => "true",
+                    VariableKind::Amount => "\"0\"",
+                    VariableKind::Asset => "\"test\"",
+                    VariableKind::Json => "true",
+                },
+            ),
+        };
+        if replacement.contains("$warp.variable") {
+            return Err(ContractError::HydrationError {
+                msg: "Attempt to inject warp variable.".to_string(),
+            });
         }
-        parsed_msgs.push(serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg)?)
-    } //todo: check if msgs valid
+        let replacement_with_encode = match var {
+            Variable::Static(v) => match v.encode {
+                true => format!("\"{}\"", base64::encode(replacement)),
+                false => replacement.to_string(),
+            },
+            Variable::External(v) => match v.encode {
+                true => format!("\"{}\"", base64::encode(replacement)),
+                false => replacement.to_string(),
+            },
+            Variable::Query(v) => match v.encode {
+                true => format!("\"{}\"", base64::encode(replacement)),
+                false => replacement.to_string(),
+            },
+        };
+        replaced_msgs = replaced_msgs.replace(
+            &format!("\"$warp.variable.{}\"", name),
+            &replacement_with_encode,
+        );
+    }
+
+    let _msgs = serde_json_wasm::from_str::<Vec<CosmosMsg>>(&replaced_msgs)?;
 
     Ok(true)
 }
@@ -375,7 +581,7 @@ pub fn apply_var_fn(
     env: Env,
     vars: Vec<Variable>,
     status: JobStatus,
-) -> Result<Vec<Variable>, ContractError> {
+) -> Result<String, ContractError> {
     let mut res = vec![];
     for var in vars.clone() {
         match var {
@@ -846,7 +1052,7 @@ pub fn apply_var_fn(
             }
         }
     }
-    Ok(res)
+    Ok(serde_json_wasm::to_string(&res)?)
 }
 
 pub fn get_var(name: String, vars: &Vec<Variable>) -> Result<&Variable, ContractError> {
@@ -934,16 +1140,6 @@ pub fn string_vars_in_vector(vars: &Vec<Variable>, s: &String) -> bool {
     }
     if s.contains("$warp.variable.") {
         return false;
-    }
-    true
-}
-
-pub fn all_vector_vars_present(vars: &Vec<Variable>, s: String) -> bool {
-    for var in vars {
-        let name = get_var_name(var);
-        if !s.contains(format!("$warp.variable.{}", name.as_str()).as_str()) {
-            return false;
-        }
     }
     true
 }

@@ -1,9 +1,4 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
-use crate::util::condition::resolve_cond;
-use crate::util::variable::{
-    all_vector_vars_present, has_duplicates, hydrate_msgs, hydrate_vars, msgs_valid,
-    string_vars_in_vector, vars_valid,
-};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
 use account::GenericMsg;
@@ -13,8 +8,11 @@ use controller::job::{
 use controller::State;
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
-    MessageInfo, QueryRequest, ReplyOn, Response, SubMsg, Uint128, Uint64, WasmMsg,
+    MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
 };
+use resolver::QueryHydrateMsgsMsg;
+
+const MAX_TEXT_LENGTH: usize = 280;
 
 pub fn create_job(
     deps: DepsMut,
@@ -25,7 +23,7 @@ pub fn create_job(
     let state = STATE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
 
-    if data.name.len() > 280 {
+    if data.name.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -37,49 +35,27 @@ pub fn create_job(
         return Err(ContractError::RewardTooSmall {});
     }
 
-    if !vars_valid(&data.vars) {
-        return Err(ContractError::InvalidVariables {});
-    }
+    let _validate_conditions_and_variables: Option<String> = deps.querier.query_wasm_smart(
+        config.resolver_address,
+        &resolver::QueryMsg::QueryValidateJobCreation(resolver::QueryValidateJobCreationMsg {
+            condition: data.condition.clone(),
+            terminate_condition: data.terminate_condition.clone(),
+            vars: data.vars.clone(),
+            msgs: data.msgs.clone(),
+        }),
+    )?;
 
-    if has_duplicates(&data.vars) {
-        return Err(ContractError::VariablesContainDuplicates {});
-    }
-
-    let cond_string = serde_json_wasm::to_string(&data.condition)?;
-    let msg_string = serde_json_wasm::to_string(&data.msgs)?;
-
-    if !(string_vars_in_vector(&data.vars, &cond_string)
-        && string_vars_in_vector(&data.vars, &msg_string))
-    {
-        return Err(ContractError::VariablesMissingFromVector {});
-    }
-
-    if !all_vector_vars_present(&data.vars, format!("{}{}", cond_string, msg_string)) {
-        return Err(ContractError::ExcessVariablesInVector {});
-    }
-
-    if !msgs_valid(&data.msgs, &data.vars)? {
-        return Err(ContractError::MsgError {
-            msg: "msgs are invalid".to_string(),
-        });
-    }
-
-    let q = ACCOUNTS()
+    let account_record = ACCOUNTS()
         .idx
         .account
         .item(deps.storage, info.sender.clone())?;
 
-    let account = match q {
+    let account = match account_record {
         None => ACCOUNTS()
             .load(deps.storage, info.sender)
             .map_err(|_e| ContractError::AccountDoesNotExist {})?,
-        Some(q) => q.1,
+        Some(record) => record.1,
     };
-
-    // let mut msgs = vec![];
-    // for msg in data.msgs {
-    //     msgs.push(serde_json_wasm::from_str::<CosmosMsg>(msg.as_str())?)
-    // }
 
     let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
         None => Ok(Job {
@@ -89,6 +65,7 @@ pub fn create_job(
             name: data.name,
             status: JobStatus::Pending,
             condition: data.condition.clone(),
+            terminate_condition: data.terminate_condition,
             recurring: data.recurring,
             requeue_on_evict: data.requeue_on_evict,
             vars: data.vars,
@@ -105,7 +82,6 @@ pub fn create_job(
         deps.storage,
         &State {
             current_job_id: state.current_job_id.checked_add(Uint64::new(1))?,
-            current_template_id: state.current_template_id,
             q: state.q.checked_add(Uint64::new(1))?,
         },
     )?;
@@ -180,6 +156,7 @@ pub fn delete_job(
             name: job.name,
             status: JobStatus::Cancelled,
             condition: job.condition,
+            terminate_condition: job.terminate_condition,
             msgs: job.msgs,
             vars: job.vars,
             recurring: job.recurring,
@@ -196,7 +173,6 @@ pub fn delete_job(
         deps.storage,
         &State {
             current_job_id: state.current_job_id,
-            current_template_id: state.current_template_id,
             q: state.q.checked_sub(Uint64::new(1))?,
         },
     )?;
@@ -207,7 +183,10 @@ pub fn delete_job(
         //send reward minus fee back to account
         BankMsg::Send {
             to_address: account.account.to_string(),
-            amount: vec![Coin::new((job.reward - fee).u128(), config.fee_denom.clone())],
+            amount: vec![Coin::new(
+                (job.reward - fee).u128(),
+                config.fee_denom.clone(),
+            )],
         },
         BankMsg::Send {
             to_address: config.fee_collector.to_string(),
@@ -240,7 +219,7 @@ pub fn update_job(
 
     let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
 
-    if data.name.is_some() && data.name.clone().unwrap().len() > 280 {
+    if data.name.is_some() && data.name.clone().unwrap().len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -263,6 +242,7 @@ pub fn update_job(
             labels: data.labels.unwrap_or(job.labels),
             status: job.status,
             condition: job.condition,
+            terminate_condition: job.terminate_condition,
             msgs: job.msgs,
             vars: job.vars,
             recurring: job.recurring,
@@ -271,8 +251,6 @@ pub fn update_job(
             assets_to_withdraw: job.assets_to_withdraw,
         }),
     })?;
-
-    //todo: sanitize updates
 
     let fee = added_reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
@@ -327,12 +305,13 @@ pub fn update_job(
 
 pub fn execute_job(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     data: ExecuteJobMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let _config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
     let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
     let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
@@ -346,17 +325,23 @@ pub fn execute_job(
         return Err(ContractError::JobNotActive {});
     }
 
-    let vars = hydrate_vars(
-        deps.as_ref(),
-        env.clone(),
-        job.vars.clone(),
-        data.external_inputs,
+    let vars: String = deps.querier.query_wasm_smart(
+        config.resolver_address.clone(),
+        &resolver::QueryMsg::QueryHydrateVars(resolver::QueryHydrateVarsMsg {
+            vars: job.vars,
+            external_inputs: data.external_inputs,
+        }),
     )?;
 
-    let resolution = resolve_cond(deps.as_ref(), env, job.condition.clone(), &vars);
+    let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
+        config.resolver_address.clone(),
+        &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
+            condition: job.condition,
+            vars: vars.clone(),
+        }),
+    );
 
     let mut attrs = vec![];
-
     let mut submsgs = vec![];
 
     if let Err(e) = resolution {
@@ -375,6 +360,7 @@ pub fn execute_job(
                 labels: job.labels,
                 status: JobStatus::Failed,
                 condition: job.condition,
+                terminate_condition: job.terminate_condition,
                 msgs: job.msgs,
                 vars,
                 recurring: job.recurring,
@@ -388,7 +374,6 @@ pub fn execute_job(
             deps.storage,
             &State {
                 current_job_id: state.current_job_id,
-                current_template_id: state.current_template_id,
                 q: state.q.checked_sub(Uint64::new(1))?,
             },
         )?;
@@ -403,7 +388,13 @@ pub fn execute_job(
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                    msgs: hydrate_msgs(job.msgs.clone(), vars)?,
+                    msgs: deps.querier.query_wasm_smart(
+                        config.resolver_address,
+                        &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                            msgs: job.msgs,
+                            vars,
+                        }),
+                    )?,
                 }))?,
                 funds: vec![],
             }),
@@ -479,7 +470,7 @@ pub fn evict_job(
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
-                        amount: vec![Coin::new(a.u128(), config.fee_denom.clone())],
+                        amount: vec![Coin::new(a.u128(), config.fee_denom)],
                     })],
                 }))?,
                 funds: vec![],
@@ -497,6 +488,7 @@ pub fn evict_job(
                     labels: job.labels,
                     status: JobStatus::Pending,
                     condition: job.condition,
+                    terminate_condition: job.terminate_condition,
                     msgs: job.msgs,
                     vars: job.vars,
                     recurring: job.recurring,
@@ -519,6 +511,7 @@ pub fn evict_job(
                     labels: job.labels,
                     status: JobStatus::Evicted,
                     condition: job.condition,
+                    terminate_condition: job.terminate_condition,
                     msgs: job.msgs,
                     vars: job.vars,
                     recurring: job.recurring,
@@ -541,6 +534,14 @@ pub fn evict_job(
                 amount: vec![Coin::new((job.reward - a).u128(), config.fee_denom)],
             }),
         ]);
+
+        STATE.save(
+            deps.storage,
+            &State {
+                current_job_id: state.current_job_id,
+                q: state.q.checked_sub(Uint64::new(1))?,
+            },
+        )?;
     }
 
     Ok(Response::new()

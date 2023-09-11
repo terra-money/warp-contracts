@@ -1,17 +1,17 @@
 use crate::util::path::resolve_path;
 use crate::util::variable::get_var;
 use crate::ContractError;
-use controller::condition::{
-    BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
-    NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
-};
-use controller::variable::{QueryExpr, Variable};
 use cosmwasm_std::{
     to_vec, ContractResult, Decimal256, Deps, Env, StdError, SystemResult, Uint256,
 };
 use cw_storage_plus::KeyDeserialize;
 use json_codec_wasm::ast::Ref;
 use json_codec_wasm::Decoder;
+use resolver::condition::{
+    BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
+    NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
+};
+use resolver::variable::{QueryExpr, Variable};
 use std::str::FromStr;
 
 pub fn resolve_cond(
@@ -102,13 +102,13 @@ fn resolve_ref_int(
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
-                msg: "Int Query value not found.".to_string(),
+                msg: format!("Int Query value not found: {}", q.name),
             })?;
             str::parse::<i128>(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
-                msg: "Int External value not found.".to_string(),
+                msg: format!("Int External value not found: {}", e.name),
             })?;
             str::parse::<i128>(&val)?
         }
@@ -218,13 +218,13 @@ fn resolve_ref_uint(
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
-                msg: "Uint Query value not found.".to_string(),
+                msg: format!("Uint Query value not found: {}", q.name),
             })?;
             Uint256::from_str(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
-                msg: "Uint External value not found.".to_string(),
+                msg: format!("Uint External value not found: {}", e.name),
             })?;
             Uint256::from_str(&val)?
         }
@@ -336,13 +336,13 @@ fn resolve_ref_decimal(
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
-                msg: "Decimal Query value not found.".to_string(),
+                msg: format!("Decimal Query value not found: {}", q.name),
             })?;
             Decimal256::from_str(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
-                msg: "Decimal External value not found.".to_string(),
+                msg: format!("Decimal External value not found: {}", e.name),
             })?;
             Decimal256::from_str(&val)?
         }
@@ -527,10 +527,10 @@ fn resolve_ref_string(
     let res = match var {
         Variable::Static(s) => s.value.clone(),
         Variable::Query(q) => q.value.clone().ok_or(ContractError::ConditionError {
-            msg: "String Query value not found.".to_string(),
+            msg: format!("String Query value not found: {}", q.name),
         })?,
         Variable::External(e) => e.value.clone().ok_or(ContractError::ConditionError {
-            msg: "String External value not found.".to_string(),
+            msg: format!("String External value not found: {}", e.name),
         })?,
     };
 
@@ -596,13 +596,13 @@ pub fn resolve_ref_bool(
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
-                msg: "String Bool value not found.".to_string(),
+                msg: format!("Bool Query value not found: {}", q.name),
             })?;
             str::parse::<bool>(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
-                msg: "String Bool value not found.".to_string(),
+                msg: format!("Bool External value not found: {}", e.name),
             })?;
             str::parse::<bool>(&val)?
         }

@@ -1,13 +1,17 @@
-use cosmwasm_schema::cw_serde;
 use crate::error::map_contract_error;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
-use crate::util::variable::apply_var_fn;
 use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
 use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use controller::job::{Job, JobStatus};
+use cosmwasm_schema::cw_serde;
+
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
-use cosmwasm_std::{entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg, Addr};
+use cosmwasm_std::{
+    entry_point, to_binary, Addr, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
+    CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
+    SubMsgResult, Uint128, Uint64, WasmMsg,
+};
 use cw_storage_plus::Item;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -19,7 +23,6 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let state = State {
         current_job_id: Uint64::one(),
-        current_template_id: Default::default(),
         q: Uint64::zero(),
     };
 
@@ -35,6 +38,7 @@ pub fn instantiate(
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
         cancellation_fee_percentage: msg.cancellation_fee,
+        resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
         t_max: msg.t_max,
         t_min: msg.t_min,
         a_max: msg.a_max,
@@ -85,6 +89,16 @@ pub fn execute(
         ExecuteMsg::CreateAccount(data) => execute::account::create_account(deps, env, info, data),
 
         ExecuteMsg::UpdateConfig(data) => execute::controller::update_config(deps, env, info, data),
+
+        ExecuteMsg::MigrateAccounts(data) => {
+            execute::controller::migrate_accounts(deps, env, info, data)
+        }
+        ExecuteMsg::MigratePendingJobs(data) => {
+            execute::controller::migrate_pending_jobs(deps, env, info, data)
+        }
+        ExecuteMsg::MigrateFinishedJobs(data) => {
+            execute::controller::migrate_finished_jobs(deps, env, info, data)
+        }
     }
 }
 
@@ -93,10 +107,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryJob(data) => to_binary(&query::job::query_job(deps, env, data)?),
         QueryMsg::QueryJobs(data) => to_binary(&query::job::query_jobs(deps, env, data)?),
-
-        QueryMsg::SimulateQuery(data) => {
-            to_binary(&query::controller::query_simulate_query(deps, env, data)?)
-        }
 
         QueryMsg::QueryAccount(data) => to_binary(&query::account::query_account(deps, env, data)?),
         QueryMsg::QueryAccounts(data) => {
@@ -111,43 +121,71 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    //STATE
+    #[cw_serde]
+    pub struct V1State {
+        pub current_job_id: Uint64,
+        pub current_template_id: Uint64,
+        pub q: Uint64,
+    }
+
+    const V1STATE: Item<V1State> = Item::new("state");
+    let v1_state = V1STATE.load(deps.storage)?;
+
+    STATE.save(
+        deps.storage,
+        &State {
+            current_job_id: v1_state.current_job_id,
+            q: v1_state.q,
+        },
+    )?;
+
+    //CONFIG
     #[cw_serde]
     pub struct V1Config {
         pub owner: Addr,
+        pub fee_denom: String,
         pub fee_collector: Addr,
         pub warp_account_code_id: Uint64,
         pub minimum_reward: Uint128,
         pub creation_fee_percentage: Uint64,
         pub cancellation_fee_percentage: Uint64,
+        // maximum time for evictions
         pub t_max: Uint64,
+        // minimum time for evictions
         pub t_min: Uint64,
+        // maximum fee for evictions
         pub a_max: Uint128,
+        // minimum fee for evictions
         pub a_min: Uint128,
+        // maximum length of queue modifier for evictions
         pub q_max: Uint64,
     }
-    let v1_config: V1Config = Item::new("config").load(deps.storage)?;
 
-    let new_config = Config {
-        owner: v1_config.owner,
-        fee_denom: msg.fee_denom,
-        fee_collector: v1_config.fee_collector,
-        warp_account_code_id: v1_config.warp_account_code_id,
-        minimum_reward: v1_config.minimum_reward,
-        creation_fee_percentage: v1_config.creation_fee_percentage,
-        cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
-        t_max: v1_config.t_max,
-        t_min: v1_config.t_min,
-        a_max: v1_config.a_max,
-        a_min: v1_config.a_min,
-        q_max: v1_config.q_max,
-    };
+    const V1CONFIG: Item<V1Config> = Item::new("config");
 
-    CONFIG.save(deps.storage, &new_config)?;
+    let v1_config = V1CONFIG.load(deps.storage)?;
 
-    Ok(Response::new()
-        .add_attribute("action", "migrate")
-        .add_attribute("fee_denom", new_config.fee_denom)
-    )
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            owner: v1_config.owner,
+            fee_denom: v1_config.fee_denom,
+            fee_collector: v1_config.fee_collector,
+            warp_account_code_id: msg.warp_account_code_id,
+            minimum_reward: v1_config.minimum_reward,
+            creation_fee_percentage: v1_config.creation_fee_percentage,
+            cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
+            resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
+            t_max: v1_config.t_max,
+            t_min: v1_config.t_min,
+            a_max: v1_config.a_max,
+            a_min: v1_config.a_min,
+            q_max: v1_config.q_max,
+        },
+    )?;
+
+    Ok(Response::new())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -273,8 +311,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             let job = PENDING_JOBS().load(deps.storage, msg.id)?;
             PENDING_JOBS().remove(deps.storage, msg.id)?;
 
-            state.q = state.q.checked_sub(Uint64::new(1))?;
-
             let finished_job = FINISHED_JOBS().update(deps.storage, msg.id, |j| match j {
                 None => Ok(Job {
                     id: job.id,
@@ -285,6 +321,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     labels: job.labels,
                     status: new_status,
                     condition: job.condition,
+                    terminate_condition: job.terminate_condition,
                     msgs: job.msgs,
                     vars: job.vars,
                     recurring: job.recurring,
@@ -335,103 +372,162 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         "failed_invalid_job_status",
                     ));
                 } else {
-                    let new_vars = apply_var_fn(
-                        deps.as_ref(),
-                        env.clone(),
-                        finished_job.vars,
-                        finished_job.status.clone(),
-                    )?;
-                    let new_job = PENDING_JOBS().update(
-                        deps.storage,
-                        state.current_job_id.u64(),
-                        |s| match s {
-                            None => Ok(Job {
-                                id: state.current_job_id,
-                                owner: finished_job.owner.clone(),
-                                last_update_time: Uint64::from(env.block.time.seconds()),
-                                name: finished_job.name.clone(),
-                                description: finished_job.description,
-                                labels: finished_job.labels,
-                                status: JobStatus::Pending,
-                                condition: finished_job.condition.clone(),
-                                vars: new_vars,
-                                requeue_on_evict: finished_job.requeue_on_evict,
-                                recurring: finished_job.recurring,
-                                msgs: finished_job.msgs.clone(),
-                                reward: finished_job.reward,
-                                assets_to_withdraw: finished_job.assets_to_withdraw,
-                            }),
-                            Some(_) => Err(ContractError::JobAlreadyExists {}),
-                        },
+                    let new_vars: String = deps.querier.query_wasm_smart(
+                        config.resolver_address.clone(),
+                        &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
+                            vars: finished_job.vars,
+                            status: finished_job.status.clone(),
+                        }),
                     )?;
 
-                    state.current_job_id = state.current_job_id.checked_add(Uint64::new(1))?;
-                    state.q = state.q.checked_add(Uint64::new(1))?;
+                    let should_terminate_job: bool;
+                    match finished_job.terminate_condition.clone() {
+                        Some(terminate_condition) => {
+                            let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
+                                config.resolver_address,
+                                &resolver::QueryMsg::QueryResolveCondition(
+                                    resolver::QueryResolveConditionMsg {
+                                        condition: terminate_condition,
+                                        vars: new_vars.clone(),
+                                    },
+                                ),
+                            );
+                            if let Err(e) = resolution {
+                                should_terminate_job = true;
+                                new_job_attrs.push(Attribute::new("action", "recur_job"));
+                                new_job_attrs.push(Attribute::new(
+                                    "job_terminate_condition_status",
+                                    "invalid",
+                                ));
+                                new_job_attrs.push(Attribute::new(
+                                    "creation_status",
+                                    format!(
+                                        "terminated_due_to_terminate_condition_resolves_to_error. {}",
+                                        e
+                                    ),
+                                ));
+                            } else {
+                                new_job_attrs.push(Attribute::new(
+                                    "job_terminate_condition_status",
+                                    "valid",
+                                ));
+                                if resolution? {
+                                    should_terminate_job = true;
+                                    new_job_attrs.push(Attribute::new("action", "recur_job"));
+                                    new_job_attrs.push(Attribute::new(
+                                        "creation_status",
+                                        "terminated_due_to_terminate_condition_resolves_to_true",
+                                    ));
+                                } else {
+                                    should_terminate_job = false;
+                                }
+                            }
+                        }
+                        None => {
+                            should_terminate_job = false;
+                        }
+                    }
 
-                    msgs.push(
-                        //send reward to controller
-                        WasmMsg::Execute {
-                            contract_addr: account.account.to_string(),
-                            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                                    to_address: config.fee_collector.to_string(),
-                                    amount: vec![Coin::new((fee).u128(), config.fee_denom.clone())],
-                                })],
-                            }))?,
-                            funds: vec![],
-                        },
-                    );
+                    if !should_terminate_job {
+                        let new_job = PENDING_JOBS().update(
+                            deps.storage,
+                            state.current_job_id.u64(),
+                            |s| match s {
+                                None => Ok(Job {
+                                    id: state.current_job_id,
+                                    owner: finished_job.owner.clone(),
+                                    last_update_time: Uint64::from(env.block.time.seconds()),
+                                    name: finished_job.name.clone(),
+                                    description: finished_job.description,
+                                    labels: finished_job.labels,
+                                    status: JobStatus::Pending,
+                                    condition: finished_job.condition.clone(),
+                                    terminate_condition: finished_job.terminate_condition.clone(),
+                                    vars: new_vars,
+                                    requeue_on_evict: finished_job.requeue_on_evict,
+                                    recurring: finished_job.recurring,
+                                    msgs: finished_job.msgs.clone(),
+                                    reward: finished_job.reward,
+                                    assets_to_withdraw: finished_job.assets_to_withdraw,
+                                }),
+                                Some(_) => Err(ContractError::JobAlreadyExists {}),
+                            },
+                        )?;
 
-                    msgs.push(
-                        //send reward to controller
-                        WasmMsg::Execute {
-                            contract_addr: account.account.to_string(),
-                            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                                    to_address: env.contract.address.to_string(),
-                                    amount: vec![Coin::new((new_job.reward).u128(), config.fee_denom)],
-                                })],
-                            }))?,
-                            funds: vec![],
-                        },
-                    );
+                        state.current_job_id = state.current_job_id.checked_add(Uint64::new(1))?;
+                        state.q = state.q.checked_add(Uint64::new(1))?;
 
-                    msgs.push(
-                        //withdraw all assets that are listed
-                        WasmMsg::Execute {
-                            contract_addr: account.account.to_string(),
-                            msg: to_binary(&account::ExecuteMsg::WithdrawAssets(
-                                WithdrawAssetsMsg {
-                                    asset_infos: new_job.assets_to_withdraw,
-                                },
-                            ))?,
-                            funds: vec![],
-                        },
-                    );
+                        msgs.push(
+                            //send reward to controller
+                            WasmMsg::Execute {
+                                contract_addr: account.account.to_string(),
+                                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                                    msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                                        to_address: config.fee_collector.to_string(),
+                                        amount: vec![Coin::new(
+                                            (fee).u128(),
+                                            config.fee_denom.clone(),
+                                        )],
+                                    })],
+                                }))?,
+                                funds: vec![],
+                            },
+                        );
 
-                    new_job_attrs.push(Attribute::new("action", "create_job"));
-                    new_job_attrs.push(Attribute::new("job_id", new_job.id));
-                    new_job_attrs.push(Attribute::new("job_owner", new_job.owner));
-                    new_job_attrs.push(Attribute::new("job_name", new_job.name));
-                    new_job_attrs.push(Attribute::new(
-                        "job_status",
-                        serde_json_wasm::to_string(&new_job.status)?,
-                    ));
-                    new_job_attrs.push(Attribute::new(
-                        "job_condition",
-                        serde_json_wasm::to_string(&new_job.condition)?,
-                    ));
-                    new_job_attrs.push(Attribute::new(
-                        "job_msgs",
-                        serde_json_wasm::to_string(&new_job.msgs)?,
-                    ));
-                    new_job_attrs.push(Attribute::new("job_reward", new_job.reward));
-                    new_job_attrs.push(Attribute::new("job_creation_fee", fee));
-                    new_job_attrs.push(Attribute::new(
-                        "job_last_updated_time",
-                        new_job.last_update_time,
-                    ));
-                    new_job_attrs.push(Attribute::new("sub_action", "recur_job"));
+                        msgs.push(
+                            //send reward to controller
+                            WasmMsg::Execute {
+                                contract_addr: account.account.to_string(),
+                                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                                    msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                                        to_address: env.contract.address.to_string(),
+                                        amount: vec![Coin::new(
+                                            (new_job.reward).u128(),
+                                            config.fee_denom,
+                                        )],
+                                    })],
+                                }))?,
+                                funds: vec![],
+                            },
+                        );
+
+                        msgs.push(
+                            //withdraw all assets that are listed
+                            WasmMsg::Execute {
+                                contract_addr: account.account.to_string(),
+                                msg: to_binary(&account::ExecuteMsg::WithdrawAssets(
+                                    WithdrawAssetsMsg {
+                                        asset_infos: new_job.assets_to_withdraw,
+                                    },
+                                ))?,
+                                funds: vec![],
+                            },
+                        );
+
+                        new_job_attrs.push(Attribute::new("action", "create_job"));
+                        new_job_attrs.push(Attribute::new("job_id", new_job.id));
+                        new_job_attrs.push(Attribute::new("job_owner", new_job.owner));
+                        new_job_attrs.push(Attribute::new("job_name", new_job.name));
+                        new_job_attrs.push(Attribute::new(
+                            "job_status",
+                            serde_json_wasm::to_string(&new_job.status)?,
+                        ));
+                        new_job_attrs.push(Attribute::new(
+                            "job_condition",
+                            serde_json_wasm::to_string(&new_job.condition)?,
+                        ));
+                        new_job_attrs.push(Attribute::new(
+                            "job_msgs",
+                            serde_json_wasm::to_string(&new_job.msgs)?,
+                        ));
+                        new_job_attrs.push(Attribute::new("job_reward", new_job.reward));
+                        new_job_attrs.push(Attribute::new("job_creation_fee", fee));
+                        new_job_attrs.push(Attribute::new(
+                            "job_last_updated_time",
+                            new_job.last_update_time,
+                        ));
+                        new_job_attrs.push(Attribute::new("sub_action", "recur_job"));
+                    }
                 }
             }
 

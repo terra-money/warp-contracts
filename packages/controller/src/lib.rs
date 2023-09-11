@@ -6,12 +6,10 @@ use crate::job::{
     QueryJobsMsg, UpdateJobMsg,
 };
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, QueryRequest, Uint128, Uint64};
+use cosmwasm_std::{Addr, Uint128, Uint64};
 
 pub mod account;
-pub mod condition;
 pub mod job;
-pub mod variable;
 
 //objects
 #[cw_serde]
@@ -23,17 +21,23 @@ pub struct Config {
     pub minimum_reward: Uint128,
     pub creation_fee_percentage: Uint64,
     pub cancellation_fee_percentage: Uint64,
+    pub resolver_address: Addr,
+    // maximum time for evictions
     pub t_max: Uint64,
+    // minimum time for evictions
     pub t_min: Uint64,
+    // maximum fee for evictions
     pub a_max: Uint128,
+    // minimum fee for evictions
     pub a_min: Uint128,
+    // maximum length of queue modifier for evictions
     pub q_max: Uint64,
 }
 
 #[cw_serde]
 pub struct State {
     pub current_job_id: Uint64,
-    pub current_template_id: Uint64,
+    // queue length
     pub q: Uint64,
 }
 
@@ -47,6 +51,7 @@ pub struct InstantiateMsg {
     pub minimum_reward: Uint128,
     pub creation_fee: Uint64,
     pub cancellation_fee: Uint64,
+    pub resolver_address: String,
     pub t_max: Uint64,
     pub t_min: Uint64,
     pub a_max: Uint128,
@@ -66,12 +71,15 @@ pub enum ExecuteMsg {
     CreateAccount(CreateAccountMsg),
 
     UpdateConfig(UpdateConfigMsg),
+
+    MigrateAccounts(MigrateAccountsMsg),
+    MigratePendingJobs(MigrateJobsMsg),
+    MigrateFinishedJobs(MigrateJobsMsg),
 }
 
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub owner: Option<String>,
-    pub fee_denom: Option<String>,
     pub fee_collector: Option<String>,
     pub minimum_reward: Option<Uint128>,
     pub creation_fee_percentage: Option<Uint64>,
@@ -83,6 +91,19 @@ pub struct UpdateConfigMsg {
     pub q_max: Option<Uint64>,
 }
 
+#[cw_serde]
+pub struct MigrateAccountsMsg {
+    pub warp_account_code_id: Uint64,
+    pub start_after: Option<String>,
+    pub limit: u8,
+}
+
+#[cw_serde]
+pub struct MigrateJobsMsg {
+    pub start_after: Option<Uint64>,
+    pub limit: u8,
+}
+
 //query
 #[derive(QueryResponses)]
 #[cw_serde]
@@ -91,9 +112,6 @@ pub enum QueryMsg {
     QueryJob(QueryJobMsg),
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
-
-    #[returns(SimulateResponse)]
-    SimulateQuery(SimulateQueryMsg),
 
     #[returns(AccountResponse)]
     QueryAccount(QueryAccountMsg),
@@ -105,16 +123,6 @@ pub enum QueryMsg {
 }
 
 #[cw_serde]
-pub struct SimulateQueryMsg {
-    pub query: QueryRequest<String>,
-}
-
-#[cw_serde]
-pub struct SimulateResponse {
-    pub response: String,
-}
-
-#[cw_serde]
 pub struct QueryConfigMsg {}
 
 //responses
@@ -123,8 +131,9 @@ pub struct ConfigResponse {
     pub config: Config,
 }
 
-//migrate
+//migrate//{"resolver_address":"terra1a8dxkrapwj4mkpfnrv7vahd0say0lxvd0ft6qv","warp_account_code_id":"10081"}
 #[cw_serde]
 pub struct MigrateMsg {
-    pub fee_denom: String,
+    pub warp_account_code_id: Uint64,
+    pub resolver_address: String,
 }
