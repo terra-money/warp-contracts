@@ -380,7 +380,11 @@ pub fn execute_job(
     } else {
         attrs.push(Attribute::new("job_condition_status", "valid"));
         if !resolution? {
-            return Err(ContractError::JobNotActive {});
+            return Ok(Response::new()
+                .add_attribute("action", "execute_job", )
+                .add_attribute("condition", "false")
+                .add_attribute("job_id", job.id)
+            );
         }
 
         submsgs.push(SubMsg {
@@ -412,6 +416,7 @@ pub fn execute_job(
         .add_submessages(submsgs)
         .add_message(reward_msg)
         .add_attribute("action", "execute_job")
+        .add_attribute("condition", "true")
         .add_attribute("executor", info.sender)
         .add_attribute("job_id", job.id)
         .add_attribute("job_reward", job.reward)
