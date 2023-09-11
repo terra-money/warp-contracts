@@ -205,7 +205,7 @@ pub fn delete_job(
 }
 
 pub fn update_job(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     data: UpdateJobMsg,
@@ -229,30 +229,7 @@ pub fn update_job(
         return Err(ContractError::NameTooShort {});
     }
 
-    let job = PENDING_JOBS().update(deps.storage, data.id.u64(), |h| match h {
-        None => Err(ContractError::JobDoesNotExist {}),
-        Some(job) => Ok(Job {
-            id: job.id,
-            owner: job.owner,
-            last_update_time: if added_reward > config.minimum_reward {
-                Uint64::new(env.block.time.seconds())
-            } else {
-                job.last_update_time
-            },
-            name: data.name.unwrap_or(job.name),
-            description: data.description.unwrap_or(job.description),
-            labels: data.labels.unwrap_or(job.labels),
-            status: job.status,
-            condition: job.condition,
-            terminate_condition: job.terminate_condition,
-            msgs: job.msgs,
-            vars: job.vars,
-            recurring: job.recurring,
-            requeue_on_evict: job.requeue_on_evict,
-            reward: job.reward + added_reward,
-            assets_to_withdraw: job.assets_to_withdraw,
-        }),
-    })?;
+    let job = JobQueueInstance::update(&mut deps, env.clone(), data)?;
 
     let fee = added_reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
