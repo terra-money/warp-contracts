@@ -381,10 +381,9 @@ pub fn execute_job(
         attrs.push(Attribute::new("job_condition_status", "valid"));
         if !resolution? {
             return Ok(Response::new()
-                .add_attribute("action", "execute_job", )
+                .add_attribute("action", "execute_job")
                 .add_attribute("condition", "false")
-                .add_attribute("job_id", job.id)
-            );
+                .add_attribute("job_id", job.id));
         }
 
         submsgs.push(SubMsg {
