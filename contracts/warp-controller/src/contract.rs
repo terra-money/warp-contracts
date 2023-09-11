@@ -12,7 +12,7 @@ use cosmwasm_std::{
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
-use cw_storage_plus::{Item};
+use cw_storage_plus::Item;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
