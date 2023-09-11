@@ -77,8 +77,14 @@ pub const STATE: Item<State> = Item::new("state");
 pub trait JobQueue {
     fn add(deps: &mut DepsMut, job: Job) -> Result<Job, ContractError>;
     fn get(deps: &DepsMut, job_id: u64) -> Result<Job, ContractError>;
+    fn sync(deps: &mut DepsMut, env: Env, job: Job) -> Result<Job, ContractError>;
     fn update(deps: &mut DepsMut, env: Env, data: UpdateJobMsg) -> Result<Job, ContractError>;
-    fn finalize(deps: &mut DepsMut, job_id: u64, status: JobStatus) -> Result<Job, ContractError>;
+    fn finalize(
+        deps: &mut DepsMut,
+        env: Env,
+        job_id: u64,
+        status: JobStatus,
+    ) -> Result<Job, ContractError>;
     fn remove(deps: &mut DepsMut, job_id: u64) -> Result<(), ContractError>;
 }
 
@@ -108,6 +114,29 @@ impl JobQueue for JobQueueInstance {
         let job = PENDING_JOBS().load(deps.storage, job_id)?;
 
         Ok(job)
+    }
+
+    fn sync(deps: &mut DepsMut, env: Env, job: Job) -> Result<Job, ContractError> {
+        PENDING_JOBS().update(deps.storage, job.id.u64(), |j| match j {
+            None => Err(ContractError::JobDoesNotExist {}),
+            Some(job) => Ok(Job {
+                id: job.id,
+                owner: job.owner,
+                last_update_time: Uint64::new(env.block.time.seconds()),
+                name: job.name,
+                description: job.description,
+                labels: job.labels,
+                status: JobStatus::Pending,
+                condition: job.condition,
+                terminate_condition: job.terminate_condition,
+                msgs: job.msgs,
+                vars: job.vars,
+                recurring: job.recurring,
+                requeue_on_evict: job.requeue_on_evict,
+                reward: job.reward,
+                assets_to_withdraw: job.assets_to_withdraw,
+            }),
+        })
     }
 
     fn update(deps: &mut DepsMut, env: Env, data: UpdateJobMsg) -> Result<Job, ContractError> {
@@ -140,7 +169,12 @@ impl JobQueue for JobQueueInstance {
         })
     }
 
-    fn finalize(deps: &mut DepsMut, job_id: u64, status: JobStatus) -> Result<Job, ContractError> {
+    fn finalize(
+        deps: &mut DepsMut,
+        env: Env,
+        job_id: u64,
+        status: JobStatus,
+    ) -> Result<Job, ContractError> {
         if status == JobStatus::Pending {
             return Err(ContractError::Unauthorized {});
         }
@@ -150,7 +184,7 @@ impl JobQueue for JobQueueInstance {
         let new_job = Job {
             id: job.id,
             owner: job.owner,
-            last_update_time: job.last_update_time,
+            last_update_time: Uint64::new(env.block.time.seconds()),
             name: job.name,
             description: job.description,
             labels: job.labels,
@@ -166,10 +200,10 @@ impl JobQueue for JobQueueInstance {
         };
 
         FINISHED_JOBS().update(deps.storage, job_id, |j| match j {
-            None => Ok(new_job),
+            None => Ok(new_job.clone()),
             Some(_) => Err(ContractError::JobAlreadyFinished {}),
         })?;
-        
+
         PENDING_JOBS().remove(deps.storage, job_id)?;
 
         let state = STATE.load(deps.storage)?;
