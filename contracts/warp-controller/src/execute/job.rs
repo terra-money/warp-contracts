@@ -1,13 +1,10 @@
-use crate::state::{
-    JobQueue, JobQueueInstance, ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE,
-};
+use crate::state::{JobQueue, JobQueueInstance, ACCOUNTS, CONFIG, STATE};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
 use account::GenericMsg;
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
-use controller::State;
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
     MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
@@ -17,7 +14,7 @@ use resolver::QueryHydrateMsgsMsg;
 const MAX_TEXT_LENGTH: usize = 280;
 
 pub fn create_job(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     data: CreateJobMsg,
@@ -59,8 +56,9 @@ pub fn create_job(
         Some(record) => record.1,
     };
 
-    let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
-        None => Ok(Job {
+    let job = JobQueueInstance::add(
+        &mut deps,
+        Job {
             id: state.current_job_id,
             owner: account.owner,
             last_update_time: Uint64::from(env.block.time.seconds()),
@@ -76,15 +74,6 @@ pub fn create_job(
             description: data.description,
             labels: data.labels,
             assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
-        }),
-        Some(_) => Err(ContractError::JobAlreadyExists {}),
-    })?;
-
-    STATE.save(
-        deps.storage,
-        &State {
-            current_job_id: state.current_job_id.checked_add(Uint64::new(1))?,
-            q: state.q.checked_add(Uint64::new(1))?,
         },
     )?;
 
@@ -137,7 +126,7 @@ pub fn delete_job(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
-    let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
+    let job = JobQueueInstance::get(&deps, data.id.into())?;
 
     if job.status != JobStatus::Pending {
         return Err(ContractError::JobNotActive {});
@@ -183,7 +172,7 @@ pub fn update_job(
     info: MessageInfo,
     data: UpdateJobMsg,
 ) -> Result<Response, ContractError> {
-    let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
+    let job = JobQueueInstance::get(&deps, data.id.into())?;
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender != job.owner {
@@ -264,7 +253,7 @@ pub fn execute_job(
     let _config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
-    let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
+    let job = JobQueueInstance::get(&deps, data.id.into())?;
     let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
     if !ACCOUNTS().has(deps.storage, info.sender.clone()) {
@@ -349,7 +338,7 @@ pub fn evict_job(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
-    let job = PENDING_JOBS().load(deps.storage, data.id.u64())?;
+    let job = JobQueueInstance::get(&deps, data.id.into())?;
     let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
     let account_amount = deps
