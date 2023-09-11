@@ -1,4 +1,6 @@
-use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
+use crate::state::{
+    JobQueue, JobQueueInstance, ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE,
+};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
 use account::GenericMsg;
@@ -419,7 +421,7 @@ pub fn execute_job(
 }
 
 pub fn evict_job(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     data: EvictJobMsg,
@@ -476,52 +478,11 @@ pub fn evict_job(
                 funds: vec![],
             }),
         );
-        job_status = PENDING_JOBS()
-            .update(deps.storage, data.id.u64(), |j| match j {
-                None => Err(ContractError::JobDoesNotExist {}),
-                Some(job) => Ok(Job {
-                    id: job.id,
-                    owner: job.owner,
-                    last_update_time: Uint64::new(env.block.time.seconds()),
-                    name: job.name,
-                    description: job.description,
-                    labels: job.labels,
-                    status: JobStatus::Pending,
-                    condition: job.condition,
-                    terminate_condition: job.terminate_condition,
-                    msgs: job.msgs,
-                    vars: job.vars,
-                    recurring: job.recurring,
-                    requeue_on_evict: job.requeue_on_evict,
-                    reward: job.reward,
-                    assets_to_withdraw: job.assets_to_withdraw,
-                }),
-            })?
-            .status;
+        job_status = JobQueueInstance::sync(&mut deps, env.clone(), job.clone())?.status;
     } else {
-        PENDING_JOBS().remove(deps.storage, data.id.u64())?;
-        job_status = FINISHED_JOBS()
-            .update(deps.storage, data.id.u64(), |j| match j {
-                None => Ok(Job {
-                    id: job.id,
-                    owner: job.owner,
-                    last_update_time: Uint64::new(env.block.time.seconds()),
-                    name: job.name,
-                    description: job.description,
-                    labels: job.labels,
-                    status: JobStatus::Evicted,
-                    condition: job.condition,
-                    terminate_condition: job.terminate_condition,
-                    msgs: job.msgs,
-                    vars: job.vars,
-                    recurring: job.recurring,
-                    requeue_on_evict: job.requeue_on_evict,
-                    reward: job.reward,
-                    assets_to_withdraw: job.assets_to_withdraw,
-                }),
-                Some(_) => Err(ContractError::JobAlreadyExists {}),
-            })?
-            .status;
+        job_status =
+            JobQueueInstance::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Evicted)?
+                .status;
 
         cosmos_msgs.append(&mut vec![
             //send reward minus fee back to account
@@ -534,14 +495,6 @@ pub fn evict_job(
                 amount: vec![Coin::new((job.reward - a).u128(), config.fee_denom)],
             }),
         ]);
-
-        STATE.save(
-            deps.storage,
-            &State {
-                current_job_id: state.current_job_id,
-                q: state.q.checked_sub(Uint64::new(1))?,
-            },
-        )?;
     }
 
     Ok(Response::new()
