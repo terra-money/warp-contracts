@@ -116,6 +116,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryConfig(data) => {
             to_binary(&query::controller::query_config(deps, env, data)?)
         }
+        QueryMsg::QueryState(data) => {
+            to_binary(&query::controller::query_state(deps, env, data)?)
+        }
     }
 }
 
