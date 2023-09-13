@@ -137,7 +137,7 @@ pub fn delete_job(
 
     let account = ACCOUNTS().load(deps.storage, info.sender)?;
 
-    let _new_job = JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Cancelled)?;
+    let _new_job = JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Cancelled)?;
 
     let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
 
@@ -285,7 +285,7 @@ pub fn execute_job(
     if let Err(e) = resolution {
         attrs.push(Attribute::new("job_condition_status", "invalid"));
         attrs.push(Attribute::new("error", e.to_string()));
-        JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Failed)?;
+        JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Failed)?;
     } else {
         attrs.push(Attribute::new("job_condition_status", "valid"));
         if !resolution? {
@@ -385,10 +385,10 @@ pub fn evict_job(
                 funds: vec![],
             }),
         );
-        job_status = JobQueue::sync(&mut deps, env.clone(), job.clone())?.status;
+        job_status = JobQueue::sync(&mut deps, env, job.clone())?.status;
     } else {
         job_status =
-            JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Evicted)?.status;
+            JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Evicted)?.status;
 
         cosmos_msgs.append(&mut vec![
             //send reward minus fee back to account
