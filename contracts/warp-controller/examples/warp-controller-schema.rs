@@ -4,7 +4,7 @@ use std::fs::create_dir_all;
 use controller::{
     account::{AccountResponse, AccountsResponse},
     job::{JobResponse, JobsResponse},
-    QueryMsg, {Config, ConfigResponse, ExecuteMsg, InstantiateMsg}, State, StateResponse,
+    QueryMsg, State, StateResponse, {Config, ConfigResponse, ExecuteMsg, InstantiateMsg},
 };
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 

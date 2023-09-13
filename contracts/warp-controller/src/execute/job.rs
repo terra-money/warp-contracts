@@ -137,8 +137,7 @@ pub fn delete_job(
 
     let account = ACCOUNTS().load(deps.storage, info.sender)?;
 
-    let _new_job =
-        JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Cancelled)?;
+    let _new_job = JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Cancelled)?;
 
     let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
 
@@ -389,8 +388,7 @@ pub fn evict_job(
         job_status = JobQueue::sync(&mut deps, env.clone(), job.clone())?.status;
     } else {
         job_status =
-            JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Evicted)?
-                .status;
+            JobQueue::finalize(&mut deps, env.clone(), job.id.into(), JobStatus::Evicted)?.status;
 
         cosmos_msgs.append(&mut vec![
             //send reward minus fee back to account
