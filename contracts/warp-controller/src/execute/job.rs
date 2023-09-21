@@ -113,6 +113,16 @@ pub fn create_job(
         },
     ];
 
+    let mut account_msgs: Vec<WasmMsg> = vec![];
+
+    if let Some(msgs) = data.account_msgs {
+        account_msgs = vec![WasmMsg::Execute {
+            contract_addr: account.account.to_string(),
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg { msgs }))?,
+            funds: vec![],
+        }];
+    }
+
     Ok(Response::new()
         .add_messages(reward_send_msgs)
         .add_attribute("action", "create_job")
@@ -124,7 +134,8 @@ pub fn create_job(
         .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
         .add_attribute("job_reward", job.reward)
         .add_attribute("job_creation_fee", fee)
-        .add_attribute("job_last_updated_time", job.last_update_time))
+        .add_attribute("job_last_updated_time", job.last_update_time)
+        .add_messages(account_msgs))
 }
 
 pub fn delete_job(
