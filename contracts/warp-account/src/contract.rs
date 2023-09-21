@@ -4,7 +4,9 @@ use account::{
     Config, ExecuteMsg, IbcTransferMsg, InstantiateMsg, MigrateMsg, QueryMsg, TimeoutBlock,
     WithdrawAssetsMsg,
 };
-use controller::account::{AssetInfo, Cw721ExecuteMsg};
+use controller::account::{
+    AssetInfo, Cw721ExecuteMsg, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg,
+};
 use cosmwasm_std::CosmosMsg::Stargate;
 use cosmwasm_std::{
     entry_point, to_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
@@ -28,12 +30,59 @@ pub fn instantiate(
             warp_addr: info.sender,
         },
     )?;
+
+    let cw_funds_vec = match msg.funds.clone() {
+        None => {
+            vec![]
+        }
+        Some(funds) => funds,
+    };
+
+    let mut fund_msgs_vec: Vec<CosmosMsg> = vec![];
+
+    if !info.funds.is_empty() {
+        fund_msgs_vec.push(CosmosMsg::Bank(BankMsg::Send {
+            to_address: env.contract.address.to_string(),
+            amount: info.funds.clone(),
+        }))
+    }
+
+    for cw_fund in &cw_funds_vec {
+        fund_msgs_vec.push(CosmosMsg::Wasm(match cw_fund {
+            Fund::Cw20(cw20_fund) => WasmMsg::Execute {
+                contract_addr: deps
+                    .api
+                    .addr_validate(&cw20_fund.contract_addr)?
+                    .to_string(),
+                msg: to_binary(&FundTransferMsgs::TransferFrom(TransferFromMsg {
+                    owner: msg.owner.clone().to_string(),
+                    recipient: env.contract.address.clone().to_string(),
+                    amount: cw20_fund.amount,
+                }))?,
+                funds: vec![],
+            },
+            Fund::Cw721(cw721_fund) => WasmMsg::Execute {
+                contract_addr: deps
+                    .api
+                    .addr_validate(&cw721_fund.contract_addr)?
+                    .to_string(),
+                msg: to_binary(&FundTransferMsgs::TransferNft(TransferNftMsg {
+                    recipient: env.contract.address.clone().to_string(),
+                    token_id: cw721_fund.token_id.clone(),
+                }))?,
+                funds: vec![],
+            },
+        }));
+    }
+
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_attribute("contract_addr", env.contract.address)
         .add_attribute("owner", msg.owner)
         .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
-        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?))
+        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
+        .add_messages(fund_msgs_vec)
+        .add_messages(msg.msgs.unwrap_or(vec![])))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
