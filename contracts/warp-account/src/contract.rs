@@ -35,7 +35,7 @@ pub fn instantiate(
         .add_attribute("owner", msg.owner)
         .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
         .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
-        .add_messages(msg.msgs.unwrap_or(vec![])))
+        .add_attribute("account_msgs", serde_json_wasm::to_string(&msg.msgs)?))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
