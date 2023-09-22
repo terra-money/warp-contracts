@@ -29,22 +29,12 @@ pub fn instantiate(
         },
     )?;
 
-    let mut fund_msgs_vec: Vec<CosmosMsg> = vec![];
-
-    if !info.funds.is_empty() {
-        fund_msgs_vec.push(CosmosMsg::Bank(BankMsg::Send {
-            to_address: env.contract.address.to_string(),
-            amount: info.funds.clone(),
-        }))
-    }
-
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_attribute("contract_addr", env.contract.address)
         .add_attribute("owner", msg.owner)
         .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
         .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
-        .add_messages(fund_msgs_vec)
         .add_messages(msg.msgs.unwrap_or(vec![])))
 }
 
