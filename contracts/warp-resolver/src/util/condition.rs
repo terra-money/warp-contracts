@@ -316,9 +316,9 @@ pub fn resolve_string_value_env(
     value: StringEnvValue,
     warp_account_addr: Option<String>,
 ) -> Result<String, ContractError> {
-    if warp_account_addr.is_none() {
+    if (warp_account_addr).is_none() {
         return Err(ContractError::HydrationError {
-            msg: format!("Warp account addr not found."),
+            msg: "Warp account addr not found.".to_string(),
         });
     }
     // TODO: add warp_account_addr validation
@@ -337,7 +337,7 @@ pub fn resolve_string_value_asset(
         StringValue::Simple(value) => Ok(value),
         StringValue::Ref(r) => resolve_ref_string(deps, env, r, vars),
         StringValue::Env(value) => Err(ContractError::HydrationError {
-            msg: format!("String Env value not apply to string asset"),
+            msg: format!("String Env value not apply to string asset: {:?}", value),
         }),
     }
 }
@@ -352,7 +352,7 @@ pub fn resolve_string_value_json(
         StringValue::Simple(value) => Ok(value),
         StringValue::Ref(r) => resolve_ref_string(deps, env, r, vars),
         StringValue::Env(value) => Err(ContractError::HydrationError {
-            msg: format!("String Env value not apply to string json"),
+            msg: format!("String Env value not apply to string json: {:?}", value),
         }),
     }
 }

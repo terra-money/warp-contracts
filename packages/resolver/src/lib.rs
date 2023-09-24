@@ -65,6 +65,7 @@ pub struct ExecuteResolveConditionMsg {
 pub struct ExecuteApplyVarFnMsg {
     pub vars: String,
     pub status: JobStatus,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]
@@ -106,6 +107,7 @@ pub struct QueryResolveConditionMsg {
 pub struct QueryApplyVarFnMsg {
     pub vars: String,
     pub status: JobStatus,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]

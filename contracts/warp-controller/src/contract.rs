@@ -119,74 +119,74 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-// #[cfg_attr(not(feature = "library"), entry_point)]
-// pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-//     //STATE
-//     #[cw_serde]
-//     pub struct V1State {
-//         pub current_job_id: Uint64,
-//         pub current_template_id: Uint64,
-//         pub q: Uint64,
-//     }
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    //STATE
+    #[cw_serde]
+    pub struct V1State {
+        pub current_job_id: Uint64,
+        pub current_template_id: Uint64,
+        pub q: Uint64,
+    }
 
-//     const V1STATE: Item<V1State> = Item::new("state");
-//     let v1_state = V1STATE.load(deps.storage)?;
+    const V1STATE: Item<V1State> = Item::new("state");
+    let v1_state = V1STATE.load(deps.storage)?;
 
-//     STATE.save(
-//         deps.storage,
-//         &State {
-//             current_job_id: v1_state.current_job_id,
-//             q: v1_state.q,
-//         },
-//     )?;
+    STATE.save(
+        deps.storage,
+        &State {
+            current_job_id: v1_state.current_job_id,
+            q: v1_state.q,
+        },
+    )?;
 
-//     //CONFIG
-//     #[cw_serde]
-//     pub struct V1Config {
-//         pub owner: Addr,
-//         pub fee_denom: String,
-//         pub fee_collector: Addr,
-//         pub warp_account_code_id: Uint64,
-//         pub minimum_reward: Uint128,
-//         pub creation_fee_percentage: Uint64,
-//         pub cancellation_fee_percentage: Uint64,
-//         // maximum time for evictions
-//         pub t_max: Uint64,
-//         // minimum time for evictions
-//         pub t_min: Uint64,
-//         // maximum fee for evictions
-//         pub a_max: Uint128,
-//         // minimum fee for evictions
-//         pub a_min: Uint128,
-//         // maximum length of queue modifier for evictions
-//         pub q_max: Uint64,
-//     }
+    //CONFIG
+    #[cw_serde]
+    pub struct V1Config {
+        pub owner: Addr,
+        pub fee_denom: String,
+        pub fee_collector: Addr,
+        pub warp_account_code_id: Uint64,
+        pub minimum_reward: Uint128,
+        pub creation_fee_percentage: Uint64,
+        pub cancellation_fee_percentage: Uint64,
+        // maximum time for evictions
+        pub t_max: Uint64,
+        // minimum time for evictions
+        pub t_min: Uint64,
+        // maximum fee for evictions
+        pub a_max: Uint128,
+        // minimum fee for evictions
+        pub a_min: Uint128,
+        // maximum length of queue modifier for evictions
+        pub q_max: Uint64,
+    }
 
-//     const V1CONFIG: Item<V1Config> = Item::new("config");
+    const V1CONFIG: Item<V1Config> = Item::new("config");
 
-//     let v1_config = V1CONFIG.load(deps.storage)?;
+    let v1_config = V1CONFIG.load(deps.storage)?;
 
-//     CONFIG.save(
-//         deps.storage,
-//         &Config {
-//             owner: v1_config.owner,
-//             fee_denom: v1_config.fee_denom,
-//             fee_collector: v1_config.fee_collector,
-//             warp_account_code_id: msg.warp_account_code_id,
-//             minimum_reward: v1_config.minimum_reward,
-//             creation_fee_percentage: v1_config.creation_fee_percentage,
-//             cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
-//             resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
-//             t_max: v1_config.t_max,
-//             t_min: v1_config.t_min,
-//             a_max: v1_config.a_max,
-//             a_min: v1_config.a_min,
-//             q_max: v1_config.q_max,
-//         },
-//     )?;
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            owner: v1_config.owner,
+            fee_denom: v1_config.fee_denom,
+            fee_collector: v1_config.fee_collector,
+            warp_account_code_id: msg.warp_account_code_id,
+            minimum_reward: v1_config.minimum_reward,
+            creation_fee_percentage: v1_config.creation_fee_percentage,
+            cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
+            resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
+            t_max: v1_config.t_max,
+            t_min: v1_config.t_min,
+            a_max: v1_config.a_max,
+            a_min: v1_config.a_min,
+            q_max: v1_config.q_max,
+        },
+    )?;
 
-//     Ok(Response::new())
-// }
+    Ok(Response::new())
+}
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
@@ -377,6 +377,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
                             vars: finished_job.vars,
                             status: finished_job.status.clone(),
+                            warp_account_addr: Some(account.account.to_string()),
                         }),
                     )?;
 

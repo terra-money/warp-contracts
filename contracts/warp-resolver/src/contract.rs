@@ -145,6 +145,7 @@ pub fn execute_apply_var_fn(
         QueryApplyVarFnMsg {
             vars: data.vars,
             status: data.status,
+            warp_account_addr: data.warp_account_addr,
         },
     )?;
     Ok(Response::new()
@@ -271,7 +272,8 @@ fn query_apply_var_fn(deps: Deps, env: Env, data: QueryApplyVarFnMsg) -> StdResu
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    apply_var_fn(deps, env, vars, data.status).map_err(|e| StdError::generic_err(e.to_string()))
+    apply_var_fn(deps, env, vars, data.status, data.warp_account_addr)
+        .map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 fn query_hydrate_msgs(

@@ -36,7 +36,6 @@ pub enum Value<T> {
     Ref(String),
 }
 
-
 #[cw_serde]
 pub enum StringValue<String> {
     Simple(String),
