@@ -1,10 +1,12 @@
-use resolver::condition::{StringEnvValue, StringValue};
+use resolver::condition::{NumValue, StringEnvValue, StringValue};
 use schemars::_serde_json::json;
 
 use crate::util::variable::{hydrate_msgs, hydrate_vars};
 
 use cosmwasm_std::{testing::mock_env, WasmQuery};
-use cosmwasm_std::{to_binary, BankQuery, Binary, ContractResult, CosmosMsg, OwnedDeps, WasmMsg};
+use cosmwasm_std::{
+    to_binary, BankQuery, Binary, ContractResult, CosmosMsg, OwnedDeps, Uint256, WasmMsg,
+};
 
 use crate::contract::query;
 use cosmwasm_schema::cw_serde;
@@ -454,14 +456,14 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
     let dummy_warp_account_addr = "terra1".to_string();
 
     let json_str = serde_json_wasm::to_string(&TestStruct {
-        test: format!("$warp.variable.{}", "var1"),
+        test: format!("$warp.variable.{}", "var2"),
     })
     .unwrap();
 
-    let raw_str = r#"{"test":"static_value_1"}"#.to_string();
+    let raw_str = r#"{"test":"100"}"#.to_string();
 
     let encoded_val = base64::encode(raw_str.clone());
-    assert_eq!(encoded_val, "eyJ0ZXN0Ijoic3RhdGljX3ZhbHVlXzEifQ==");
+    assert_eq!(encoded_val, "eyJ0ZXN0IjoiMTAwIn0=");
 
     // ============ TEST HYDRATED VALUE  ============
 
@@ -477,6 +479,16 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
 
     let var2 = Variable::Static(StaticVariable {
         name: "var2".to_string(),
+        kind: VariableKind::Uint,
+        value: None,
+        init_fn: FnValue::Uint(NumValue::Simple(Uint256::from(100 as u64))),
+        reinitialize: false,
+        update_fn: None,
+        encode: false,
+    });
+
+    let var3 = Variable::Static(StaticVariable {
+        name: "var3".to_string(),
         kind: VariableKind::String,
         value: None,
         init_fn: FnValue::String(StringValue::Simple(json_str.clone())),
@@ -485,8 +497,8 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
         encode: true,
     });
 
-    let var3 = Variable::Static(StaticVariable {
-        name: "var3".to_string(),
+    let var4 = Variable::Static(StaticVariable {
+        name: "var4".to_string(),
         kind: VariableKind::String,
         value: None,
         init_fn: FnValue::String(StringValue::Env(StringEnvValue::WarpAccountAddr)),
@@ -495,7 +507,7 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
         encode: false,
     });
 
-    let vars = vec![var1, var2, var3];
+    let vars = vec![var1, var2, var3, var4];
     let hydrated_vars = hydrate_vars(
         deps.as_ref(),
         env,
@@ -511,13 +523,23 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
         Variable::Static(static_var) => {
             assert_eq!(
                 String::from_utf8(static_var.value.unwrap_or_default().into()).unwrap(),
-                raw_str
+                "100".to_string()
             )
         }
         _ => panic!("Expected static variable"),
     };
     let hydrated_var3 = hydrated_vars[2].clone();
     match hydrated_var3.clone() {
+        Variable::Static(static_var) => {
+            assert_eq!(
+                String::from_utf8(static_var.value.unwrap_or_default().into()).unwrap(),
+                raw_str
+            )
+        }
+        _ => panic!("Expected static variable"),
+    };
+    let hydrated_var4 = hydrated_vars[3].clone();
+    match hydrated_var4.clone() {
         Variable::Static(static_var) => {
             assert_eq!(
                 String::from_utf8(static_var.value.unwrap_or_default().into()).unwrap(),
@@ -531,13 +553,16 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
 
     let msgs =
         r#"[
-            {"wasm":{"execute":{"contract_addr":"$warp.variable.var1","msg":"eyJ0ZXN0Ijoic3RhdGljX3ZhbHVlXzEifQ==","funds":[]}}},
-            {"wasm":{"execute":{"contract_addr":"$warp.variable.var3","msg":"$warp.variable.var2","funds":[]}}}
+            {"wasm":{"execute":{"contract_addr":"$warp.variable.var1","msg":"eyJ0ZXN0IjoiMTAwIn0=","funds":[]}}},
+            {"wasm":{"execute":{"contract_addr":"$warp.variable.var4","msg":"$warp.variable.var3","funds":[]}}}
         ]"#
             .to_string();
 
-    let hydrated_msgs =
-        hydrate_msgs(msgs, vec![hydrated_var1, hydrated_var2, hydrated_var3]).unwrap();
+    let hydrated_msgs = hydrate_msgs(
+        msgs,
+        vec![hydrated_var1, hydrated_var2, hydrated_var3, hydrated_var4],
+    )
+    .unwrap();
 
     assert_eq!(
         hydrated_msgs[0],

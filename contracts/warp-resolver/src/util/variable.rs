@@ -142,7 +142,7 @@ pub fn hydrate_vars(
                             }
                             _ => {
                                 return Err(ContractError::HydrationError {
-                                    msg: "Variable init_fn is not of type FnValue::String."
+                                    msg: "1Variable init_fn is not of type FnValue::String."
                                         .to_string(),
                                 })
                             }
@@ -182,7 +182,7 @@ pub fn hydrate_vars(
                                 return Err(ContractError::HydrationError {
                                     msg: "Variable init_fn is not of type FnValue::String."
                                         .to_string(),
-                                })
+                                });
                             }
                         },
                     }
