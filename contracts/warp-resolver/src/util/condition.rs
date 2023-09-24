@@ -308,22 +308,25 @@ pub fn resolve_string_value(
     match value {
         StringValue::Simple(value) => Ok(value),
         StringValue::Ref(r) => resolve_ref_string(deps, env, r, vars),
-        StringValue::Env(value) => resolve_string_value_env(value, warp_account_addr),
+        StringValue::Env(value) => resolve_string_value_env(deps, value, warp_account_addr),
     }
 }
 
 pub fn resolve_string_value_env(
+    deps: Deps,
     value: StringEnvValue,
     warp_account_addr: Option<String>,
 ) -> Result<String, ContractError> {
-    if (warp_account_addr).is_none() {
-        return Err(ContractError::HydrationError {
-            msg: "Warp account addr not found.".to_string(),
-        });
-    }
-    // TODO: add warp_account_addr validation
     match value {
-        StringEnvValue::WarpAccountAddr => Ok(warp_account_addr.unwrap()),
+        StringEnvValue::WarpAccountAddr => match warp_account_addr {
+            Some(addr) => {
+                deps.api.addr_validate(&addr)?;
+                Ok(addr)
+            }
+            None => Err(ContractError::HydrationError {
+                msg: "Warp account addr not found.".to_string(),
+            }),
+        },
     }
 }
 
