@@ -9,10 +9,10 @@ use cosmwasm_std::{
     to_binary, Addr, DepsMut, Env, MessageInfo, Order, Response, Uint128, Uint64, WasmMsg,
 };
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex, UniqueIndex};
-use resolver::condition::Condition;
+use resolver::condition::{Condition, StringValue};
 use resolver::variable::{
-    ExternalExpr, ExternalVariable, QueryExpr, QueryVariable, StaticVariable, UpdateFn, Variable,
-    VariableKind,
+    ExternalExpr, ExternalVariable, FnValue, QueryExpr, QueryVariable, StaticVariable, UpdateFn,
+    Variable, VariableKind,
 };
 
 //JOBS
@@ -237,7 +237,9 @@ pub fn migrate_pending_jobs(
                     kind: v.kind,
                     name: v.name,
                     encode: false,
-                    value: v.value,
+                    init_fn: FnValue::String(StringValue::Simple(v.value.clone())),
+                    reinitialize: false,
+                    value: Some(v.value.clone()),
                     update_fn: v.update_fn,
                 }),
                 V1Variable::External(v) => Variable::External(ExternalVariable {
@@ -339,7 +341,9 @@ pub fn migrate_finished_jobs(
                     kind: v.kind,
                     name: v.name,
                     encode: false,
-                    value: v.value,
+                    init_fn: FnValue::String(StringValue::Simple(v.value.clone())),
+                    reinitialize: false,
+                    value: Some(v.value.clone()),
                     update_fn: v.update_fn,
                 }),
                 V1Variable::External(v) => Variable::External(ExternalVariable {

@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal256, QueryRequest, Uint256};
 
+use crate::condition::StringValue;
+
 use super::condition::{DecimalFnOp, IntFnOp, NumExprOp, NumValue};
 
 #[cw_serde]
@@ -68,19 +70,20 @@ pub enum FnOp {
 }
 
 #[cw_serde]
-pub enum UpdateFnValue {
+pub enum FnValue {
     Uint(NumValue<Uint256, NumExprOp, IntFnOp>),
     Int(NumValue<i128, NumExprOp, IntFnOp>),
     Decimal(NumValue<Decimal256, NumExprOp, DecimalFnOp>),
     Timestamp(NumValue<i128, NumExprOp, IntFnOp>),
     BlockHeight(NumValue<i128, NumExprOp, IntFnOp>),
     Bool(String), //ref
+    String(StringValue<String>),
 }
 
 #[cw_serde]
 pub struct UpdateFn {
-    pub on_success: Option<UpdateFnValue>,
-    pub on_error: Option<UpdateFnValue>,
+    pub on_success: Option<FnValue>,
+    pub on_error: Option<FnValue>,
 }
 
 // Variable is specified as a reference value (string) in form of $warp.variable.{name}
@@ -97,7 +100,9 @@ pub struct StaticVariable {
     pub kind: VariableKind,
     pub name: String,
     pub encode: bool,
-    pub value: String,
+    pub init_fn: FnValue,
+    pub reinitialize: bool,
+    pub value: Option<String>, //none if uninitialized
     pub update_fn: Option<UpdateFn>,
 }
 

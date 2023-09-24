@@ -9,7 +9,8 @@ use json_codec_wasm::ast::Ref;
 use json_codec_wasm::Decoder;
 use resolver::condition::{
     BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
-    NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
+    NumExprValue, NumFnValue, NumOp, NumValue, StringEnvValue, StringOp, StringValue, TimeExpr,
+    TimeOp, Value,
 };
 use resolver::variable::{QueryExpr, Variable};
 use std::str::FromStr;
@@ -97,7 +98,9 @@ fn resolve_ref_int(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => {
-            let val = s.clone().value;
+            let val = s.clone().value.ok_or(ContractError::ConditionError {
+                msg: format!("Int Static value not found: {}", s.name),
+            })?;
             str::parse::<i128>(&val)?
         }
         Variable::Query(q) => {
@@ -213,7 +216,9 @@ fn resolve_ref_uint(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => {
-            let val = s.clone().value;
+            let val = s.clone().value.ok_or(ContractError::ConditionError {
+                msg: format!("Uint Static value not found: {}", s.name),
+            })?;
             Uint256::from_str(&val)?
         }
         Variable::Query(q) => {
@@ -293,6 +298,65 @@ pub fn resolve_num_env_uint(
     }
 }
 
+pub fn resolve_string_value(
+    deps: Deps,
+    env: Env,
+    value: StringValue<String>,
+    vars: &Vec<Variable>,
+    warp_account_addr: Option<String>,
+) -> Result<String, ContractError> {
+    match value {
+        StringValue::Simple(value) => Ok(value),
+        StringValue::Ref(r) => resolve_ref_string(deps, env, r, vars),
+        StringValue::Env(value) => resolve_string_value_env(value, warp_account_addr),
+    }
+}
+
+pub fn resolve_string_value_env(
+    value: StringEnvValue,
+    warp_account_addr: Option<String>,
+) -> Result<String, ContractError> {
+    if warp_account_addr.is_none() {
+        return Err(ContractError::HydrationError {
+            msg: format!("Warp account addr not found."),
+        });
+    }
+    // TODO: add warp_account_addr validation
+    match value {
+        StringEnvValue::WarpAccountAddr => Ok(warp_account_addr.unwrap()),
+    }
+}
+
+pub fn resolve_string_value_asset(
+    deps: Deps,
+    env: Env,
+    value: StringValue<String>,
+    vars: &Vec<Variable>,
+) -> Result<String, ContractError> {
+    match value {
+        StringValue::Simple(value) => Ok(value),
+        StringValue::Ref(r) => resolve_ref_string(deps, env, r, vars),
+        StringValue::Env(value) => Err(ContractError::HydrationError {
+            msg: format!("String Env value not apply to string asset"),
+        }),
+    }
+}
+
+pub fn resolve_string_value_json(
+    deps: Deps,
+    env: Env,
+    value: StringValue<String>,
+    vars: &Vec<Variable>,
+) -> Result<String, ContractError> {
+    match value {
+        StringValue::Simple(value) => Ok(value),
+        StringValue::Ref(r) => resolve_ref_string(deps, env, r, vars),
+        StringValue::Env(value) => Err(ContractError::HydrationError {
+            msg: format!("String Env value not apply to string json"),
+        }),
+    }
+}
+
 pub fn resolve_decimal_expr(
     deps: Deps,
     env: Env,
@@ -331,7 +395,9 @@ fn resolve_ref_decimal(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => {
-            let val = s.clone().value;
+            let val = s.clone().value.ok_or(ContractError::ConditionError {
+                msg: format!("Decimal Static value not found: {}", s.name),
+            })?;
             Decimal256::from_str(&val)?
         }
         Variable::Query(q) => {
@@ -525,7 +591,9 @@ fn resolve_ref_string(
 ) -> Result<String, ContractError> {
     let var = get_var(r, vars)?;
     let res = match var {
-        Variable::Static(s) => s.value.clone(),
+        Variable::Static(s) => s.value.clone().ok_or(ContractError::ConditionError {
+            msg: format!("String Static value not found: {}", s.name),
+        })?,
         Variable::Query(q) => q.value.clone().ok_or(ContractError::ConditionError {
             msg: format!("String Query value not found: {}", q.name),
         })?,
@@ -591,7 +659,9 @@ pub fn resolve_ref_bool(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => {
-            let val = s.clone().value;
+            let val = s.clone().value.ok_or(ContractError::ConditionError {
+                msg: format!("Bool Static value not found: {}", s.name),
+            })?;
             str::parse::<bool>(&val)?
         }
         Variable::Query(q) => {

@@ -104,6 +104,7 @@ pub fn execute_hydrate_vars(
         QueryHydrateVarsMsg {
             vars: data.vars,
             external_inputs: data.external_inputs,
+            warp_account_addr: data.warp_account_addr,
         },
     )?;
 
@@ -241,8 +242,14 @@ fn query_hydrate_vars(deps: Deps, env: Env, data: QueryHydrateVarsMsg) -> StdRes
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
     serde_json_wasm::to_string(
-        &hydrate_vars(deps, env, vars, data.external_inputs)
-            .map_err(|e| StdError::generic_err(e.to_string()))?,
+        &hydrate_vars(
+            deps,
+            env,
+            vars,
+            data.external_inputs,
+            data.warp_account_addr,
+        )
+        .map_err(|e| StdError::generic_err(e.to_string()))?,
     )
     .map_err(|e| StdError::generic_err(e.to_string()))
 }

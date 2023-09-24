@@ -52,6 +52,7 @@ pub struct ExecuteHydrateMsgsMsg {
 pub struct ExecuteHydrateVarsMsg {
     pub vars: String,
     pub external_inputs: Option<Vec<ExternalInput>>,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]
@@ -92,6 +93,7 @@ pub struct QueryHydrateMsgsMsg {
 pub struct QueryHydrateVarsMsg {
     pub vars: String,
     pub external_inputs: Option<Vec<ExternalInput>>,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]

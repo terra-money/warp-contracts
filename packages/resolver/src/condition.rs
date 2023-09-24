@@ -36,6 +36,19 @@ pub enum Value<T> {
     Ref(String),
 }
 
+
+#[cw_serde]
+pub enum StringValue<String> {
+    Simple(String),
+    Ref(String),
+    Env(StringEnvValue),
+}
+
+#[cw_serde]
+pub enum StringEnvValue {
+    WarpAccountAddr,
+}
+
 #[cw_serde]
 pub enum NumValue<T, ExprOp, FnOp> {
     Simple(T),
