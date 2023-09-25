@@ -243,6 +243,16 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                     .value,
             )?;
 
+            let account_msgs: Option<Vec<CosmosMsg>> = serde_json_wasm::from_str(
+                &event
+                    .attributes
+                    .iter()
+                    .cloned()
+                    .find(|attr| attr.key == "account_msgs")
+                    .ok_or_else(|| StdError::generic_err("cannot find `account_msgs` attribute"))?
+                    .value,
+            )?;
+
             let cw_funds_vec = match cw_funds {
                 None => {
                     vec![]
@@ -278,6 +288,12 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                         funds: vec![],
                     },
                 }))
+            }
+
+            if let Some(msgs) = account_msgs {
+                for msg in msgs {
+                    msgs_vec.push(msg);
+                }
             }
 
             if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {

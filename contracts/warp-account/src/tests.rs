@@ -20,6 +20,7 @@ fn test_execute_controller() {
         InstantiateMsg {
             owner: "vlad".to_string(),
             funds: None,
+            msgs: None,
         },
     );
 
@@ -142,6 +143,7 @@ fn test_execute_owner() {
         InstantiateMsg {
             owner: "vlad".to_string(),
             funds: None,
+            msgs: None,
         },
     );
 
@@ -266,6 +268,7 @@ fn test_execute_unauth() {
         InstantiateMsg {
             owner: "vlad".to_string(),
             funds: None,
+            msgs: None,
         },
     );
 
