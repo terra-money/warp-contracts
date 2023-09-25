@@ -339,6 +339,7 @@ pub fn execute_job(
         &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
             condition: job.condition,
             vars: vars.clone(),
+            warp_account_addr: Some(account.account.to_string()),
         }),
     );
 

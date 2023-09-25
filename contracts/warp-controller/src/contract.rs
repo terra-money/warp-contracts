@@ -390,6 +390,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                                     resolver::QueryResolveConditionMsg {
                                         condition: terminate_condition,
                                         vars: new_vars.clone(),
+                                        warp_account_addr: Some(account.account.to_string()),
                                     },
                                 ),
                             );

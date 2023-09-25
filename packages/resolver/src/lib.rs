@@ -59,6 +59,7 @@ pub struct ExecuteHydrateVarsMsg {
 pub struct ExecuteResolveConditionMsg {
     pub condition: String,
     pub vars: String,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]
@@ -101,6 +102,7 @@ pub struct QueryHydrateVarsMsg {
 pub struct QueryResolveConditionMsg {
     pub condition: String,
     pub vars: String,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]

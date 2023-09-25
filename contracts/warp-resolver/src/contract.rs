@@ -125,6 +125,7 @@ pub fn execute_resolve_condition(
         QueryResolveConditionMsg {
             condition: data.condition,
             vars: data.vars,
+            warp_account_addr: data.warp_account_addr,
         },
     )?;
 
@@ -265,7 +266,8 @@ fn query_resolve_condition(
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    resolve_cond(deps, env, condition, &vars).map_err(|e| StdError::generic_err(e.to_string()))
+    resolve_cond(deps, env, condition, &vars, data.warp_account_addr)
+        .map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 fn query_apply_var_fn(deps: Deps, env: Env, data: QueryApplyVarFnMsg) -> StdResult<String> {

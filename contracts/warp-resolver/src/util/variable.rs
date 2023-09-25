@@ -14,9 +14,7 @@ use std::str::FromStr;
 use controller::job::{ExternalInput, JobStatus};
 use resolver::variable::{FnValue, QueryExpr, Variable, VariableKind};
 
-use super::condition::{
-    resolve_string_value, resolve_string_value_asset, resolve_string_value_json,
-};
+use super::condition::resolve_string_value;
 
 pub fn hydrate_vars(
     deps: Deps,
@@ -150,11 +148,12 @@ pub fn hydrate_vars(
                         VariableKind::Asset => match v.init_fn.clone() {
                             FnValue::String(val) => {
                                 v.value = Some(replace_in_string(
-                                    resolve_string_value_asset(
+                                    resolve_string_value(
                                         deps,
                                         env.clone(),
                                         val,
                                         &hydrated_vars,
+                                        warp_account_addr.clone(),
                                     )?,
                                     &hydrated_vars,
                                 )?)
@@ -169,11 +168,12 @@ pub fn hydrate_vars(
                         VariableKind::Json => match v.init_fn.clone() {
                             FnValue::String(val) => {
                                 v.value = Some(replace_in_string(
-                                    resolve_string_value_json(
+                                    resolve_string_value(
                                         deps,
                                         env.clone(),
                                         val,
                                         &hydrated_vars,
+                                        warp_account_addr.clone(),
                                     )?,
                                     &hydrated_vars,
                                 )?)
