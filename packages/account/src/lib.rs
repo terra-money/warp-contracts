@@ -69,6 +69,9 @@ pub struct TransferMsg {
 
     #[prost(string, tag = "8")]
     pub memo: String,
+
+    #[prost(message, optional, tag = "9")]
+    pub fee: Option<IbcFee>
 }
 
 #[cw_serde]
@@ -77,6 +80,21 @@ pub struct IbcTransferMsg {
     pub timeout_block_delta: Option<u64>,
     pub timeout_timestamp_seconds_delta: Option<u64>,
 }
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, prost::Message)]
+pub struct IbcFee {
+    /// **recv_fee** currently is used for compatibility with ICS-29 interface only and must be set to zero (i.e. 0untrn),
+    /// because Neutron's fee module can't refund relayer for submission of Recv IBC packets due to compatibility with target chains.
+    #[prost(message, repeated, tag = "1")]
+    pub recv_fee: Vec<Coin>,
+    /// **ack_fee** is an amount of coins to refund relayer for submitting ack message for a particular IBC packet.
+    #[prost(message, repeated, tag = "2")]
+    pub ack_fee: Vec<Coin>,
+    /// **timeout_fee** amount of coins to refund relayer for submitting timeout message for a particular IBC packet.
+    #[prost(message, repeated, tag = "3")]
+    pub timeout_fee: Vec<Coin>,
+}
+
 
 #[cw_serde]
 pub struct WithdrawAssetsMsg {
