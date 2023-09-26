@@ -1,6 +1,6 @@
 use schemars::_serde_json::json;
 
-use crate::util::variable::{all_vector_vars_present, hydrate_msgs, hydrate_vars};
+use crate::util::variable::{hydrate_msgs, hydrate_vars};
 
 use cosmwasm_std::{testing::mock_env, WasmQuery};
 use cosmwasm_std::{to_binary, BankQuery, Binary, ContractResult, CosmosMsg, OwnedDeps, WasmMsg};
@@ -9,7 +9,7 @@ use crate::contract::query;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{from_slice, Empty, Querier, QueryRequest, SystemError, SystemResult};
-use resolver::condition::{Condition, Expr, GenExpr, NumEnvValue, NumOp, NumValue};
+
 use resolver::variable::{QueryExpr, QueryVariable, StaticVariable, Variable, VariableKind};
 use resolver::{QueryMsg, QueryValidateJobCreationMsg};
 use std::marker::PhantomData;
@@ -47,27 +47,6 @@ fn test_vars() {
     let _idx = test_msg.find("\"$WARPVAR\"");
 
     let _new_str = test_msg.replace("\"$WARPVAR.test\"", "\"input\"");
-}
-
-#[test]
-fn test_all_vector_vars_present() {
-    let condition = Condition::Expr(Box::new(Expr::Uint(GenExpr {
-        left: NumValue::Env(NumEnvValue::Time),
-        op: NumOp::Gt,
-        right: NumValue::Ref("$warp.variable.next_execution".to_string()),
-    })));
-
-    let cond_string = serde_json_wasm::to_string(&condition).unwrap();
-
-    let var = Variable::Static(StaticVariable {
-        kind: VariableKind::Uint,
-        name: "next_execution".to_string(),
-        encode: false,
-        value: "1".to_string(),
-        update_fn: None,
-    });
-
-    assert!(all_vector_vars_present(&vec![var], cond_string));
 }
 
 pub fn mock_dependencies() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
@@ -385,10 +364,7 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
     match hydrated_var2.clone() {
         Variable::Static(static_var) => {
             // var3.encode = false doesn't matter here, it only matters when injecting to msgs during msg hydration
-            assert_eq!(
-                String::from_utf8(static_var.value.into()).unwrap(),
-                raw_str.clone()
-            )
+            assert_eq!(String::from_utf8(static_var.value.into()).unwrap(), raw_str)
         }
         _ => panic!("Expected static variable"),
     };
@@ -408,10 +384,7 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
     match hydrated_var3.clone() {
         Variable::Static(static_var) => {
             // var3.encode = true doesn't matter here, it only matters when injecting to msgs during msg hydration
-            assert_eq!(
-                String::from_utf8(static_var.value.into()).unwrap(),
-                raw_str.clone()
-            );
+            assert_eq!(String::from_utf8(static_var.value.into()).unwrap(), raw_str);
         }
         _ => panic!("Expected static variable"),
     };
@@ -433,7 +406,7 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
         CosmosMsg::Wasm(WasmMsg::Execute {
             // Because var1.encode = false, contract_addr should use the plain text value
             contract_addr: "static_value_1".to_string(),
-            msg: Binary::from(raw_str.clone().as_bytes()),
+            msg: Binary::from(raw_str.as_bytes()),
             funds: vec![]
         })
     );

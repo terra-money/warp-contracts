@@ -109,7 +109,7 @@ pub fn execute_hydrate_vars(
 
     Ok(Response::new()
         .add_attribute("action", "execute_hydrate_vars")
-        .add_attribute("response", &result))
+        .add_attribute("response", result))
 }
 
 pub fn execute_resolve_condition(
@@ -148,7 +148,7 @@ pub fn execute_apply_var_fn(
     )?;
     Ok(Response::new()
         .add_attribute("action", "execute_apply_var_fn")
-        .add_attribute("response", &result))
+        .add_attribute("response", result))
 }
 
 pub fn execute_hydrate_msgs(

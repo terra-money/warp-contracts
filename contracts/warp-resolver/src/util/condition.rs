@@ -102,13 +102,13 @@ fn resolve_ref_int(
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
-                msg: format!("Int Query value not found: {}", q.name).to_string(),
+                msg: format!("Int Query value not found: {}", q.name),
             })?;
             str::parse::<i128>(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
-                msg: format!("Int External value not found: {}", e.name).to_string(),
+                msg: format!("Int External value not found: {}", e.name),
             })?;
             str::parse::<i128>(&val)?
         }
@@ -218,13 +218,13 @@ fn resolve_ref_uint(
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
-                msg: format!("Uint Query value not found: {}", q.name).to_string(),
+                msg: format!("Uint Query value not found: {}", q.name),
             })?;
             Uint256::from_str(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
-                msg: format!("Uint External value not found: {}", e.name).to_string(),
+                msg: format!("Uint External value not found: {}", e.name),
             })?;
             Uint256::from_str(&val)?
         }
@@ -336,13 +336,13 @@ fn resolve_ref_decimal(
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
-                msg: format!("Decimal Query value not found: {}", q.name).to_string(),
+                msg: format!("Decimal Query value not found: {}", q.name),
             })?;
             Decimal256::from_str(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
-                msg: format!("Decimal External value not found: {}", e.name).to_string(),
+                msg: format!("Decimal External value not found: {}", e.name),
             })?;
             Decimal256::from_str(&val)?
         }
@@ -527,10 +527,10 @@ fn resolve_ref_string(
     let res = match var {
         Variable::Static(s) => s.value.clone(),
         Variable::Query(q) => q.value.clone().ok_or(ContractError::ConditionError {
-            msg: format!("String Query value not found: {}", q.name).to_string(),
+            msg: format!("String Query value not found: {}", q.name),
         })?,
         Variable::External(e) => e.value.clone().ok_or(ContractError::ConditionError {
-            msg: format!("String External value not found: {}", e.name).to_string(),
+            msg: format!("String External value not found: {}", e.name),
         })?,
     };
 
@@ -596,13 +596,13 @@ pub fn resolve_ref_bool(
         }
         Variable::Query(q) => {
             let val = q.clone().value.ok_or(ContractError::ConditionError {
-                msg: format!("Bool Query value not found: {}", q.name).to_string(),
+                msg: format!("Bool Query value not found: {}", q.name),
             })?;
             str::parse::<bool>(&val)?
         }
         Variable::External(e) => {
             let val = e.clone().value.ok_or(ContractError::ConditionError {
-                msg: format!("Bool External value not found: {}", e.name).to_string(),
+                msg: format!("Bool External value not found: {}", e.name),
             })?;
             str::parse::<bool>(&val)?
         }

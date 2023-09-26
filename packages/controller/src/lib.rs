@@ -71,6 +71,10 @@ pub enum ExecuteMsg {
     CreateAccount(CreateAccountMsg),
 
     UpdateConfig(UpdateConfigMsg),
+
+    MigrateAccounts(MigrateAccountsMsg),
+    MigratePendingJobs(MigrateJobsMsg),
+    MigrateFinishedJobs(MigrateJobsMsg),
 }
 
 #[cw_serde]
@@ -85,6 +89,19 @@ pub struct UpdateConfigMsg {
     pub a_max: Option<Uint128>,
     pub a_min: Option<Uint128>,
     pub q_max: Option<Uint64>,
+}
+
+#[cw_serde]
+pub struct MigrateAccountsMsg {
+    pub warp_account_code_id: Uint64,
+    pub start_after: Option<String>,
+    pub limit: u8,
+}
+
+#[cw_serde]
+pub struct MigrateJobsMsg {
+    pub start_after: Option<Uint64>,
+    pub limit: u8,
 }
 
 //query
@@ -103,18 +120,28 @@ pub enum QueryMsg {
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
+
+    #[returns(StateResponse)]
+    QueryState(QueryStateMsg),
 }
 
 #[cw_serde]
 pub struct QueryConfigMsg {}
 
-//responses
 #[cw_serde]
 pub struct ConfigResponse {
     pub config: Config,
 }
 
-//migrate
+#[cw_serde]
+pub struct QueryStateMsg {}
+
+#[cw_serde]
+pub struct StateResponse {
+    pub state: State,
+}
+
+//migrate//{"resolver_address":"terra1a8dxkrapwj4mkpfnrv7vahd0say0lxvd0ft6qv","warp_account_code_id":"10081"}
 #[cw_serde]
 pub struct MigrateMsg {
     pub warp_account_code_id: Uint64,
