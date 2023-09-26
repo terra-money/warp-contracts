@@ -403,8 +403,7 @@ pub fn evict_job(
         );
         job_status = JobQueue::sync(&mut deps, env, job.clone())?.status;
     } else {
-        job_status =
-            JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Evicted)?.status;
+        job_status = JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Evicted)?.status;
 
         cosmos_msgs.append(&mut vec![
             //send reward minus fee back to account
