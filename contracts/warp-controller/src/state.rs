@@ -107,6 +107,7 @@ impl JobQueue {
             None => Err(ContractError::JobDoesNotExist {}),
             Some(job) => Ok(Job {
                 id: job.id,
+                prev_id: job.prev_id,
                 owner: job.owner,
                 last_update_time: Uint64::new(env.block.time.seconds()),
                 name: job.name,
@@ -133,6 +134,7 @@ impl JobQueue {
             None => Err(ContractError::JobDoesNotExist {}),
             Some(job) => Ok(Job {
                 id: job.id,
+                prev_id: job.prev_id,
                 owner: job.owner,
                 last_update_time: if added_reward > config.minimum_reward {
                     Uint64::new(env.block.time.seconds())
@@ -169,6 +171,7 @@ impl JobQueue {
 
         let new_job = Job {
             id: job.id,
+            prev_id: job.prev_id,
             owner: job.owner,
             last_update_time: Uint64::new(env.block.time.seconds()),
             name: job.name,

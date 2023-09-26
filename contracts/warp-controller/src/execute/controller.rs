@@ -274,6 +274,7 @@ pub fn migrate_pending_jobs(
             job_key,
             &Job {
                 id: v1_job.id,
+                prev_id: None,
                 owner: v1_job.owner,
                 last_update_time: v1_job.last_update_time,
                 name: v1_job.name,
@@ -376,6 +377,7 @@ pub fn migrate_finished_jobs(
             job_key,
             &Job {
                 id: v1_job.id,
+                prev_id: None,
                 owner: v1_job.owner,
                 last_update_time: v1_job.last_update_time,
                 name: v1_job.name,
