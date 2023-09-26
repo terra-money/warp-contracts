@@ -62,6 +62,7 @@ pub fn create_job(
             id: state.current_job_id,
             prev_id: None,
             owner: account.owner,
+            account: account.account.clone(),
             last_update_time: Uint64::from(env.block.time.seconds()),
             name: data.name,
             status: JobStatus::Pending,
@@ -78,11 +79,11 @@ pub fn create_job(
         },
     )?;
 
-    //assume reward.amount == warp token allowance
+    // Assume reward.amount == warp token allowance
     let fee = data.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
     let reward_send_msgs = vec![
-        //send reward to controller
+        // Job sends reward to controller
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
@@ -93,6 +94,7 @@ pub fn create_job(
             }))?,
             funds: vec![],
         },
+        // Job owner sends fee to fee collector
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
@@ -147,21 +149,20 @@ pub fn delete_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let account = ACCOUNTS().load(deps.storage, info.sender)?;
-
     let _new_job = JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Cancelled)?;
 
     let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
 
     let cw20_send_msgs = vec![
-        //send reward minus fee back to account
+        // Job owner sends reward minus fee back to account
         BankMsg::Send {
-            to_address: account.account.to_string(),
+            to_address: job.account.to_string(),
             amount: vec![Coin::new(
                 (job.reward - fee).u128(),
                 config.fee_denom.clone(),
             )],
         },
+        // Job owner sends fee to fee collector
         BankMsg::Send {
             to_address: config.fee_collector.to_string(),
             amount: vec![Coin::new(fee.u128(), config.fee_denom)],
@@ -189,8 +190,6 @@ pub fn update_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let account = ACCOUNTS().load(deps.storage, info.sender)?;
-
     let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
 
     if data.name.is_some() && data.name.clone().unwrap().len() > MAX_TEXT_LENGTH {
@@ -213,9 +212,9 @@ pub fn update_job(
 
     if added_reward.u128() > 0 {
         cw20_send_msgs.push(
-            //send reward to controller
+            // Job owner sends additional reward to controller
             WasmMsg::Execute {
-                contract_addr: account.account.to_string(),
+                contract_addr: job.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: env.contract.address.to_string(),
@@ -226,9 +225,9 @@ pub fn update_job(
             },
         );
         cw20_send_msgs.push(
-            //send reward to controller
+            // Job owner sends fee to fee collector
             WasmMsg::Execute {
-                contract_addr: account.account.to_string(),
+                contract_addr: job.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: config.fee_collector.to_string(),
@@ -263,7 +262,6 @@ pub fn execute_job(
     let _config = CONFIG.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
     let job = JobQueue::get(&deps, data.id.into())?;
-    let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
     if job.status != JobStatus::Pending {
         return Err(ContractError::JobNotActive {});
@@ -274,7 +272,7 @@ pub fn execute_job(
         &resolver::QueryMsg::QueryHydrateVars(resolver::QueryHydrateVarsMsg {
             vars: job.vars,
             external_inputs: data.external_inputs,
-            warp_account_addr: Some(account.account.to_string()),
+            warp_account_addr: Some(job.account.to_string()),
         }),
     )?;
 
@@ -283,7 +281,7 @@ pub fn execute_job(
         &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
             condition: job.condition,
             vars: vars.clone(),
-            warp_account_addr: Some(account.account.to_string()),
+            warp_account_addr: Some(job.account.to_string()),
         }),
     );
 
@@ -306,7 +304,7 @@ pub fn execute_job(
         submsgs.push(SubMsg {
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: account.account.to_string(),
+                contract_addr: job.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: deps.querier.query_wasm_smart(
                         config.resolver_address,
@@ -323,7 +321,7 @@ pub fn execute_job(
         });
     }
 
-    //send reward to executor
+    // Controller sends reward to executor
     let reward_msg = BankMsg::Send {
         to_address: info.sender.to_string(),
         amount: vec![Coin::new(job.reward.u128(), config.fee_denom)],
@@ -348,12 +346,11 @@ pub fn evict_job(
     let config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
     let job = JobQueue::get(&deps, data.id.into())?;
-    let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
     let account_amount = deps
         .querier
         .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-            address: account.account.to_string(),
+            address: job.account.to_string(),
             denom: config.fee_denom.clone(),
         }))?
         .amount
@@ -385,9 +382,9 @@ pub fn evict_job(
 
     if job.requeue_on_evict && account_amount >= a {
         cosmos_msgs.push(
-            //send reward to evictor
+            // Controller sends reward to evictor
             CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: account.account.to_string(),
+                contract_addr: job.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
@@ -402,13 +399,14 @@ pub fn evict_job(
         job_status = JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Evicted)?.status;
 
         cosmos_msgs.append(&mut vec![
-            //send reward minus fee back to account
+            // Controller sends reward to evictor
             CosmosMsg::Bank(BankMsg::Send {
                 to_address: info.sender.to_string(),
                 amount: vec![Coin::new(a.u128(), config.fee_denom.clone())],
             }),
+            // Controller sends reward minus fee back to account
             CosmosMsg::Bank(BankMsg::Send {
-                to_address: account.account.to_string(),
+                to_address: job.account.to_string(),
                 amount: vec![Coin::new((job.reward - a).u128(), config.fee_denom)],
             }),
         ]);

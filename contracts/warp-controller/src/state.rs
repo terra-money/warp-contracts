@@ -109,6 +109,7 @@ impl JobQueue {
                 id: job.id,
                 prev_id: job.prev_id,
                 owner: job.owner,
+                account: job.account,
                 last_update_time: Uint64::new(env.block.time.seconds()),
                 name: job.name,
                 description: job.description,
@@ -136,6 +137,7 @@ impl JobQueue {
                 id: job.id,
                 prev_id: job.prev_id,
                 owner: job.owner,
+                account: job.account,
                 last_update_time: if added_reward > config.minimum_reward {
                     Uint64::new(env.block.time.seconds())
                 } else {
@@ -173,6 +175,7 @@ impl JobQueue {
             id: job.id,
             prev_id: job.prev_id,
             owner: job.owner,
+            account: job.account,
             last_update_time: Uint64::new(env.block.time.seconds()),
             name: job.name,
             description: job.description,

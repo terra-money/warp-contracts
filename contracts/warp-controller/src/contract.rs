@@ -192,7 +192,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        //account creation
+        // Account creation
         0 => {
             let reply = msg.result.into_result().map_err(StdError::generic_err)?;
 
@@ -316,7 +316,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                 .add_attribute("cw_funds", serde_json_wasm::to_string(&cw_funds_vec)?)
                 .add_messages(msgs_vec))
         }
-        //job execution
+        // Job execution
         _ => {
             let state = STATE.load(deps.storage)?;
 
@@ -338,17 +338,16 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
             let mut msgs = vec![];
             let mut new_job_attrs = vec![];
 
-            let account = ACCOUNTS().load(deps.storage, finished_job.owner.clone())?;
             let config = CONFIG.load(deps.storage)?;
 
-            //assume reward.amount == warp token allowance
+            // Assume reward.amount == warp token allowance
             let fee = finished_job.reward * Uint128::from(config.creation_fee_percentage)
                 / Uint128::new(100);
 
             let account_amount = deps
                 .querier
                 .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-                    address: account.account.to_string(),
+                    address: finished_job.account.to_string(),
                     denom: config.fee_denom.clone(),
                 }))?
                 .amount
@@ -372,7 +371,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                         &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
                             vars: finished_job.vars,
                             status: finished_job.status.clone(),
-                            warp_account_addr: Some(account.account.to_string()),
+                            warp_account_addr: Some(finished_job.account.to_string()),
                         }),
                     )?;
 
@@ -385,7 +384,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                                     resolver::QueryResolveConditionMsg {
                                         condition: terminate_condition,
                                         vars: new_vars.clone(),
-                                        warp_account_addr: Some(account.account.to_string()),
+                                        warp_account_addr: Some(finished_job.account.to_string()),
                                     },
                                 ),
                             );
@@ -432,6 +431,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                                 id: state.current_job_id,
                                 prev_id: Some(finished_job.id),
                                 owner: finished_job.owner.clone(),
+                                account: finished_job.account.clone(),
                                 last_update_time: Uint64::from(env.block.time.seconds()),
                                 name: finished_job.name.clone(),
                                 description: finished_job.description,
@@ -449,9 +449,9 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                         )?;
 
                         msgs.push(
-                            //send reward to controller
+                            // Job owner's warp account sends fee to fee collector
                             WasmMsg::Execute {
-                                contract_addr: account.account.to_string(),
+                                contract_addr: finished_job.account.to_string(),
                                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                         to_address: config.fee_collector.to_string(),
@@ -466,9 +466,9 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                         );
 
                         msgs.push(
-                            //send reward to controller
+                            // Job owner's warp account sends reward to controller
                             WasmMsg::Execute {
-                                contract_addr: account.account.to_string(),
+                                contract_addr: finished_job.account.to_string(),
                                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                         to_address: env.contract.address.to_string(),
@@ -483,9 +483,9 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                         );
 
                         msgs.push(
-                            //withdraw all assets that are listed
+                            // Job owner withdraw all assets that are listed from warp account to itself
                             WasmMsg::Execute {
-                                contract_addr: account.account.to_string(),
+                                contract_addr: finished_job.account.to_string(),
                                 msg: to_binary(&account::ExecuteMsg::WithdrawAssets(
                                     WithdrawAssetsMsg {
                                         asset_infos: new_job.assets_to_withdraw,

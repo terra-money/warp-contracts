@@ -271,6 +271,8 @@ pub fn migrate_pending_jobs(
 
         new_msgs.push(']');
 
+        let warp_account = ACCOUNTS().load(deps.storage, v1_job.owner.clone())?;
+
         PENDING_JOBS().save(
             deps.storage,
             job_key,
@@ -278,6 +280,7 @@ pub fn migrate_pending_jobs(
                 id: v1_job.id,
                 prev_id: None,
                 owner: v1_job.owner,
+                account: warp_account.account,
                 last_update_time: v1_job.last_update_time,
                 name: v1_job.name,
                 description: v1_job.description,
@@ -376,6 +379,8 @@ pub fn migrate_finished_jobs(
 
         new_msgs.push(']');
 
+        let warp_account = ACCOUNTS().load(deps.storage, v1_job.owner.clone())?;
+
         FINISHED_JOBS().save(
             deps.storage,
             job_key,
@@ -383,6 +388,7 @@ pub fn migrate_finished_jobs(
                 id: v1_job.id,
                 prev_id: None,
                 owner: v1_job.owner,
+                account: warp_account.account,
                 last_update_time: v1_job.last_update_time,
                 name: v1_job.name,
                 description: v1_job.description,
