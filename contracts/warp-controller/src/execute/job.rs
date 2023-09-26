@@ -60,6 +60,7 @@ pub fn create_job(
         &mut deps,
         Job {
             id: state.current_job_id,
+            prev_id: None,
             owner: account.owner,
             last_update_time: Uint64::from(env.block.time.seconds()),
             name: data.name,
@@ -264,12 +265,6 @@ pub fn execute_job(
     let job = JobQueue::get(&deps, data.id.into())?;
     let account = ACCOUNTS().load(deps.storage, job.owner.clone())?;
 
-    if !ACCOUNTS().has(deps.storage, info.sender.clone()) {
-        return Err(ContractError::AccountDoesNotExist {});
-    }
-
-    let keeper_account = ACCOUNTS().load(deps.storage, info.sender.clone())?;
-
     if job.status != JobStatus::Pending {
         return Err(ContractError::JobNotActive {});
     }
@@ -326,8 +321,9 @@ pub fn execute_job(
         });
     }
 
+    //send reward to executor
     let reward_msg = BankMsg::Send {
-        to_address: keeper_account.account.to_string(),
+        to_address: info.sender.to_string(),
         amount: vec![Coin::new(job.reward.u128(), config.fee_denom)],
     };
 
@@ -401,8 +397,7 @@ pub fn evict_job(
         );
         job_status = JobQueue::sync(&mut deps, env, job.clone())?.status;
     } else {
-        job_status =
-            JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Evicted)?.status;
+        job_status = JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Evicted)?.status;
 
         cosmos_msgs.append(&mut vec![
             //send reward minus fee back to account

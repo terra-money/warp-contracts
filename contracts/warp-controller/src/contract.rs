@@ -428,6 +428,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                             &mut deps,
                             Job {
                                 id: state.current_job_id,
+                                prev_id: Some(finished_job.id),
                                 owner: finished_job.owner.clone(),
                                 last_update_time: Uint64::from(env.block.time.seconds()),
                                 name: finished_job.name.clone(),

@@ -22,6 +22,8 @@ use strum_macros::Display;
 #[cw_serde]
 pub struct Job {
     pub id: Uint64,
+    // Exist if job is the follow up job of a recurring job
+    pub prev_id: Option<Uint64>,
     pub owner: Addr,
     pub last_update_time: Uint64,
     pub name: String,
