@@ -28,12 +28,14 @@ pub fn instantiate(
             warp_addr: info.sender,
         },
     )?;
+
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_attribute("contract_addr", env.contract.address)
         .add_attribute("owner", msg.owner)
         .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
-        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?))
+        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
+        .add_attribute("account_msgs", serde_json_wasm::to_string(&msg.msgs)?))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

@@ -87,6 +87,7 @@ pub fn create_account(
             msg: to_binary(&account::InstantiateMsg {
                 owner: info.sender.to_string(),
                 funds: data.funds,
+                msgs: data.msgs,
             })?,
             funds: info.funds,
             label: info.sender.to_string(),

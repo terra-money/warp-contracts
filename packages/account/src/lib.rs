@@ -13,6 +13,7 @@ pub struct Config {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
+    pub msgs: Option<Vec<CosmosMsg>>,
     pub funds: Option<Vec<Fund>>,
 }
 

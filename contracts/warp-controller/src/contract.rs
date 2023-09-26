@@ -1,5 +1,5 @@
 use crate::error::map_contract_error;
-use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
+use crate::state::{JobQueue, ACCOUNTS, CONFIG};
 use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
 use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
@@ -116,6 +116,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryConfig(data) => {
             to_binary(&query::controller::query_config(deps, env, data)?)
         }
+        QueryMsg::QueryState(data) => to_binary(&query::controller::query_state(deps, env, data)?),
     }
 }
 
@@ -189,7 +190,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         //account creation
         0 => {
@@ -242,6 +243,16 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     .value,
             )?;
 
+            let account_msgs: Option<Vec<CosmosMsg>> = serde_json_wasm::from_str(
+                &event
+                    .attributes
+                    .iter()
+                    .cloned()
+                    .find(|attr| attr.key == "account_msgs")
+                    .ok_or_else(|| StdError::generic_err("cannot find `account_msgs` attribute"))?
+                    .value,
+            )?;
+
             let cw_funds_vec = match cw_funds {
                 None => {
                     vec![]
@@ -279,6 +290,12 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 }))
             }
 
+            if let Some(msgs) = account_msgs {
+                for msg in msgs {
+                    msgs_vec.push(msg);
+                }
+            }
+
             if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
                 return Err(ContractError::AccountAlreadyExists {});
             }
@@ -301,36 +318,14 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         }
         //job execution
         _ => {
-            let mut state = STATE.load(deps.storage)?;
+            let state = STATE.load(deps.storage)?;
 
             let new_status = match msg.result {
                 SubMsgResult::Ok(_) => JobStatus::Executed,
                 SubMsgResult::Err(_) => JobStatus::Failed,
             };
 
-            let job = PENDING_JOBS().load(deps.storage, msg.id)?;
-            PENDING_JOBS().remove(deps.storage, msg.id)?;
-
-            let finished_job = FINISHED_JOBS().update(deps.storage, msg.id, |j| match j {
-                None => Ok(Job {
-                    id: job.id,
-                    owner: job.owner,
-                    last_update_time: job.last_update_time,
-                    name: job.name,
-                    description: job.description,
-                    labels: job.labels,
-                    status: new_status,
-                    condition: job.condition,
-                    terminate_condition: job.terminate_condition,
-                    msgs: job.msgs,
-                    vars: job.vars,
-                    recurring: job.recurring,
-                    requeue_on_evict: job.requeue_on_evict,
-                    reward: job.reward,
-                    assets_to_withdraw: job.assets_to_withdraw,
-                }),
-                Some(_) => Err(ContractError::JobAlreadyFinished {}),
-            })?;
+            let finished_job = JobQueue::finalize(&mut deps, env.clone(), msg.id, new_status)?;
 
             let res_attrs = match msg.result {
                 SubMsgResult::Err(e) => vec![Attribute::new(
@@ -431,33 +426,26 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                     }
 
                     if !should_terminate_job {
-                        let new_job = PENDING_JOBS().update(
-                            deps.storage,
-                            state.current_job_id.u64(),
-                            |s| match s {
-                                None => Ok(Job {
-                                    id: state.current_job_id,
-                                    owner: finished_job.owner.clone(),
-                                    last_update_time: Uint64::from(env.block.time.seconds()),
-                                    name: finished_job.name.clone(),
-                                    description: finished_job.description,
-                                    labels: finished_job.labels,
-                                    status: JobStatus::Pending,
-                                    condition: finished_job.condition.clone(),
-                                    terminate_condition: finished_job.terminate_condition.clone(),
-                                    vars: new_vars,
-                                    requeue_on_evict: finished_job.requeue_on_evict,
-                                    recurring: finished_job.recurring,
-                                    msgs: finished_job.msgs.clone(),
-                                    reward: finished_job.reward,
-                                    assets_to_withdraw: finished_job.assets_to_withdraw,
-                                }),
-                                Some(_) => Err(ContractError::JobAlreadyExists {}),
+                        let new_job = JobQueue::add(
+                            &mut deps,
+                            Job {
+                                id: state.current_job_id,
+                                owner: finished_job.owner.clone(),
+                                last_update_time: Uint64::from(env.block.time.seconds()),
+                                name: finished_job.name.clone(),
+                                description: finished_job.description,
+                                labels: finished_job.labels,
+                                status: JobStatus::Pending,
+                                condition: finished_job.condition.clone(),
+                                terminate_condition: finished_job.terminate_condition.clone(),
+                                vars: new_vars,
+                                requeue_on_evict: finished_job.requeue_on_evict,
+                                recurring: finished_job.recurring,
+                                msgs: finished_job.msgs.clone(),
+                                reward: finished_job.reward,
+                                assets_to_withdraw: finished_job.assets_to_withdraw,
                             },
                         )?;
-
-                        state.current_job_id = state.current_job_id.checked_add(Uint64::new(1))?;
-                        state.q = state.q.checked_add(Uint64::new(1))?;
 
                         msgs.push(
                             //send reward to controller
@@ -533,11 +521,9 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 }
             }
 
-            STATE.save(deps.storage, &state)?;
-
             Ok(Response::new()
                 .add_attribute("action", "execute_reply")
-                .add_attribute("job_id", job.id)
+                .add_attribute("job_id", finished_job.id)
                 .add_attributes(res_attrs)
                 .add_attributes(new_job_attrs)
                 .add_messages(msgs))

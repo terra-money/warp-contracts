@@ -120,15 +120,25 @@ pub enum QueryMsg {
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
+
+    #[returns(StateResponse)]
+    QueryState(QueryStateMsg),
 }
 
 #[cw_serde]
 pub struct QueryConfigMsg {}
 
-//responses
 #[cw_serde]
 pub struct ConfigResponse {
     pub config: Config,
+}
+
+#[cw_serde]
+pub struct QueryStateMsg {}
+
+#[cw_serde]
+pub struct StateResponse {
+    pub state: State,
 }
 
 //migrate//{"resolver_address":"terra1a8dxkrapwj4mkpfnrv7vahd0say0lxvd0ft6qv","warp_account_code_id":"10081"}
