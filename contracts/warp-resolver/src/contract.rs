@@ -104,6 +104,7 @@ pub fn execute_hydrate_vars(
         QueryHydrateVarsMsg {
             vars: data.vars,
             external_inputs: data.external_inputs,
+            warp_account_addr: data.warp_account_addr,
         },
     )?;
 
@@ -124,6 +125,7 @@ pub fn execute_resolve_condition(
         QueryResolveConditionMsg {
             condition: data.condition,
             vars: data.vars,
+            warp_account_addr: data.warp_account_addr,
         },
     )?;
 
@@ -144,6 +146,7 @@ pub fn execute_apply_var_fn(
         QueryApplyVarFnMsg {
             vars: data.vars,
             status: data.status,
+            warp_account_addr: data.warp_account_addr,
         },
     )?;
     Ok(Response::new()
@@ -241,8 +244,14 @@ fn query_hydrate_vars(deps: Deps, env: Env, data: QueryHydrateVarsMsg) -> StdRes
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
     serde_json_wasm::to_string(
-        &hydrate_vars(deps, env, vars, data.external_inputs)
-            .map_err(|e| StdError::generic_err(e.to_string()))?,
+        &hydrate_vars(
+            deps,
+            env,
+            vars,
+            data.external_inputs,
+            data.warp_account_addr,
+        )
+        .map_err(|e| StdError::generic_err(e.to_string()))?,
     )
     .map_err(|e| StdError::generic_err(e.to_string()))
 }
@@ -257,14 +266,16 @@ fn query_resolve_condition(
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    resolve_cond(deps, env, condition, &vars).map_err(|e| StdError::generic_err(e.to_string()))
+    resolve_cond(deps, env, condition, &vars, data.warp_account_addr)
+        .map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 fn query_apply_var_fn(deps: Deps, env: Env, data: QueryApplyVarFnMsg) -> StdResult<String> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    apply_var_fn(deps, env, vars, data.status).map_err(|e| StdError::generic_err(e.to_string()))
+    apply_var_fn(deps, env, vars, data.status, data.warp_account_addr)
+        .map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 fn query_hydrate_msgs(

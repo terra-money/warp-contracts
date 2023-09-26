@@ -31,9 +31,15 @@ pub struct BlockExpr {
 }
 
 #[cw_serde]
-pub enum Value<T> {
+pub enum StringValue<T> {
     Simple(T),
     Ref(String),
+    Env(StringEnvValue),
+}
+
+#[cw_serde]
+pub enum StringEnvValue {
+    WarpAccountAddr,
 }
 
 #[cw_serde]
@@ -90,7 +96,7 @@ pub enum IntFnOp {
 
 #[cw_serde]
 pub enum Expr {
-    String(GenExpr<Value<String>, StringOp>),
+    String(GenExpr<StringValue<String>, StringOp>),
     Uint(GenExpr<NumValue<Uint256, NumExprOp, IntFnOp>, NumOp>),
     Int(GenExpr<NumValue<i128, NumExprOp, IntFnOp>, NumOp>),
     Decimal(GenExpr<NumValue<Decimal256, NumExprOp, DecimalFnOp>, NumOp>),

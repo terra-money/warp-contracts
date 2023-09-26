@@ -274,6 +274,7 @@ pub fn execute_job(
         &resolver::QueryMsg::QueryHydrateVars(resolver::QueryHydrateVarsMsg {
             vars: job.vars,
             external_inputs: data.external_inputs,
+            warp_account_addr: Some(account.account.to_string()),
         }),
     )?;
 
@@ -282,6 +283,7 @@ pub fn execute_job(
         &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
             condition: job.condition,
             vars: vars.clone(),
+            warp_account_addr: Some(account.account.to_string()),
         }),
     );
 

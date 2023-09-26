@@ -372,6 +372,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                         &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
                             vars: finished_job.vars,
                             status: finished_job.status.clone(),
+                            warp_account_addr: Some(account.account.to_string()),
                         }),
                     )?;
 
@@ -384,6 +385,7 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                                     resolver::QueryResolveConditionMsg {
                                         condition: terminate_condition,
                                         vars: new_vars.clone(),
+                                        warp_account_addr: Some(account.account.to_string()),
                                     },
                                 ),
                             );

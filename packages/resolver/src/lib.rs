@@ -52,18 +52,21 @@ pub struct ExecuteHydrateMsgsMsg {
 pub struct ExecuteHydrateVarsMsg {
     pub vars: String,
     pub external_inputs: Option<Vec<ExternalInput>>,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]
 pub struct ExecuteResolveConditionMsg {
     pub condition: String,
     pub vars: String,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]
 pub struct ExecuteApplyVarFnMsg {
     pub vars: String,
     pub status: JobStatus,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]
@@ -92,18 +95,21 @@ pub struct QueryHydrateMsgsMsg {
 pub struct QueryHydrateVarsMsg {
     pub vars: String,
     pub external_inputs: Option<Vec<ExternalInput>>,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]
 pub struct QueryResolveConditionMsg {
     pub condition: String,
     pub vars: String,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]
 pub struct QueryApplyVarFnMsg {
     pub vars: String,
     pub status: JobStatus,
+    pub warp_account_addr: Option<String>,
 }
 
 #[cw_serde]
