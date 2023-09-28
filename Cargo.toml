@@ -5,6 +5,7 @@ members = [
 ]
 exclude = [
 ]
+resolver = "2"
 
 [profile.dev]
 overflow-checks = true

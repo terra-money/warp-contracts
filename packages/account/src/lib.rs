@@ -1,7 +1,7 @@
 #[cfg(feature = "interface")]
 pub use crate::{ExecuteMsg as AccountExecuteFns, QueryMsg as AccountQueryFns};
 use controller::account::{AssetInfo, Fund};
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, CosmosMsg};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -92,7 +92,9 @@ pub struct ExecuteWasmMsg {}
 
 #[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(Config)]
     Config,
 }
 
