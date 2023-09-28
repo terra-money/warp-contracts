@@ -5,6 +5,7 @@ authors = ["Terra Money <core@terra.money>"]
 edition = "2021"
 
 [features]
+interface = ["dep:cw-orch"]
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
 
@@ -24,6 +25,7 @@ strum_macros = "0.24"
 thiserror = { version = "1" }
 controller = {path = "../controller"}
 prost = "0.11.9"
+cw-orch = { version = "0.16.4", optional = true }
 
 [dev-dependencies]
 cw-multi-test = "0.16"

@@ -1,3 +1,5 @@
+#[cfg(feature = "interface")]
+pub use crate::{ExecuteMsg as ResolverExecuteFns, QueryMsg as ResolverQueryFns};
 pub mod condition;
 pub mod variable;
 
@@ -7,6 +9,7 @@ use cosmwasm_std::{CosmosMsg, QueryRequest};
 #[cw_serde]
 pub struct InstantiateMsg {}
 
+#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
 #[cw_serde]
 pub enum ExecuteMsg {
     ExecuteSimulateQuery(ExecuteSimulateQueryMsg),
@@ -17,6 +20,7 @@ pub enum ExecuteMsg {
     ExecuteHydrateMsgs(ExecuteHydrateMsgsMsg),
 }
 
+#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
 #[derive(QueryResponses)]
 #[cw_serde]
 pub enum QueryMsg {

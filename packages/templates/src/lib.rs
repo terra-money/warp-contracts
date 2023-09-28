@@ -1,3 +1,5 @@
+#[cfg(feature = "interface")]
+pub use crate::{ExecuteMsg as TemplatesExecuteFns, QueryMsg as TemplatesQueryFns};
 pub mod template;
 
 use crate::template::{
@@ -29,6 +31,7 @@ pub struct InstantiateMsg {
     pub templates: Vec<Template>,
 }
 
+#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
 #[cw_serde]
 pub enum ExecuteMsg {
     SubmitTemplate(SubmitTemplateMsg),
@@ -38,6 +41,7 @@ pub enum ExecuteMsg {
     UpdateConfig(UpdateConfigMsg),
 }
 
+#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
 #[derive(QueryResponses)]
 #[cw_serde]
 pub enum QueryMsg {

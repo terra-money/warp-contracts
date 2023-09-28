@@ -1,3 +1,5 @@
+#[cfg(feature = "interface")]
+pub use crate::{ExecuteMsg as AccountExecuteFns, QueryMsg as AccountQueryFns};
 use controller::account::{AssetInfo, Fund};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, CosmosMsg};
@@ -17,6 +19,7 @@ pub struct InstantiateMsg {
     pub funds: Option<Vec<Fund>>,
 }
 
+#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
@@ -87,6 +90,7 @@ pub struct WithdrawAssetsMsg {
 #[cw_serde]
 pub struct ExecuteWasmMsg {}
 
+#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
 #[cw_serde]
 pub enum QueryMsg {
     Config,

@@ -1,3 +1,5 @@
+#[cfg(feature = "interface")]
+pub use crate::{ExecuteMsg as ControllerExecuteFns, QueryMsg as ControllerQueryFns};
 use crate::account::{
     AccountResponse, AccountsResponse, CreateAccountMsg, QueryAccountMsg, QueryAccountsMsg,
 };
@@ -60,6 +62,7 @@ pub struct InstantiateMsg {
 }
 
 //execute
+#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
 #[cw_serde]
 pub enum ExecuteMsg {
     CreateJob(CreateJobMsg),
@@ -105,6 +108,7 @@ pub struct MigrateJobsMsg {
 }
 
 //query
+#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
 #[derive(QueryResponses)]
 #[cw_serde]
 pub enum QueryMsg {

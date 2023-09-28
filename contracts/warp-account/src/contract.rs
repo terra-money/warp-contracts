@@ -14,6 +14,8 @@ use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
 use prost::Message;
 
+pub const CONTRACT_NAME: &str = "warp-account";
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,

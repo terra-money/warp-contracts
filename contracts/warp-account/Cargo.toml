@@ -16,6 +16,7 @@ exclude = [
 crate-type = ["cdylib", "rlib"]
 
 [features]
+interface = ["dep:cw-orch"]
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
@@ -46,6 +47,7 @@ thiserror = "1"
 serde-json-wasm = "0.4.1"
 json-codec-wasm = "0.1.0"
 prost = "0.11.9"
+cw-orch = { version = "0.16.4", optional = true }
 
 [dev-dependencies]
 cw-multi-test = "0.16.0"

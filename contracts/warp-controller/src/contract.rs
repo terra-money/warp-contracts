@@ -15,6 +15,7 @@ use cosmwasm_std::{
 use cw_storage_plus::Item;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
+#[cfg_attr(feature="interface", cw_orch::interface_entry_point)]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
@@ -73,6 +74,7 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
+#[cfg_attr(feature="interface", cw_orch::interface_entry_point)]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -103,6 +105,7 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
+#[cfg_attr(feature="interface", cw_orch::interface_entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryJob(data) => to_binary(&query::job::query_job(deps, env, data)?),
@@ -121,6 +124,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
+#[cfg_attr(feature="interface", cw_orch::interface_entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     //STATE
     #[cw_serde]
