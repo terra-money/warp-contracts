@@ -25,6 +25,9 @@ pub struct Job {
     // Exist if job is the follow up job of a recurring job
     pub prev_id: Option<Uint64>,
     pub owner: Addr,
+    // Warp account this job is associated with, job will be executed in the context of it and pay protocol fee from it
+    // As job creator can have multiple warp accounts (1 main account and infinite sub accounts)
+    pub account: Addr,
     pub last_update_time: Uint64,
     pub name: String,
     pub description: String,
