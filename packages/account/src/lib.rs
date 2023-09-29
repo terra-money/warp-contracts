@@ -126,12 +126,8 @@ pub enum QueryMsg {
     QueryOccupiedSubAccounts(QueryOccupiedSubAccountsMsg),
     #[returns(FreeSubAccountsResponse)]
     QueryFreeSubAccounts(QueryFreeSubAccountsMsg),
-    #[returns(FirstFreeSubAccountsResponse)]
+    #[returns(FirstFreeSubAccountResponse)]
     QueryFirstFreeSubAccount(QueryFirstFreeSubAccountMsg),
-    #[returns(IsSubAccountOwnedAndOccupiedResponse)]
-    QueryIsSubAccountOwnedAndOccupied(QueryIsSubAccountOwnedAndOccupiedMsg),
-    #[returns(IsSubAccountOwnedAndFreeResponse)]
-    QueryIsSubAccountOwnedAndFree(QueryIsSubAccountOwnedAndFreeMsg),
 }
 
 #[cw_serde]
@@ -151,6 +147,7 @@ pub struct QueryOccupiedSubAccountsMsg {
 #[cw_serde]
 pub struct OccupiedSubAccountsResponse {
     pub sub_accounts: Vec<SubAccount>,
+    pub total_count: usize,
 }
 
 #[cw_serde]
@@ -162,34 +159,15 @@ pub struct QueryFreeSubAccountsMsg {
 #[cw_serde]
 pub struct FreeSubAccountsResponse {
     pub sub_accounts: Vec<SubAccount>,
+    pub total_count: usize,
 }
 
 #[cw_serde]
 pub struct QueryFirstFreeSubAccountMsg {}
 
 #[cw_serde]
-pub struct FirstFreeSubAccountsResponse {
+pub struct FirstFreeSubAccountResponse {
     pub sub_account: Option<SubAccount>,
-}
-
-#[cw_serde]
-pub struct QueryIsSubAccountOwnedAndOccupiedMsg {
-    pub sub_account_addr: String,
-}
-
-#[cw_serde]
-pub struct IsSubAccountOwnedAndOccupiedResponse {
-    pub is_in_use: bool,
-}
-
-#[cw_serde]
-pub struct QueryIsSubAccountOwnedAndFreeMsg {
-    pub sub_account_addr: String,
-}
-
-#[cw_serde]
-pub struct IsSubAccountOwnedAndFreeResponse {
-    pub is_free: bool,
 }
 
 #[cw_serde]

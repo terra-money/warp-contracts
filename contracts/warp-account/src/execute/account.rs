@@ -8,7 +8,7 @@ pub fn occupy_sub_account(
     env: Env,
     data: OccupySubAccountMsg,
 ) -> Result<Response, ContractError> {
-    // We do not add default account to occupied sub accounts
+    // We do not add main account to occupied sub accounts
     if data.sub_account_addr == env.contract.address {
         return Ok(Response::new());
     }
@@ -28,7 +28,7 @@ pub fn free_sub_account(
     env: Env,
     data: FreeSubAccountMsg,
 ) -> Result<Response, ContractError> {
-    // We do not add default account to free sub accounts
+    // We do not add main account to free sub accounts
     if data.sub_account_addr == env.contract.address {
         return Ok(Response::new());
     }

@@ -14,9 +14,9 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let instantiated_account_addr = env.contract.address;
     let main_account_addr = if msg.is_sub_account.unwrap_or(false) {
-        instantiated_account_addr.clone()
-    } else {
         deps.api.addr_validate(&msg.main_account_addr.unwrap())?
+    } else {
+        instantiated_account_addr.clone()
     };
 
     CONFIG.save(
@@ -68,7 +68,7 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::account::query_config(deps)?),
         QueryMsg::QueryOccupiedSubAccounts(data) => {
@@ -80,12 +80,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryFirstFreeSubAccount(_) => {
             to_binary(&query::account::query_first_free_sub_account(deps)?)
         }
-        QueryMsg::QueryIsSubAccountOwnedAndOccupied(data) => to_binary(
-            &query::account::query_is_sub_account_owned_and_occupied(deps, data)?,
-        ),
-        QueryMsg::QueryIsSubAccountOwnedAndFree(data) => to_binary(
-            &query::account::query_is_sub_account_owned_and_free(deps, data)?,
-        ),
     }
 }
 
