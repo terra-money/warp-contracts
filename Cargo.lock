@@ -1035,6 +1035,7 @@ name = "warp-account"
 version = "0.1.0"
 dependencies = [
  "account",
+ "anyhow",
  "base64",
  "controller",
  "cosmwasm-schema",

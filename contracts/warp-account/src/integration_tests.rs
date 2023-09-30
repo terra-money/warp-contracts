@@ -6,10 +6,14 @@ mod tests {
         QueryConfigMsg, QueryFirstFreeSubAccountMsg, QueryFreeSubAccountsMsg, QueryMsg,
         QueryOccupiedSubAccountsMsg, SubAccount,
     };
+    use anyhow::Result as AnyResult;
     use cosmwasm_std::{Addr, Coin, Empty, Uint128, Uint64};
-    use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+    use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 
-    use crate::contract::{execute, instantiate, query};
+    use crate::{
+        contract::{execute, instantiate, query},
+        ContractError,
+    };
 
     const USER_1: &str = "terra1";
 
@@ -56,6 +60,16 @@ mod tests {
             None,
         )
         .unwrap()
+    }
+
+    fn assert_err(res: AnyResult<AppResponse>, err: ContractError) {
+        match res {
+            Ok(_) => panic!("Result was not an error"),
+            Err(generic_err) => {
+                let contract_err: ContractError = generic_err.downcast().unwrap();
+                assert_eq!(contract_err, err);
+            }
+        }
     }
 
     #[test]
@@ -143,6 +157,18 @@ mod tests {
                 sub_account_addr: warp_sub_account_1_contract_addr.to_string(),
             }),
             &[],
+        );
+        // Cannot free sub account twice
+        assert_err(
+            app.execute_contract(
+                Addr::unchecked(USER_1),
+                warp_main_account_contract_addr.clone(),
+                &ExecuteMsg::FreeSubAccount(FreeSubAccountMsg {
+                    sub_account_addr: warp_sub_account_1_contract_addr.to_string(),
+                }),
+                &[],
+            ),
+            ContractError::SubAccountAlreadyFreeError {},
         );
 
         // Instantiate second sub account
@@ -245,6 +271,19 @@ mod tests {
                 job_id: Uint64::from(1 as u8),
             }),
             &[],
+        );
+        // Cannot occupy sub account twice
+        assert_err(
+            app.execute_contract(
+                Addr::unchecked(USER_1),
+                warp_main_account_contract_addr.clone(),
+                &ExecuteMsg::OccupySubAccount(OccupySubAccountMsg {
+                    sub_account_addr: warp_sub_account_2_contract_addr.to_string(),
+                    job_id: Uint64::from(1 as u8),
+                }),
+                &[],
+            ),
+            ContractError::SubAccountAlreadyOccupiedError {},
         );
 
         // Query free sub accounts
