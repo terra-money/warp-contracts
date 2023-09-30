@@ -18,15 +18,15 @@ pub fn query_first_free_sub_account(deps: Deps) -> StdResult<FirstFreeSubAccount
         .range(deps.storage, None, None, Order::Ascending)
         .next();
     if sub_account.is_none() {
-        return Ok(FirstFreeSubAccountResponse { sub_account: None });
+        Ok(FirstFreeSubAccountResponse { sub_account: None })
     } else {
         let (addr, _) = sub_account.unwrap()?;
-        return Ok(FirstFreeSubAccountResponse {
+        Ok(FirstFreeSubAccountResponse {
             sub_account: Some(SubAccount {
                 addr: addr.clone(),
                 in_use_by_job_id: Option::None,
             }),
-        });
+        })
     }
 }
 
