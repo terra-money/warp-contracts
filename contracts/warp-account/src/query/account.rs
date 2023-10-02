@@ -24,7 +24,7 @@ pub fn query_first_free_sub_account(deps: Deps) -> StdResult<FirstFreeSubAccount
         Ok(FirstFreeSubAccountResponse {
             sub_account: Some(SubAccount {
                 addr: addr.to_string(),
-                in_use_by_job_id: Option::None,
+                occupied_by_job_id: Option::None,
             }),
         })
     }
@@ -50,7 +50,7 @@ pub fn query_occupied_sub_accounts(
         .map(|item| {
             item.map(|(sub_account_addr, job_id)| SubAccount {
                 addr: sub_account_addr.to_string(),
-                in_use_by_job_id: Some(job_id),
+                occupied_by_job_id: Some(job_id),
             })
         })
         .collect::<StdResult<Vec<SubAccount>>>()?;
@@ -80,7 +80,7 @@ pub fn query_free_sub_accounts(
         .map(|item| {
             item.map(|(sub_account_addr, _)| SubAccount {
                 addr: sub_account_addr.to_string(),
-                in_use_by_job_id: Option::None,
+                occupied_by_job_id: Option::None,
             })
         })
         .collect::<StdResult<Vec<SubAccount>>>()?;

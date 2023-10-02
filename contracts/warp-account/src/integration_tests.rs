@@ -214,7 +214,7 @@ mod tests {
             Ok(FirstFreeSubAccountResponse {
                 sub_account: Some(SubAccount {
                     addr: warp_sub_account_1_contract_addr.to_string(),
-                    in_use_by_job_id: None
+                    occupied_by_job_id: None
                 })
             })
         );
@@ -232,15 +232,15 @@ mod tests {
                 sub_accounts: vec![
                     SubAccount {
                         addr: warp_sub_account_3_contract_addr.to_string(),
-                        in_use_by_job_id: None
+                        occupied_by_job_id: None
                     },
                     SubAccount {
                         addr: warp_sub_account_2_contract_addr.to_string(),
-                        in_use_by_job_id: None
+                        occupied_by_job_id: None
                     },
                     SubAccount {
                         addr: warp_sub_account_1_contract_addr.to_string(),
-                        in_use_by_job_id: None
+                        occupied_by_job_id: None
                     }
                 ],
                 total_count: 3
@@ -299,11 +299,11 @@ mod tests {
                 sub_accounts: vec![
                     SubAccount {
                         addr: warp_sub_account_3_contract_addr.to_string(),
-                        in_use_by_job_id: None
+                        occupied_by_job_id: None
                     },
                     SubAccount {
                         addr: warp_sub_account_1_contract_addr.to_string(),
-                        in_use_by_job_id: None
+                        occupied_by_job_id: None
                     }
                 ],
                 total_count: 2
@@ -322,7 +322,7 @@ mod tests {
             Ok(OccupiedSubAccountsResponse {
                 sub_accounts: vec![SubAccount {
                     addr: warp_sub_account_2_contract_addr.to_string(),
-                    in_use_by_job_id: Some(Uint64::from(1 as u8))
+                    occupied_by_job_id: Some(Uint64::from(1 as u8))
                 }],
                 total_count: 1
             })
@@ -351,15 +351,15 @@ mod tests {
                 sub_accounts: vec![
                     SubAccount {
                         addr: warp_sub_account_3_contract_addr.to_string(),
-                        in_use_by_job_id: None
+                        occupied_by_job_id: None
                     },
                     SubAccount {
                         addr: warp_sub_account_2_contract_addr.to_string(),
-                        in_use_by_job_id: None
+                        occupied_by_job_id: None
                     },
                     SubAccount {
                         addr: warp_sub_account_1_contract_addr.to_string(),
-                        in_use_by_job_id: None
+                        occupied_by_job_id: None
                     }
                 ],
                 total_count: 3

@@ -17,8 +17,8 @@ pub struct Config {
 #[cw_serde]
 pub struct SubAccount {
     pub addr: String,
-    // If in use, in_use_by_job_id is the job id of the job that is using this sub account
-    pub in_use_by_job_id: Option<Uint64>,
+    // If occupied, occupied_by_job_id is the job id of the pending job that is using this sub account
+    pub occupied_by_job_id: Option<Uint64>,
 }
 
 #[cw_serde]
