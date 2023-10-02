@@ -8,13 +8,14 @@ pub fn occupy_sub_account(
     env: Env,
     data: OccupySubAccountMsg,
 ) -> Result<Response, ContractError> {
+    let sub_account_addr_ref = &deps.api.addr_validate(data.sub_account_addr.as_str())?;
     // We do not add main account to occupied sub accounts
     if data.sub_account_addr == env.contract.address {
         return Ok(Response::new());
     }
-    FREE_SUB_ACCOUNTS.remove(deps.storage, data.sub_account_addr.clone());
-    OCCUPIED_SUB_ACCOUNTS.update(deps.storage, data.sub_account_addr.clone(), |s| match s {
-        None => Ok(data.job_id.u64()),
+    FREE_SUB_ACCOUNTS.remove(deps.storage, sub_account_addr_ref);
+    OCCUPIED_SUB_ACCOUNTS.update(deps.storage, sub_account_addr_ref, |s| match s {
+        None => Ok(data.job_id),
         Some(_) => Err(ContractError::SubAccountAlreadyOccupiedError {}),
     })?;
     Ok(Response::new()
@@ -28,14 +29,15 @@ pub fn free_sub_account(
     env: Env,
     data: FreeSubAccountMsg,
 ) -> Result<Response, ContractError> {
+    let sub_account_addr_ref = &deps.api.addr_validate(data.sub_account_addr.as_str())?;
     // We do not add main account to free sub accounts
     if data.sub_account_addr == env.contract.address {
         return Ok(Response::new());
     }
-    OCCUPIED_SUB_ACCOUNTS.remove(deps.storage, data.sub_account_addr.clone());
-    FREE_SUB_ACCOUNTS.update(deps.storage, data.sub_account_addr.clone(), |s| match s {
+    OCCUPIED_SUB_ACCOUNTS.remove(deps.storage, sub_account_addr_ref);
+    FREE_SUB_ACCOUNTS.update(deps.storage, sub_account_addr_ref, |s| match s {
         // value is a dummy data because there is no built in support for set in cosmwasm
-        None => Ok(0),
+        None => Ok(true),
         Some(_) => Err(ContractError::SubAccountAlreadyFreeError {}),
     })?;
     Ok(Response::new()
