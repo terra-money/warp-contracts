@@ -88,6 +88,8 @@ pub fn create_account(
                 owner: info.sender.to_string(),
                 funds: data.funds,
                 msgs: data.msgs,
+                is_sub_account: Some(false),
+                main_account_addr: None,
             })?,
             funds: info.funds,
             label: info.sender.to_string(),

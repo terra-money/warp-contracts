@@ -1,6 +1,6 @@
 use controller::account::{AssetInfo, Fund};
-use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, CosmosMsg};
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Addr, CosmosMsg, Uint64};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -8,6 +8,17 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub owner: Addr,
     pub warp_addr: Addr,
+    pub is_sub_account: bool,
+    // If current account is a main account, main_account_addr is itself,
+    // If current account is a sub account, main_account_addr is its main account address
+    pub main_account_addr: Addr,
+}
+
+#[cw_serde]
+pub struct SubAccount {
+    pub addr: String,
+    // If occupied, occupied_by_job_id is the job id of the pending job that is using this sub account
+    pub occupied_by_job_id: Option<Uint64>,
 }
 
 #[cw_serde]
@@ -15,6 +26,12 @@ pub struct InstantiateMsg {
     pub owner: String,
     pub msgs: Option<Vec<CosmosMsg>>,
     pub funds: Option<Vec<Fund>>,
+    // By default it's false meaning it's a main account
+    // If it's true, it's a sub account
+    pub is_sub_account: Option<bool>,
+    // Only supplied when is_sub_account is true
+    // Skipped if it's instantiating a main account
+    pub main_account_addr: Option<String>,
 }
 
 #[cw_serde]
@@ -23,6 +40,8 @@ pub enum ExecuteMsg {
     Generic(GenericMsg),
     WithdrawAssets(WithdrawAssetsMsg),
     IbcTransfer(IbcTransferMsg),
+    OccupySubAccount(OccupySubAccountMsg),
+    FreeSubAccount(FreeSubAccountMsg),
 }
 
 #[cw_serde]
@@ -88,8 +107,67 @@ pub struct WithdrawAssetsMsg {
 pub struct ExecuteWasmMsg {}
 
 #[cw_serde]
+pub struct OccupySubAccountMsg {
+    pub sub_account_addr: String,
+    pub job_id: Uint64,
+}
+
+#[cw_serde]
+pub struct FreeSubAccountMsg {
+    pub sub_account_addr: String,
+}
+
+#[derive(QueryResponses)]
+#[cw_serde]
 pub enum QueryMsg {
-    Config,
+    #[returns(ConfigResponse)]
+    QueryConfig(QueryConfigMsg),
+    #[returns(OccupiedSubAccountsResponse)]
+    QueryOccupiedSubAccounts(QueryOccupiedSubAccountsMsg),
+    #[returns(FreeSubAccountsResponse)]
+    QueryFreeSubAccounts(QueryFreeSubAccountsMsg),
+    #[returns(FirstFreeSubAccountResponse)]
+    QueryFirstFreeSubAccount(QueryFirstFreeSubAccountMsg),
+}
+
+#[cw_serde]
+pub struct QueryConfigMsg {}
+
+#[cw_serde]
+pub struct ConfigResponse {
+    pub config: Config,
+}
+
+#[cw_serde]
+pub struct QueryOccupiedSubAccountsMsg {
+    pub start_after: Option<String>,
+    pub limit: Option<u32>,
+}
+
+#[cw_serde]
+pub struct OccupiedSubAccountsResponse {
+    pub sub_accounts: Vec<SubAccount>,
+    pub total_count: usize,
+}
+
+#[cw_serde]
+pub struct QueryFreeSubAccountsMsg {
+    pub start_after: Option<String>,
+    pub limit: Option<u32>,
+}
+
+#[cw_serde]
+pub struct FreeSubAccountsResponse {
+    pub sub_accounts: Vec<SubAccount>,
+    pub total_count: usize,
+}
+
+#[cw_serde]
+pub struct QueryFirstFreeSubAccountMsg {}
+
+#[cw_serde]
+pub struct FirstFreeSubAccountResponse {
+    pub sub_account: Option<SubAccount>,
 }
 
 #[cw_serde]
