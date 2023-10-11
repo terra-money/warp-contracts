@@ -6,6 +6,6 @@ pub mod state;
 mod tests;
 
 #[cfg(feature = "interface")]
-mod interface;
+pub mod interface;
 
 pub use crate::error::ContractError;

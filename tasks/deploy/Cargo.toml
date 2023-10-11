@@ -1,0 +1,13 @@
+[package]
+name = "deploy"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dotenv = { version = "0.15.0" } # Enables loading of .env files
+env_logger = { version = "0.10.0" } # Enables logging to stdout
+cw-orch = { version = "0.16.4", features = ["daemon"] }
+warp-account = { path = "../../contracts/warp-account", default-features = false, version = "*", features = ["interface"] }
+account = { path = "../../packages/account", default-features = false, version = "*", features = ["interface"] }
