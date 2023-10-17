@@ -9,9 +9,9 @@ use cosmwasm_std::{
     StdResult,
 };
 
-use resolver::condition::Condition;
-use resolver::variable::{QueryExpr, Variable};
-use resolver::{
+use warp_resolver_pkg::condition::Condition;
+use warp_resolver_pkg::variable::{QueryExpr, Variable};
+use warp_resolver_pkg::{
     ExecuteApplyVarFnMsg, ExecuteHydrateMsgsMsg, ExecuteHydrateVarsMsg, ExecuteMsg,
     ExecuteResolveConditionMsg, ExecuteSimulateQueryMsg, ExecuteValidateJobCreationMsg,
     InstantiateMsg, MigrateMsg, QueryApplyVarFnMsg, QueryHydrateMsgsMsg, QueryHydrateVarsMsg,

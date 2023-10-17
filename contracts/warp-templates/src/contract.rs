@@ -6,11 +6,11 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::Bound;
 
-use templates::template::{
+use warp_templates_pkg::template::{
     DeleteTemplateMsg, EditTemplateMsg, QueryTemplateMsg, QueryTemplatesMsg, SubmitTemplateMsg,
     Template, TemplateResponse, TemplatesResponse,
 };
-use templates::{
+use warp_templates_pkg::{
     Config, ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryConfigMsg, QueryMsg,
     State, UpdateConfigMsg,
 };

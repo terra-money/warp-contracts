@@ -3,28 +3,6 @@
 version = 3
 
 [[package]]
-name = "account"
-version = "0.1.0"
-dependencies = [
- "controller",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-asset",
- "cw-multi-test",
- "cw-storage-plus 0.16.0",
- "cw2 0.16.0",
- "cw20",
- "json-codec-wasm",
- "prost 0.11.9",
- "schemars",
- "serde",
- "strum",
- "strum_macros",
- "thiserror",
-]
-
-[[package]]
 name = "ahash"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -100,25 +78,6 @@ name = "const-oid"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cec318a675afcb6a1ea1d4340e2d377e56e47c266f28043ceccbf4412ddfdd3b"
-
-[[package]]
-name = "controller"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-asset",
- "cw-multi-test",
- "cw-storage-plus 0.16.0",
- "cw2 0.16.0",
- "cw20",
- "schemars",
- "serde",
- "strum",
- "strum_macros",
- "thiserror",
-]
 
 [[package]]
 name = "cosmwasm-crypto"
@@ -714,27 +673,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "resolver"
-version = "0.1.0"
-dependencies = [
- "controller",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-asset",
- "cw-multi-test",
- "cw-storage-plus 0.16.0",
- "cw2 0.16.0",
- "cw20",
- "json-codec-wasm",
- "schemars",
- "serde",
- "strum",
- "strum_macros",
- "thiserror",
-]
-
-[[package]]
 name = "rfc6979"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -959,28 +897,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "templates"
-version = "0.1.0"
-dependencies = [
- "controller",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-asset",
- "cw-multi-test",
- "cw-storage-plus 0.16.0",
- "cw2 0.16.0",
- "cw20",
- "json-codec-wasm",
- "resolver",
- "schemars",
- "serde",
- "strum",
- "strum_macros",
- "thiserror",
-]
-
-[[package]]
 name = "thiserror"
 version = "1.0.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1034,9 +950,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 name = "warp-account"
 version = "0.1.0"
 dependencies = [
- "account",
  "base64",
- "controller",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
@@ -1051,15 +965,37 @@ dependencies = [
  "schemars",
  "serde-json-wasm 0.4.1",
  "thiserror",
+ "warp-account-pkg",
+ "warp-controller-pkg",
+]
+
+[[package]]
+name = "warp-account-pkg"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-asset",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw2 0.16.0",
+ "cw20",
+ "json-codec-wasm",
+ "prost 0.11.9",
+ "schemars",
+ "serde",
+ "strum",
+ "strum_macros",
+ "thiserror",
+ "warp-controller-pkg",
 ]
 
 [[package]]
 name = "warp-controller"
 version = "0.1.0"
 dependencies = [
- "account",
  "base64",
- "controller",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
@@ -1070,9 +1006,30 @@ dependencies = [
  "cw2 0.16.0",
  "cw20",
  "json-codec-wasm",
- "resolver",
  "schemars",
  "serde-json-wasm 0.4.1",
+ "thiserror",
+ "warp-account-pkg",
+ "warp-controller-pkg",
+ "warp-resolver-pkg",
+]
+
+[[package]]
+name = "warp-controller-pkg"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-asset",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw2 0.16.0",
+ "cw20",
+ "schemars",
+ "serde",
+ "strum",
+ "strum_macros",
  "thiserror",
 ]
 
@@ -1081,7 +1038,6 @@ name = "warp-resolver"
 version = "0.1.0"
 dependencies = [
  "base64",
- "controller",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
@@ -1092,10 +1048,32 @@ dependencies = [
  "cw20",
  "cw721",
  "json-codec-wasm",
- "resolver",
  "schemars",
  "serde-json-wasm 0.4.1",
  "thiserror",
+ "warp-controller-pkg",
+ "warp-resolver-pkg",
+]
+
+[[package]]
+name = "warp-resolver-pkg"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-asset",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw2 0.16.0",
+ "cw20",
+ "json-codec-wasm",
+ "schemars",
+ "serde",
+ "strum",
+ "strum_macros",
+ "thiserror",
+ "warp-controller-pkg",
 ]
 
 [[package]]
@@ -1113,11 +1091,33 @@ dependencies = [
  "cw20",
  "cw721",
  "json-codec-wasm",
- "resolver",
  "schemars",
  "serde-json-wasm 0.4.1",
- "templates",
  "thiserror",
+ "warp-resolver-pkg",
+ "warp-templates-pkg",
+]
+
+[[package]]
+name = "warp-templates-pkg"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-asset",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw2 0.16.0",
+ "cw20",
+ "json-codec-wasm",
+ "schemars",
+ "serde",
+ "strum",
+ "strum_macros",
+ "thiserror",
+ "warp-controller-pkg",
+ "warp-resolver-pkg",
 ]
 
 [[package]]

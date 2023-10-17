@@ -7,11 +7,11 @@ use cosmwasm_std::{
 use cw_storage_plus::KeyDeserialize;
 use json_codec_wasm::ast::Ref;
 use json_codec_wasm::Decoder;
-use resolver::condition::{
+use warp_resolver_pkg::condition::{
     BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
     NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
 };
-use resolver::variable::{QueryExpr, Variable};
+use warp_resolver_pkg::variable::{QueryExpr, Variable};
 use std::str::FromStr;
 
 pub fn resolve_cond(

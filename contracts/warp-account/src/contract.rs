@@ -1,10 +1,10 @@
 use crate::state::CONFIG;
 use crate::ContractError;
-use account::{
+use warp_account_pkg::{
     Config, ExecuteMsg, IbcTransferMsg, InstantiateMsg, MigrateMsg, QueryMsg, TimeoutBlock,
     WithdrawAssetsMsg,
 };
-use controller::account::{AssetInfo, Cw721ExecuteMsg};
+use warp_controller_pkg::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::CosmosMsg::Stargate;
 use cosmwasm_std::{
     entry_point, to_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,

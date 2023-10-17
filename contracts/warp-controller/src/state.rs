@@ -1,9 +1,9 @@
-use controller::account::Account;
+use warp_controller_pkg::account::Account;
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
 
-use controller::job::Job;
-use controller::{Config, State};
+use warp_controller_pkg::job::Job;
+use warp_controller_pkg::{Config, State};
 
 pub struct JobIndexes<'a> {
     pub reward: UniqueIndex<'a, (u128, u64), Job>,

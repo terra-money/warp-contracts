@@ -1,16 +1,16 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::ContractError;
-use controller::{MigrateAccountsMsg, MigrateJobsMsg, UpdateConfigMsg};
+use warp_controller_pkg::{MigrateAccountsMsg, MigrateJobsMsg, UpdateConfigMsg};
 use cosmwasm_schema::cw_serde;
 
-use controller::account::AssetInfo;
-use controller::job::{Job, JobStatus};
+use warp_controller_pkg::account::AssetInfo;
+use warp_controller_pkg::job::{Job, JobStatus};
 use cosmwasm_std::{
     to_binary, Addr, DepsMut, Env, MessageInfo, Order, Response, Uint128, Uint64, WasmMsg,
 };
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex, UniqueIndex};
-use resolver::condition::Condition;
-use resolver::variable::{
+use warp_resolver_pkg::condition::Condition;
+use warp_resolver_pkg::variable::{
     ExternalExpr, ExternalVariable, QueryExpr, QueryVariable, StaticVariable, UpdateFn, Variable,
     VariableKind,
 };
@@ -186,7 +186,7 @@ pub fn migrate_accounts(
         migration_msgs.push(WasmMsg::Migrate {
             contract_addr: account_address.to_string(),
             new_code_id: msg.warp_account_code_id.u64(),
-            msg: to_binary(&account::MigrateMsg {})?,
+            msg: to_binary(&warp_account_pkg::MigrateMsg {})?,
         })
     }
 

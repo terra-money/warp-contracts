@@ -1,6 +1,6 @@
 use cw_storage_plus::{Item, Map};
-use templates::template::Template;
-use templates::{Config, State};
+use warp_templates_pkg::template::Template;
+use warp_templates_pkg::{Config, State};
 
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const TEMPLATES: Map<u64, Template> = Map::new("templates");

@@ -11,8 +11,8 @@ use cosmwasm_std::{
 };
 use std::str::FromStr;
 
-use controller::job::{ExternalInput, JobStatus};
-use resolver::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
+use warp_controller_pkg::job::{ExternalInput, JobStatus};
+use warp_resolver_pkg::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
 
 pub fn hydrate_vars(
     deps: Deps,

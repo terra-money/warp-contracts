@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint64};
-use resolver::condition::Condition;
-use resolver::variable::Variable;
+use warp_resolver_pkg::condition::Condition;
+use warp_resolver_pkg::variable::Variable;
 
 //msg templates
 #[cw_serde]

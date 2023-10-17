@@ -1,12 +1,12 @@
 use crate::error::map_contract_error;
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::{execute, query, state::STATE, ContractError};
-use account::{GenericMsg, WithdrawAssetsMsg};
-use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
-use controller::job::{Job, JobStatus};
+use warp_account_pkg::{GenericMsg, WithdrawAssetsMsg};
+use warp_controller_pkg::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
+use warp_controller_pkg::job::{Job, JobStatus};
 use cosmwasm_schema::cw_serde;
 
-use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
+use warp_controller_pkg::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
@@ -374,7 +374,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                 } else {
                     let new_vars: String = deps.querier.query_wasm_smart(
                         config.resolver_address.clone(),
-                        &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
+                        &warp_resolver_pkg::QueryMsg::QueryApplyVarFn(warp_resolver_pkg::QueryApplyVarFnMsg {
                             vars: finished_job.vars,
                             status: finished_job.status.clone(),
                         }),
@@ -385,8 +385,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                         Some(terminate_condition) => {
                             let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
                                 config.resolver_address,
-                                &resolver::QueryMsg::QueryResolveCondition(
-                                    resolver::QueryResolveConditionMsg {
+                                &warp_resolver_pkg::QueryMsg::QueryResolveCondition(
+                                    warp_resolver_pkg::QueryResolveConditionMsg {
                                         condition: terminate_condition,
                                         vars: new_vars.clone(),
                                     },
@@ -461,7 +461,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             //send reward to controller
                             WasmMsg::Execute {
                                 contract_addr: account.account.to_string(),
-                                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                                msg: to_binary(&warp_account_pkg::ExecuteMsg::Generic(GenericMsg {
                                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                         to_address: config.fee_collector.to_string(),
                                         amount: vec![Coin::new(
@@ -478,7 +478,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             //send reward to controller
                             WasmMsg::Execute {
                                 contract_addr: account.account.to_string(),
-                                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                                msg: to_binary(&warp_account_pkg::ExecuteMsg::Generic(GenericMsg {
                                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                                         to_address: env.contract.address.to_string(),
                                         amount: vec![Coin::new(
@@ -495,7 +495,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
                             //withdraw all assets that are listed
                             WasmMsg::Execute {
                                 contract_addr: account.account.to_string(),
-                                msg: to_binary(&account::ExecuteMsg::WithdrawAssets(
+                                msg: to_binary(&warp_account_pkg::ExecuteMsg::WithdrawAssets(
                                     WithdrawAssetsMsg {
                                         asset_infos: new_job.assets_to_withdraw,
                                     },

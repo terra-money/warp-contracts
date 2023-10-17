@@ -1,16 +1,16 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
-use account::GenericMsg;
-use controller::job::{
+use warp_account_pkg::GenericMsg;
+use warp_controller_pkg::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
-use controller::State;
+use warp_controller_pkg::State;
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
     MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
 };
-use resolver::QueryHydrateMsgsMsg;
+use warp_resolver_pkg::QueryHydrateMsgsMsg;
 
 const MAX_TEXT_LENGTH: usize = 280;
 
@@ -37,7 +37,7 @@ pub fn create_job(
 
     let _validate_conditions_and_variables: Option<String> = deps.querier.query_wasm_smart(
         config.resolver_address,
-        &resolver::QueryMsg::QueryValidateJobCreation(resolver::QueryValidateJobCreationMsg {
+        &warp_resolver_pkg::QueryMsg::QueryValidateJobCreation(warp_resolver_pkg::QueryValidateJobCreationMsg {
             condition: data.condition.clone(),
             terminate_condition: data.terminate_condition.clone(),
             vars: data.vars.clone(),
@@ -93,7 +93,7 @@ pub fn create_job(
         //send reward to controller
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+            msg: to_binary(&warp_account_pkg::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: env.contract.address.to_string(),
                     amount: vec![Coin::new((data.reward).u128(), config.fee_denom.clone())],
@@ -103,7 +103,7 @@ pub fn create_job(
         },
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
-            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+            msg: to_binary(&warp_account_pkg::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
                     amount: vec![Coin::new((fee).u128(), config.fee_denom)],
@@ -265,7 +265,7 @@ pub fn update_job(
             //send reward to controller
             WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msg: to_binary(&warp_account_pkg::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: env.contract.address.to_string(),
                         amount: vec![Coin::new((added_reward).u128(), config.fee_denom.clone())],
@@ -278,7 +278,7 @@ pub fn update_job(
             //send reward to controller
             WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msg: to_binary(&warp_account_pkg::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: config.fee_collector.to_string(),
                         amount: vec![Coin::new((fee).u128(), config.fee_denom)],
@@ -327,7 +327,7 @@ pub fn execute_job(
 
     let vars: String = deps.querier.query_wasm_smart(
         config.resolver_address.clone(),
-        &resolver::QueryMsg::QueryHydrateVars(resolver::QueryHydrateVarsMsg {
+        &warp_resolver_pkg::QueryMsg::QueryHydrateVars(warp_resolver_pkg::QueryHydrateVarsMsg {
             vars: job.vars,
             external_inputs: data.external_inputs,
         }),
@@ -335,7 +335,7 @@ pub fn execute_job(
 
     let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
         config.resolver_address.clone(),
-        &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
+        &warp_resolver_pkg::QueryMsg::QueryResolveCondition(warp_resolver_pkg::QueryResolveConditionMsg {
             condition: job.condition,
             vars: vars.clone(),
         }),
@@ -387,10 +387,10 @@ pub fn execute_job(
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msg: to_binary(&warp_account_pkg::ExecuteMsg::Generic(GenericMsg {
                     msgs: deps.querier.query_wasm_smart(
                         config.resolver_address,
-                        &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                        &warp_resolver_pkg::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
                             msgs: job.msgs,
                             vars,
                         }),
@@ -467,7 +467,7 @@ pub fn evict_job(
             //send reward to evictor
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msg: to_binary(&warp_account_pkg::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: info.sender.to_string(),
                         amount: vec![Coin::new(a.u128(), config.fee_denom)],

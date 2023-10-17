@@ -1,5 +1,5 @@
 use crate::state::CONFIG;
-use controller::{ConfigResponse, QueryConfigMsg};
+use warp_controller_pkg::{ConfigResponse, QueryConfigMsg};
 use cosmwasm_std::{Deps, Env, StdResult};
 
 pub fn query_config(deps: Deps, _env: Env, _data: QueryConfigMsg) -> StdResult<ConfigResponse> {

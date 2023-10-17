@@ -1,6 +1,6 @@
 use crate::state::{ACCOUNTS, CONFIG};
 use crate::ContractError;
-use controller::account::{
+use warp_controller_pkg::account::{
     CreateAccountMsg, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg,
 };
 
@@ -84,7 +84,7 @@ pub fn create_account(
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
             admin: Some(env.contract.address.to_string()),
             code_id: config.warp_account_code_id.u64(),
-            msg: to_binary(&account::InstantiateMsg {
+            msg: to_binary(&warp_account_pkg::InstantiateMsg {
                 owner: info.sender.to_string(),
                 funds: data.funds,
             })?,

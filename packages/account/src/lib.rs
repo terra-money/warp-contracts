@@ -1,4 +1,4 @@
-use controller::account::{AssetInfo, Fund};
+use warp_controller_pkg::account::{AssetInfo, Fund};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, CosmosMsg};
 use schemars::JsonSchema;
