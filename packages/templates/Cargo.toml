@@ -1,6 +1,8 @@
 [package]
 name = "warp-templates-pkg"
 version = "0.1.0"
+description = "Package and references for Warp Templates entry points and objects."
+license = "MIT"
 authors = ["Terra Money <core@terra.money>"]
 edition = "2021"
 
