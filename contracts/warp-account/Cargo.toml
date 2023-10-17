@@ -40,8 +40,8 @@ cw-storage-plus = "0.16"
 cw2 = "0.16"
 cw20 = "0.16"
 cw721 = "0.16.0"
-controller = { path = "../../packages/controller", default-features = false, version = "*" }
-account = { path = "../../packages/account", default-features = false, version = "*" }
+warp-controller-pkg = { path = "../../packages/controller", default-features = false, version = "0.1.0" }
+warp-account-pkg = { path = "../../packages/account", default-features = false, version = "0.1.0" }
 schemars = "0.8"
 thiserror = "1"
 serde-json-wasm = "0.4.1"

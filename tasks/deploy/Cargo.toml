@@ -9,5 +9,5 @@ edition = "2021"
 dotenv = { version = "0.15.0" } # Enables loading of .env files
 env_logger = { version = "0.10.0" } # Enables logging to stdout
 cw-orch = { version = "0.16.4", features = ["daemon"] }
-warp-account = { path = "../../contracts/warp-account", default-features = false, version = "*", features = ["interface"] }
-account = { path = "../../packages/account", default-features = false, version = "*", features = ["interface"] }
+warp-account = { path = "../../contracts/warp-account", default-features = false, version = "0.1.0", features = ["interface"] }
+warp-account-pkg = { path = "../../packages/account", default-features = false, version = "0.1.0", features = ["interface"] }

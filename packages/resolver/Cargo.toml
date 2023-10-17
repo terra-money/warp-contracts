@@ -1,5 +1,5 @@
 [package]
-name = "resolver"
+name = "warp-resolver-pkg"
 version = "0.1.0"
 authors = ["Terra Money <core@terra.money>"]
 edition = "2021"
@@ -23,7 +23,7 @@ json-codec-wasm = "0.1.0"
 strum = "0.24"
 strum_macros = "0.24"
 thiserror = { version = "1" }
-controller = {path = "../controller"}
+warp-controller-pkg = {path = "../controller", version = "0.1.0"}
 cw-orch = { version = "0.16.4", optional = true }
 
 [dev-dependencies]
