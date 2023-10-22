@@ -5,30 +5,29 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[cw_serde]
-pub struct Config {
-    pub owner: Addr,
-    pub warp_addr: Addr,
-    pub is_sub_account: bool,
-    // If current account is a main account, main_account_addr is itself,
-    // If current account is a sub account, main_account_addr is its main account address
+pub struct SubAccountConfig {
     pub main_account_addr: Addr,
-}
-
-#[cw_serde]
-pub struct SubAccount {
-    pub addr: String,
     // If occupied, occupied_by_job_id is the job id of the pending job that is using this sub account
     pub occupied_by_job_id: Option<Uint64>,
 }
 
 #[cw_serde]
+pub struct Config {
+    pub owner: Addr,
+    // Address of warp controller contract
+    pub creator_addr: Addr,
+    // Address of current warp account contract
+    pub account_addr: Addr,
+    // Exist if current account is a sub account
+    pub sub_account_config: Option<SubAccountConfig>,
+}
+
+#[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
+    pub is_sub_account: bool,
     pub msgs: Option<Vec<CosmosMsg>>,
     pub funds: Option<Vec<Fund>>,
-    // By default it's false meaning it's a main account
-    // If it's true, it's a sub account
-    pub is_sub_account: Option<bool>,
     // Only supplied when is_sub_account is true
     // Skipped if it's instantiating a main account
     pub main_account_addr: Option<String>,
@@ -146,7 +145,7 @@ pub struct QueryOccupiedSubAccountsMsg {
 
 #[cw_serde]
 pub struct OccupiedSubAccountsResponse {
-    pub sub_accounts: Vec<SubAccount>,
+    pub sub_accounts: Vec<Config>,
     pub total_count: usize,
 }
 
@@ -158,7 +157,7 @@ pub struct QueryFreeSubAccountsMsg {
 
 #[cw_serde]
 pub struct FreeSubAccountsResponse {
-    pub sub_accounts: Vec<SubAccount>,
+    pub sub_accounts: Vec<Config>,
     pub total_count: usize,
 }
 
@@ -167,7 +166,7 @@ pub struct QueryFirstFreeSubAccountMsg {}
 
 #[cw_serde]
 pub struct FirstFreeSubAccountResponse {
-    pub sub_account: Option<SubAccount>,
+    pub sub_account: Option<Config>,
 }
 
 #[cw_serde]

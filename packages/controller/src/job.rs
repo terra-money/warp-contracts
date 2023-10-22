@@ -1,4 +1,4 @@
-use crate::account::AssetInfo;
+use crate::account::{AssetInfo, Fund};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, CosmosMsg, Uint128, Uint64};
 use schemars::JsonSchema;
@@ -58,6 +58,8 @@ pub enum JobStatus {
     Evicted,
 }
 
+// Create a job using sub account, if sub account does not exist, create it
+// Each sub account will only be used for 1 job, so we achieve funds isolation
 #[cw_serde]
 pub struct CreateJobMsg {
     pub name: String,
@@ -72,6 +74,7 @@ pub struct CreateJobMsg {
     pub reward: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
     pub account_msgs: Option<Vec<CosmosMsg>>,
+    pub funds: Option<Vec<Fund>>,
 }
 
 #[cw_serde]

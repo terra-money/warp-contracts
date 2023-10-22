@@ -4,7 +4,7 @@ mod tests {
         Config, ConfigResponse, ExecuteMsg, FirstFreeSubAccountResponse, FreeSubAccountMsg,
         FreeSubAccountsResponse, InstantiateMsg, OccupiedSubAccountsResponse, OccupySubAccountMsg,
         QueryConfigMsg, QueryFirstFreeSubAccountMsg, QueryFreeSubAccountsMsg, QueryMsg,
-        QueryOccupiedSubAccountsMsg, SubAccount,
+        QueryOccupiedSubAccountsMsg, SubAccountConfig,
     };
     use anyhow::Result as AnyResult;
     use cosmwasm_std::{Addr, Coin, Empty, Uint128, Uint64};
@@ -15,7 +15,8 @@ mod tests {
         ContractError,
     };
 
-    const USER_1: &str = "terra1";
+    const DUMMY_WARP_CONTROLLER_ADDR: &str = "terra1";
+    const USER_1: &str = "terra2";
 
     fn mock_app() -> App {
         AppBuilder::new().build(|router, _, storage| {
@@ -42,12 +43,12 @@ mod tests {
     fn init_warp_account(
         app: &mut App,
         warp_account_contract_code_id: u64,
-        is_sub_account: Option<bool>,
+        is_sub_account: bool,
         main_account_addr: Option<String>,
     ) -> Addr {
         app.instantiate_contract(
             warp_account_contract_code_id,
-            Addr::unchecked(USER_1),
+            Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
             &InstantiateMsg {
                 owner: USER_1.to_string(),
                 msgs: None,
@@ -79,7 +80,7 @@ mod tests {
 
         // Instantiate main account
         let warp_main_account_contract_addr =
-            init_warp_account(&mut app, warp_account_contract_code_id, Some(false), None);
+            init_warp_account(&mut app, warp_account_contract_code_id, false, None);
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_main_account_contract_addr.clone(),
@@ -88,9 +89,9 @@ mod tests {
             Ok(ConfigResponse {
                 config: Config {
                     owner: Addr::unchecked(USER_1),
-                    warp_addr: Addr::unchecked(USER_1),
-                    is_sub_account: false,
-                    main_account_addr: Addr::unchecked(warp_main_account_contract_addr.clone())
+                    creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                    account_addr: warp_main_account_contract_addr.clone(),
+                    sub_account_config: None
                 }
             })
         );
@@ -132,7 +133,7 @@ mod tests {
         let warp_sub_account_1_contract_addr = init_warp_account(
             &mut app,
             warp_account_contract_code_id,
-            Some(true),
+            true,
             Some(warp_main_account_contract_addr.to_string()),
         );
         assert_eq!(
@@ -143,9 +144,12 @@ mod tests {
             Ok(ConfigResponse {
                 config: Config {
                     owner: Addr::unchecked(USER_1),
-                    warp_addr: Addr::unchecked(USER_1),
-                    is_sub_account: true,
-                    main_account_addr: Addr::unchecked(warp_main_account_contract_addr.clone())
+                    creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                    account_addr: warp_sub_account_1_contract_addr.clone(),
+                    sub_account_config: Some(SubAccountConfig {
+                        main_account_addr: warp_main_account_contract_addr.clone(),
+                        occupied_by_job_id: None
+                    })
                 }
             })
         );
@@ -175,7 +179,7 @@ mod tests {
         let warp_sub_account_2_contract_addr = init_warp_account(
             &mut app,
             warp_account_contract_code_id,
-            Some(true),
+            true,
             Some(warp_main_account_contract_addr.to_string()),
         );
         // Mark second sub account as free
@@ -192,7 +196,7 @@ mod tests {
         let warp_sub_account_3_contract_addr = init_warp_account(
             &mut app,
             warp_account_contract_code_id,
-            Some(true),
+            true,
             Some(warp_main_account_contract_addr.to_string()),
         );
         // Mark third sub account as free
@@ -212,9 +216,14 @@ mod tests {
                 &QueryMsg::QueryFirstFreeSubAccount(QueryFirstFreeSubAccountMsg {})
             ),
             Ok(FirstFreeSubAccountResponse {
-                sub_account: Some(SubAccount {
-                    addr: warp_sub_account_1_contract_addr.to_string(),
-                    occupied_by_job_id: None
+                sub_account: Some(Config {
+                    owner: Addr::unchecked(USER_1),
+                    creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                    account_addr: warp_sub_account_1_contract_addr.clone(),
+                    sub_account_config: Some(SubAccountConfig {
+                        main_account_addr: warp_main_account_contract_addr.clone(),
+                        occupied_by_job_id: None
+                    })
                 })
             })
         );
@@ -230,17 +239,32 @@ mod tests {
             ),
             Ok(FreeSubAccountsResponse {
                 sub_accounts: vec![
-                    SubAccount {
-                        addr: warp_sub_account_3_contract_addr.to_string(),
-                        occupied_by_job_id: None
+                    Config {
+                        owner: Addr::unchecked(USER_1),
+                        creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                        account_addr: warp_sub_account_3_contract_addr.clone(),
+                        sub_account_config: Some(SubAccountConfig {
+                            main_account_addr: warp_main_account_contract_addr.clone(),
+                            occupied_by_job_id: None
+                        })
                     },
-                    SubAccount {
-                        addr: warp_sub_account_2_contract_addr.to_string(),
-                        occupied_by_job_id: None
+                    Config {
+                        owner: Addr::unchecked(USER_1),
+                        creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                        account_addr: warp_sub_account_2_contract_addr.clone(),
+                        sub_account_config: Some(SubAccountConfig {
+                            main_account_addr: warp_main_account_contract_addr.clone(),
+                            occupied_by_job_id: None
+                        })
                     },
-                    SubAccount {
-                        addr: warp_sub_account_1_contract_addr.to_string(),
-                        occupied_by_job_id: None
+                    Config {
+                        owner: Addr::unchecked(USER_1),
+                        creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                        account_addr: warp_sub_account_1_contract_addr.clone(),
+                        sub_account_config: Some(SubAccountConfig {
+                            main_account_addr: warp_main_account_contract_addr.clone(),
+                            occupied_by_job_id: None
+                        })
                     }
                 ],
                 total_count: 3
@@ -297,13 +321,23 @@ mod tests {
             ),
             Ok(FreeSubAccountsResponse {
                 sub_accounts: vec![
-                    SubAccount {
-                        addr: warp_sub_account_3_contract_addr.to_string(),
-                        occupied_by_job_id: None
+                    Config {
+                        owner: Addr::unchecked(USER_1),
+                        creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                        account_addr: warp_sub_account_3_contract_addr.clone(),
+                        sub_account_config: Some(SubAccountConfig {
+                            main_account_addr: warp_main_account_contract_addr.clone(),
+                            occupied_by_job_id: None
+                        })
                     },
-                    SubAccount {
-                        addr: warp_sub_account_1_contract_addr.to_string(),
-                        occupied_by_job_id: None
+                    Config {
+                        owner: Addr::unchecked(USER_1),
+                        creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                        account_addr: warp_sub_account_1_contract_addr.clone(),
+                        sub_account_config: Some(SubAccountConfig {
+                            main_account_addr: warp_main_account_contract_addr.clone(),
+                            occupied_by_job_id: None
+                        })
                     }
                 ],
                 total_count: 2
@@ -320,9 +354,14 @@ mod tests {
                 })
             ),
             Ok(OccupiedSubAccountsResponse {
-                sub_accounts: vec![SubAccount {
-                    addr: warp_sub_account_2_contract_addr.to_string(),
-                    occupied_by_job_id: Some(Uint64::from(1 as u8))
+                sub_accounts: vec![Config {
+                    owner: Addr::unchecked(USER_1),
+                    creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                    account_addr: warp_sub_account_2_contract_addr.clone(),
+                    sub_account_config: Some(SubAccountConfig {
+                        main_account_addr: warp_main_account_contract_addr.clone(),
+                        occupied_by_job_id: Some(Uint64::from(1 as u8))
+                    })
                 }],
                 total_count: 1
             })
@@ -349,17 +388,32 @@ mod tests {
             ),
             Ok(FreeSubAccountsResponse {
                 sub_accounts: vec![
-                    SubAccount {
-                        addr: warp_sub_account_3_contract_addr.to_string(),
-                        occupied_by_job_id: None
+                    Config {
+                        owner: Addr::unchecked(USER_1),
+                        creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                        account_addr: warp_sub_account_3_contract_addr.clone(),
+                        sub_account_config: Some(SubAccountConfig {
+                            main_account_addr: warp_main_account_contract_addr.clone(),
+                            occupied_by_job_id: None
+                        })
                     },
-                    SubAccount {
-                        addr: warp_sub_account_2_contract_addr.to_string(),
-                        occupied_by_job_id: None
+                    Config {
+                        owner: Addr::unchecked(USER_1),
+                        creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                        account_addr: warp_sub_account_2_contract_addr.clone(),
+                        sub_account_config: Some(SubAccountConfig {
+                            main_account_addr: warp_main_account_contract_addr.clone(),
+                            occupied_by_job_id: None
+                        })
                     },
-                    SubAccount {
-                        addr: warp_sub_account_1_contract_addr.to_string(),
-                        occupied_by_job_id: None
+                    Config {
+                        owner: Addr::unchecked(USER_1),
+                        creator_addr: Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
+                        account_addr: warp_sub_account_1_contract_addr.clone(),
+                        sub_account_config: Some(SubAccountConfig {
+                            main_account_addr: warp_main_account_contract_addr.clone(),
+                            occupied_by_job_id: None
+                        })
                     }
                 ],
                 total_count: 3

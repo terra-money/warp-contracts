@@ -1,10 +1,8 @@
-use crate::state::CONFIG;
 use crate::ContractError;
-use account::WithdrawAssetsMsg;
+use account::{Config, WithdrawAssetsMsg};
 use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, CosmosMsg, Deps, DepsMut, Env, Response, StdResult, Uint128, WasmMsg,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
@@ -12,14 +10,9 @@ use cw721::{Cw721QueryMsg, OwnerOfResponse};
 pub fn withdraw_assets(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
     data: WithdrawAssetsMsg,
+    config: Config,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.owner && info.sender != config.warp_addr {
-        return Err(ContractError::Unauthorized {});
-    }
-
     let mut withdraw_msgs: Vec<CosmosMsg> = vec![];
 
     for asset_info in &data.asset_infos {

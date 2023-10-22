@@ -1,6 +1,4 @@
-use crate::account::{
-    AccountResponse, AccountsResponse, CreateAccountMsg, QueryAccountMsg, QueryAccountsMsg,
-};
+use crate::account::{AccountResponse, AccountsResponse, QueryAccountMsg, QueryAccountsMsg};
 use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, UpdateJobMsg,
@@ -67,8 +65,6 @@ pub enum ExecuteMsg {
     UpdateJob(UpdateJobMsg),
     ExecuteJob(ExecuteJobMsg),
     EvictJob(EvictJobMsg),
-
-    CreateAccount(CreateAccountMsg),
 
     UpdateConfig(UpdateConfigMsg),
 

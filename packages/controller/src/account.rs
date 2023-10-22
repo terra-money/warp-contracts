@@ -1,11 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, CosmosMsg, Uint128};
-
-#[cw_serde]
-pub struct CreateAccountMsg {
-    pub funds: Option<Vec<Fund>>,
-    pub msgs: Option<Vec<CosmosMsg>>,
-}
+use cosmwasm_std::{Addr, Uint128};
 
 #[cw_serde]
 pub enum Fund {

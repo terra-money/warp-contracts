@@ -1,7 +1,12 @@
+use crate::contract::{
+    REPLY_ID_CREATE_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB, REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
+    REPLY_ID_EXECUTE_JOB,
+};
 use crate::state::{JobQueue, ACCOUNTS, CONFIG, STATE};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
-use account::GenericMsg;
+use account::{FirstFreeSubAccountResponse, GenericMsg};
+use controller::account::{Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
@@ -44,92 +49,219 @@ pub fn create_job(
         }),
     )?;
 
-    let account_record = ACCOUNTS()
+    // First try to query main account by account address (query index key which is account by sender)
+    // This can happen when account contract calls controller's create_job
+    // The result would be none if user (account owner) calls create_job directly
+    let main_account = match ACCOUNTS()
         .idx
         .account
-        .item(deps.storage, info.sender.clone())?;
-
-    let account = match account_record {
-        None => ACCOUNTS()
-            .load(deps.storage, info.sender)
-            .map_err(|_e| ContractError::AccountDoesNotExist {})?,
-        Some(record) => record.1,
+        .item(deps.storage, info.sender.clone())?
+    {
+        // create_job is called by account contract
+        Some(record) => Some(record.1),
+        // create_job is called by user
+        None => match ACCOUNTS().may_load(deps.storage, info.sender.clone())? {
+            // User has main account
+            Some(account) => Some(account),
+            // User does not have main account
+            None => None,
+        },
     };
 
-    let job = JobQueue::add(
-        &mut deps,
-        Job {
-            id: state.current_job_id,
-            prev_id: None,
-            owner: account.owner,
-            account: account.account.clone(),
-            last_update_time: Uint64::from(env.block.time.seconds()),
-            name: data.name,
-            status: JobStatus::Pending,
-            condition: data.condition.clone(),
-            terminate_condition: data.terminate_condition,
-            recurring: data.recurring,
-            requeue_on_evict: data.requeue_on_evict,
-            vars: data.vars,
-            msgs: data.msgs,
-            reward: data.reward,
-            description: data.description,
-            labels: data.labels,
-            assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
-        },
-    )?;
+    match main_account {
+        None => {
+            let create_main_account_submsg = SubMsg {
+                id: REPLY_ID_CREATE_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB,
+                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                    admin: Some(env.contract.address.to_string()),
+                    code_id: config.warp_account_code_id.u64(),
+                    msg: to_binary(&account::InstantiateMsg {
+                        owner: info.sender.to_string(),
+                        funds: data.funds,
+                        msgs: data.account_msgs,
+                        is_sub_account: false,
+                        main_account_addr: None,
+                    })?,
+                    funds: info.funds,
+                    label: info.sender.to_string(),
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Always,
+            };
 
-    // Assume reward.amount == warp token allowance
-    let fee = data.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+            Ok(Response::new()
+                .add_submessage(create_main_account_submsg)
+                .add_attribute(
+                    "action",
+                    "create_job_and_new_main_account_and_new_sub_account",
+                ))
+        }
+        Some(main_account) => {
+            if main_account.owner != info.sender {
+                return Err(ContractError::Unauthorized {});
+            }
+            let main_account_addr = main_account.account;
+            let available_sub_account: FirstFreeSubAccountResponse =
+                deps.querier.query_wasm_smart(
+                    main_account_addr.clone(),
+                    &account::QueryMsg::QueryFirstFreeSubAccount(
+                        account::QueryFirstFreeSubAccountMsg {},
+                    ),
+                )?;
+            match available_sub_account.sub_account {
+                None => {
+                    let create_sub_account_submsg = SubMsg {
+                        id: REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
+                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                            admin: Some(env.contract.address.to_string()),
+                            code_id: config.warp_account_code_id.u64(),
+                            msg: to_binary(&account::InstantiateMsg {
+                                owner: info.sender.to_string(),
+                                funds: data.funds,
+                                msgs: data.account_msgs,
+                                is_sub_account: true,
+                                main_account_addr: Some(main_account_addr.clone().to_string()),
+                            })?,
+                            funds: info.funds,
+                            label: info.sender.to_string(),
+                        }),
+                        gas_limit: None,
+                        reply_on: ReplyOn::Always,
+                    };
 
-    let reward_send_msgs = vec![
-        // Job sends reward to controller
-        WasmMsg::Execute {
-            contract_addr: account.account.to_string(),
-            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                    to_address: env.contract.address.to_string(),
-                    amount: vec![Coin::new((data.reward).u128(), config.fee_denom.clone())],
-                })],
-            }))?,
-            funds: vec![],
-        },
-        // Job owner sends fee to fee collector
-        WasmMsg::Execute {
-            contract_addr: account.account.to_string(),
-            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                    to_address: config.fee_collector.to_string(),
-                    amount: vec![Coin::new((fee).u128(), config.fee_denom)],
-                })],
-            }))?,
-            funds: vec![],
-        },
-    ];
+                    Ok(Response::new()
+                        .add_submessage(create_sub_account_submsg)
+                        .add_attribute("action", "create_job_and_new_sub_account"))
+                }
+                Some(sub_account) => {
+                    let sub_account_addr = sub_account.account_addr;
+                    let job = JobQueue::add(
+                        &mut deps,
+                        Job {
+                            id: state.current_job_id,
+                            prev_id: None,
+                            owner: info.sender.clone(),
+                            account: sub_account_addr.clone(),
+                            last_update_time: Uint64::from(env.block.time.seconds()),
+                            name: data.name,
+                            status: JobStatus::Pending,
+                            condition: data.condition.clone(),
+                            terminate_condition: data.terminate_condition,
+                            recurring: data.recurring,
+                            requeue_on_evict: data.requeue_on_evict,
+                            vars: data.vars,
+                            msgs: data.msgs,
+                            reward: data.reward,
+                            description: data.description,
+                            labels: data.labels,
+                            assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
+                        },
+                    )?;
 
-    let mut account_msgs: Vec<WasmMsg> = vec![];
+                    // Assume reward.amount == warp token allowance
+                    let fee = data.reward * Uint128::from(config.creation_fee_percentage)
+                        / Uint128::new(100);
 
-    if let Some(msgs) = data.account_msgs {
-        account_msgs = vec![WasmMsg::Execute {
-            contract_addr: account.account.to_string(),
-            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg { msgs }))?,
-            funds: vec![],
-        }];
+                    let cw_funds_vec = match data.funds {
+                        None => {
+                            vec![]
+                        }
+                        Some(funds) => funds,
+                    };
+
+                    let mut fund_account_msgs: Vec<CosmosMsg> = vec![];
+
+                    if !info.funds.is_empty() {
+                        fund_account_msgs.push(CosmosMsg::Bank(BankMsg::Send {
+                            to_address: sub_account_addr.clone().to_string(),
+                            amount: info.funds.clone(),
+                        }))
+                    }
+
+                    for cw_fund in &cw_funds_vec {
+                        fund_account_msgs.push(CosmosMsg::Wasm(match cw_fund {
+                            Fund::Cw20(cw20_fund) => WasmMsg::Execute {
+                                contract_addr: deps
+                                    .api
+                                    .addr_validate(&cw20_fund.contract_addr)?
+                                    .to_string(),
+                                msg: to_binary(&FundTransferMsgs::TransferFrom(TransferFromMsg {
+                                    owner: info.sender.clone().to_string(),
+                                    recipient: sub_account_addr.clone().to_string(),
+                                    amount: cw20_fund.amount,
+                                }))?,
+                                funds: vec![],
+                            },
+                            Fund::Cw721(cw721_fund) => WasmMsg::Execute {
+                                contract_addr: deps
+                                    .api
+                                    .addr_validate(&cw721_fund.contract_addr)?
+                                    .to_string(),
+                                msg: to_binary(&FundTransferMsgs::TransferNft(TransferNftMsg {
+                                    recipient: sub_account_addr.clone().to_string(),
+                                    token_id: cw721_fund.token_id.clone(),
+                                }))?,
+                                funds: vec![],
+                            },
+                        }))
+                    }
+
+                    let reward_send_msgs = vec![
+                        // Job sends reward to controller
+                        WasmMsg::Execute {
+                            contract_addr: sub_account_addr.to_string(),
+                            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                                    to_address: env.contract.address.to_string(),
+                                    amount: vec![Coin::new(
+                                        (data.reward).u128(),
+                                        config.fee_denom.clone(),
+                                    )],
+                                })],
+                            }))?,
+                            funds: vec![],
+                        },
+                        // Job owner sends fee to fee collector
+                        WasmMsg::Execute {
+                            contract_addr: sub_account_addr.to_string(),
+                            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                                    to_address: config.fee_collector.to_string(),
+                                    amount: vec![Coin::new((fee).u128(), config.fee_denom)],
+                                })],
+                            }))?,
+                            funds: vec![],
+                        },
+                    ];
+
+                    let mut account_msgs: Vec<WasmMsg> = vec![];
+
+                    if let Some(msgs) = data.account_msgs {
+                        account_msgs = vec![WasmMsg::Execute {
+                            contract_addr: sub_account_addr.to_string(),
+                            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg { msgs }))?,
+                            funds: vec![],
+                        }];
+                    }
+
+                    Ok(Response::new()
+                        .add_messages(fund_account_msgs)
+                        .add_messages(reward_send_msgs)
+                        .add_messages(account_msgs)
+                        .add_attribute("action", "create_job")
+                        .add_attribute("job_id", job.id)
+                        .add_attribute("job_owner", job.owner)
+                        .add_attribute("job_name", job.name)
+                        .add_attribute("job_status", serde_json_wasm::to_string(&job.status)?)
+                        .add_attribute("job_condition", serde_json_wasm::to_string(&job.condition)?)
+                        .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
+                        .add_attribute("job_reward", job.reward)
+                        .add_attribute("job_creation_fee", fee)
+                        .add_attribute("job_last_updated_time", job.last_update_time))
+                }
+            }
+        }
     }
-
-    Ok(Response::new()
-        .add_messages(reward_send_msgs)
-        .add_attribute("action", "create_job")
-        .add_attribute("job_id", job.id)
-        .add_attribute("job_owner", job.owner)
-        .add_attribute("job_name", job.name)
-        .add_attribute("job_status", serde_json_wasm::to_string(&job.status)?)
-        .add_attribute("job_condition", serde_json_wasm::to_string(&job.condition)?)
-        .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
-        .add_attribute("job_reward", job.reward)
-        .add_attribute("job_creation_fee", fee)
-        .add_attribute("job_last_updated_time", job.last_update_time)
-        .add_messages(account_msgs))
 }
 
 pub fn delete_job(
@@ -302,7 +434,7 @@ pub fn execute_job(
         }
 
         submsgs.push(SubMsg {
-            id: job.id.u64(),
+            id: REPLY_ID_EXECUTE_JOB,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: job.account.to_string(),
                 msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {

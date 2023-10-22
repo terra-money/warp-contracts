@@ -21,7 +21,7 @@ fn test_execute_controller() {
             owner: "vlad".to_string(),
             funds: None,
             msgs: None,
-            is_sub_account: Some(false),
+            is_sub_account: false,
             main_account_addr: None,
         },
     );
@@ -146,7 +146,7 @@ fn test_execute_owner() {
             owner: "vlad".to_string(),
             funds: None,
             msgs: None,
-            is_sub_account: Some(false),
+            is_sub_account: false,
             main_account_addr: None,
         },
     );
@@ -273,7 +273,7 @@ fn test_execute_unauth() {
             owner: "vlad".to_string(),
             funds: None,
             msgs: None,
-            is_sub_account: Some(false),
+            is_sub_account: false,
             main_account_addr: None,
         },
     );

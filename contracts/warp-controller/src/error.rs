@@ -81,6 +81,9 @@ pub enum ContractError {
 
     #[error("Eviction period not elapsed.")]
     EvictionPeriodNotElapsed {},
+
+    #[error("Unknown reply ID.")]
+    UnknownReplyId {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {
