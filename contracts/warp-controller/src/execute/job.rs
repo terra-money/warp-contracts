@@ -101,7 +101,7 @@ pub fn create_job(
             prev_id: None,
             owner: info.sender.clone(),
             // Account uses a placeholder value for now, will update it to job account address if job account exists or after created
-            // Update will happen either in create_job (sub account exists) or reply (after creation), so it's atomic
+            // Update will happen either in create_job (exists free job account) or reply (after creation), so it's atomic
             // And we guarantee we do not read this value before it's updated
             account: info.sender.clone(),
             last_update_time: Uint64::from(env.block.time.seconds()),

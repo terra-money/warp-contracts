@@ -26,7 +26,8 @@ pub struct Job {
     pub prev_id: Option<Uint64>,
     pub owner: Addr,
     // Warp account this job is associated with, job will be executed in the context of it and pay protocol fee from it
-    // As job creator can have multiple warp accounts (1 main account and infinite sub accounts)
+    // As job creator can have infinite job accounts, each job account can only be used by up to 1 active job
+    // So each job's fund is isolated
     pub account: Addr,
     pub last_update_time: Uint64,
     pub name: String,
@@ -58,8 +59,8 @@ pub enum JobStatus {
     Evicted,
 }
 
-// Create a job using sub account, if sub account does not exist, create it
-// Each sub account will only be used for 1 job, so we achieve funds isolation
+// Create a job using job account, if job account does not exist, create it
+// Each job account will only be used for 1 job, therefore we achieve funds isolation
 #[cw_serde]
 pub struct CreateJobMsg {
     pub name: String,

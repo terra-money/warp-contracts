@@ -100,7 +100,7 @@ pub fn create_job_account_tracker_and_account_and_job(
         &deps.api.addr_validate(&job_account_tracker_addr)?,
     )?;
 
-    // Create new sub account then create job in reply
+    // Create new job account then create job in reply
     let create_account_and_job_submsg = SubMsg {
         id: REPLY_ID_CREATE_ACCOUNT_AND_JOB,
         msg: build_instantiate_warp_account_msg(
@@ -263,7 +263,7 @@ pub fn create_account_and_job(
         ));
     }
 
-    // Occupy sub account
+    // Occupy job account
     msgs.push(build_occupy_account_msg(
         main_account_addr.to_string(),
         sub_account_addr.to_string(),

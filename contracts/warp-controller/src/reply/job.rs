@@ -205,7 +205,7 @@ pub fn execute_job(
             // For job not using legacy account, job owner must already have account tracker instantiated
             let job_account_tracker =
                 JOB_ACCOUNT_TRACKERS.load(deps.storage, &finished_job.owner)?;
-            // Occupy sub account with the new job
+            // Occupy job account with the new job
             msgs.push(build_occupy_account_msg(
                 job_account_tracker.to_string(),
                 job_account_addr.to_string(),
