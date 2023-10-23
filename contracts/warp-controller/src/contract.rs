@@ -6,19 +6,22 @@ use cosmwasm_std::{
 use cw_storage_plus::Item;
 use cw_utils::{must_pay, nonpayable};
 
-use crate::state::CONFIG;
-use crate::{execute, query, reply, state::STATE, ContractError};
+use crate::{
+    execute, migrate, query, reply,
+    state::{CONFIG, STATE},
+    ContractError,
+};
 
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
 // Reply id for job creation
-// From a totally new user using warp for the first time, does not have account yet, let alone sub account
-// So we create both account and sub account and job
-pub const REPLY_ID_CREATE_MAIN_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB: u64 = 1;
+// From a totally new user using warp for the first time, does not have account tracker yet, let alone free account
+// So we create account account and account and job
+pub const REPLY_ID_CREATE_ACCOUNT_TRACKER_AND_ACCOUNT_AND_JOB: u64 = 1;
 // Reply id for job creation
-// From an existing user, who has main account, but does not have available sub account
-// So we create sub account and job
-pub const REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB: u64 = 2;
+// From an existing user, who has account tracker, but does not have available account
+// So we create account and job
+pub const REPLY_ID_CREATE_ACCOUNT_AND_JOB: u64 = 2;
 // Reply id for job execution
 pub const REPLY_ID_EXECUTE_JOB: u64 = 3;
 
@@ -42,6 +45,7 @@ pub fn instantiate(
         fee_collector: deps
             .api
             .addr_validate(&msg.fee_collector.unwrap_or_else(|| info.sender.to_string()))?,
+        warp_job_account_tracker_code_id: msg.warp_job_account_tracker_code_id,
         warp_account_code_id: msg.warp_account_code_id,
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
@@ -112,20 +116,44 @@ pub fn execute(
 
         ExecuteMsg::UpdateConfig(data) => {
             nonpayable(&info).unwrap();
-            execute::controller::update_config(deps, env, info, data)
+            execute::controller::update_config(deps, env, info, data, config)
         }
 
-        ExecuteMsg::MigrateAccounts(data) => {
+        ExecuteMsg::MigrateLegacyAccounts(data) => {
             nonpayable(&info).unwrap();
-            execute::controller::migrate_accounts(deps, env, info, data)
+            migrate::legacy_account::migrate_legacy_accounts(deps, info, data, config)
         }
+        ExecuteMsg::MigrateJobAccountTrackers(data) => {
+            nonpayable(&info).unwrap();
+            migrate::job_account_tracker::migrate_job_account_trackers(
+                deps.as_ref(),
+                info,
+                data,
+                config,
+            )
+        }
+        ExecuteMsg::MigrateFreeJobAccounts(data) => {
+            nonpayable(&info).unwrap();
+            migrate::job_account::migrate_free_job_accounts(deps.as_ref(), env, info, data, config)
+        }
+        ExecuteMsg::MigrateOccupiedJobAccounts(data) => {
+            nonpayable(&info).unwrap();
+            migrate::job_account::migrate_occupied_job_accounts(
+                deps.as_ref(),
+                env,
+                info,
+                data,
+                config,
+            )
+        }
+
         ExecuteMsg::MigratePendingJobs(data) => {
             nonpayable(&info).unwrap();
-            execute::controller::migrate_pending_jobs(deps, env, info, data)
+            migrate::job::migrate_pending_jobs(deps, env, info, data, config)
         }
         ExecuteMsg::MigrateFinishedJobs(data) => {
             nonpayable(&info).unwrap();
-            execute::controller::migrate_finished_jobs(deps, env, info, data)
+            migrate::job::migrate_finished_jobs(deps, env, info, data, config)
         }
     }
 }
@@ -136,11 +164,12 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryJob(data) => to_binary(&query::job::query_job(deps, env, data)?),
         QueryMsg::QueryJobs(data) => to_binary(&query::job::query_jobs(deps, env, data)?),
 
-        QueryMsg::QueryMainAccount(data) => {
-            to_binary(&query::account::query_main_account(deps, env, data)?)
+        // For job account, please query it via the account tracker contract
+        QueryMsg::QueryLegacyAccount(data) => {
+            to_binary(&query::account::query_legacy_account(deps, env, data)?)
         }
-        QueryMsg::QueryMainAccounts(data) => {
-            to_binary(&query::account::query_main_accounts(deps, env, data)?)
+        QueryMsg::QueryLegacyAccounts(data) => {
+            to_binary(&query::account::query_legacy_accounts(deps, env, data)?)
         }
 
         QueryMsg::QueryConfig(data) => {
@@ -203,6 +232,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             owner: v1_config.owner,
             fee_denom: v1_config.fee_denom,
             fee_collector: v1_config.fee_collector,
+            warp_job_account_tracker_code_id: msg.warp_job_account_tracker_code_id,
             warp_account_code_id: msg.warp_account_code_id,
             minimum_reward: v1_config.minimum_reward,
             creation_fee_percentage: v1_config.creation_fee_percentage,
@@ -223,14 +253,12 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     match msg.id {
-        // Main account has been created, now create sub account and job
-        REPLY_ID_CREATE_MAIN_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB => {
-            reply::account::create_main_account_and_sub_account_and_job(deps, env, msg, config)
+        // Account tracker has been created, now create account and job
+        REPLY_ID_CREATE_ACCOUNT_TRACKER_AND_ACCOUNT_AND_JOB => {
+            reply::account::create_job_account_tracker_and_account_and_job(deps, env, msg, config)
         }
-        // Sub account has been created, now create job
-        REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB => {
-            reply::account::create_sub_account_and_job(deps, env, msg)
-        }
+        // Account has been created, now create job
+        REPLY_ID_CREATE_ACCOUNT_AND_JOB => reply::account::create_account_and_job(deps, env, msg),
         // Job has been executed
         REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg, config),
         _ => Err(ContractError::UnknownReplyId {}),

@@ -2,23 +2,20 @@ use cosmwasm_std::{
     Coin, CosmosMsg, DepsMut, Env, Reply, ReplyOn, Response, StdError, SubMsg, Uint64,
 };
 
-use controller::{
-    account::{CwFund, MainAccount},
-    Config,
-};
+use controller::{account::CwFund, Config};
 
 use crate::{
-    contract::REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
-    state::{JobQueue, ACCOUNTS},
+    contract::REPLY_ID_CREATE_ACCOUNT_AND_JOB,
+    state::{JobQueue, JOB_ACCOUNT_TRACKERS},
     util::msg::{
-        build_account_execute_generic_msgs, build_instantiate_warp_sub_account_msg,
-        build_occupy_sub_account_msg, build_transfer_cw20_msg, build_transfer_cw721_msg,
+        build_account_execute_generic_msgs, build_instantiate_warp_account_msg,
+        build_occupy_account_msg, build_transfer_cw20_msg, build_transfer_cw721_msg,
         build_transfer_native_funds_msg,
     },
     ContractError,
 };
 
-pub fn create_main_account_and_sub_account_and_job(
+pub fn create_job_account_tracker_and_account_and_job(
     deps: DepsMut,
     env: Env,
     msg: Reply,
@@ -53,8 +50,9 @@ pub fn create_main_account_and_sub_account_and_job(
         .find(|attr| attr.key == "owner")
         .ok_or_else(|| StdError::generic_err("cannot find `owner` attribute"))?
         .value;
+    let owner_addr_ref = &deps.api.addr_validate(&owner)?;
 
-    let main_account_addr = event
+    let job_account_tracker_addr = event
         .attributes
         .iter()
         .cloned()
@@ -92,28 +90,25 @@ pub fn create_main_account_and_sub_account_and_job(
             .value,
     )?;
 
-    if ACCOUNTS().has(deps.storage, deps.api.addr_validate(&owner)?) {
-        return Err(ContractError::AccountAlreadyExists {});
+    if JOB_ACCOUNT_TRACKERS.has(deps.storage, owner_addr_ref) {
+        return Err(ContractError::JobAccountTrackerAlreadyExists {});
     }
 
-    ACCOUNTS().save(
+    JOB_ACCOUNT_TRACKERS.save(
         deps.storage,
-        deps.api.addr_validate(&owner)?,
-        &MainAccount {
-            owner: deps.api.addr_validate(&owner.clone())?,
-            account: deps.api.addr_validate(&main_account_addr)?,
-        },
+        owner_addr_ref,
+        &deps.api.addr_validate(&job_account_tracker_addr)?,
     )?;
 
     // Create new sub account then create job in reply
-    let create_sub_account_and_job_submsg = SubMsg {
-        id: REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
-        msg: build_instantiate_warp_sub_account_msg(
+    let create_account_and_job_submsg = SubMsg {
+        id: REPLY_ID_CREATE_ACCOUNT_AND_JOB,
+        msg: build_instantiate_warp_account_msg(
             Uint64::from(job_id),
             env.contract.address.to_string(),
             config.warp_account_code_id.u64(),
             owner.clone(),
-            main_account_addr.clone().to_string(),
+            job_account_tracker_addr.clone(),
             native_funds.clone(),
             cw_funds.clone(),
             account_msgs,
@@ -123,15 +118,14 @@ pub fn create_main_account_and_sub_account_and_job(
     };
 
     Ok(Response::new()
-        .add_submessage(create_sub_account_and_job_submsg)
-        // .add_messages(msgs)
+        .add_submessage(create_account_and_job_submsg)
         .add_attribute(
             "action",
-            "create_main_account_and_sub_account_and_job_reply",
+            "create_job_account_tracker_and_account_and_job_reply",
         )
-        // .add_attribute("job_id", value)
+        .add_attribute("job_id", job_id_str)
         .add_attribute("owner", owner)
-        .add_attribute("account_address", main_account_addr)
+        .add_attribute("job_account_tracker_addr", job_account_tracker_addr)
         .add_attribute("native_funds", serde_json_wasm::to_string(&native_funds)?)
         .add_attribute(
             "cw_funds",
@@ -139,7 +133,7 @@ pub fn create_main_account_and_sub_account_and_job(
         ))
 }
 
-pub fn create_sub_account_and_job(
+pub fn create_account_and_job(
     mut deps: DepsMut,
     env: Env,
     msg: Reply,
@@ -270,7 +264,7 @@ pub fn create_sub_account_and_job(
     }
 
     // Occupy sub account
-    msgs.push(build_occupy_sub_account_msg(
+    msgs.push(build_occupy_account_msg(
         main_account_addr.to_string(),
         sub_account_addr.to_string(),
         job.id,
@@ -278,7 +272,7 @@ pub fn create_sub_account_and_job(
 
     Ok(Response::new()
         .add_messages(msgs)
-        .add_attribute("action", "create_sub_account_and_job_reply")
+        .add_attribute("action", "create_account_and_job_reply")
         // .add_attribute("job_id", value)
         .add_attribute("owner", owner)
         .add_attribute("account_address", sub_account_addr)

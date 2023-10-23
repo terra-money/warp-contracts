@@ -1,0 +1,21 @@
+[package]
+name = "legacy-account"
+version = "0.1.0"
+authors = ["Terra Money <core@terra.money>"]
+edition = "2021"
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+
+[dependencies]
+cosmwasm-std = "1.1"
+cosmwasm-schema = "1.1"
+schemars = "0.8"
+serde = { version = "1", default-features = false, features = ["derive"] }
+prost = "0.11.9"
+
+controller = { path = "../controller" }
+
+[dev-dependencies]
+cw-multi-test = "0.16"

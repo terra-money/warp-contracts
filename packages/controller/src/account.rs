@@ -44,30 +44,30 @@ pub enum Cw721ExecuteMsg {
 }
 
 #[cw_serde]
-pub struct QueryMainAccountMsg {
+pub struct QueryLegacyAccountMsg {
     pub owner: String,
 }
 
 #[cw_serde]
-pub struct QueryMainAccountsMsg {
+pub struct QueryLegacyAccountsMsg {
     pub start_after: Option<String>,
     pub limit: Option<u32>,
 }
 
 #[cw_serde]
-pub struct MainAccount {
+pub struct LegacyAccount {
     pub owner: Addr,
     pub account: Addr,
 }
 
 #[cw_serde]
-pub struct MainAccountResponse {
-    pub main_account: MainAccount,
+pub struct LegacyAccountResponse {
+    pub account: LegacyAccount,
 }
 
 #[cw_serde]
-pub struct MainAccountsResponse {
-    pub main_accounts: Vec<MainAccount>,
+pub struct LegacyAccountsResponse {
+    pub accounts: Vec<LegacyAccount>,
 }
 
 #[cw_serde]

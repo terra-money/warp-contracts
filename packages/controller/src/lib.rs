@@ -1,5 +1,5 @@
 use crate::account::{
-    MainAccountResponse, MainAccountsResponse, QueryMainAccountMsg, QueryMainAccountsMsg,
+    LegacyAccountResponse, LegacyAccountsResponse, QueryLegacyAccountMsg, QueryLegacyAccountsMsg,
 };
 use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
@@ -17,6 +17,7 @@ pub struct Config {
     pub owner: Addr,
     pub fee_denom: String,
     pub fee_collector: Addr,
+    pub warp_job_account_tracker_code_id: Uint64,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
     pub creation_fee_percentage: Uint64,
@@ -47,6 +48,7 @@ pub struct InstantiateMsg {
     pub owner: Option<String>,
     pub fee_denom: String,
     pub fee_collector: Option<String>,
+    pub warp_job_account_tracker_code_id: Uint64,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
     pub creation_fee: Uint64,
@@ -70,7 +72,11 @@ pub enum ExecuteMsg {
 
     UpdateConfig(UpdateConfigMsg),
 
-    MigrateAccounts(MigrateAccountsMsg),
+    MigrateLegacyAccounts(MigrateLegacyAccountsMsg),
+    MigrateJobAccountTrackers(MigrateJobAccountTrackersMsg),
+    MigrateFreeJobAccounts(MigrateJobAccountsMsg),
+    MigrateOccupiedJobAccounts(MigrateJobAccountsMsg),
+
     MigratePendingJobs(MigrateJobsMsg),
     MigrateFinishedJobs(MigrateJobsMsg),
 }
@@ -90,8 +96,23 @@ pub struct UpdateConfigMsg {
 }
 
 #[cw_serde]
-pub struct MigrateAccountsMsg {
-    pub warp_account_code_id: Uint64,
+pub struct MigrateLegacyAccountsMsg {
+    pub warp_legacy_account_code_id: Uint64,
+    pub start_after: Option<String>,
+    pub limit: u8,
+}
+
+#[cw_serde]
+pub struct MigrateJobAccountTrackersMsg {
+    pub warp_job_account_tracker_code_id: Uint64,
+    pub start_after: Option<String>,
+    pub limit: u8,
+}
+
+#[cw_serde]
+pub struct MigrateJobAccountsMsg {
+    pub job_account_tracker_addr: String,
+    pub warp_job_account_code_id: Uint64,
     pub start_after: Option<String>,
     pub limit: u8,
 }
@@ -111,12 +132,12 @@ pub enum QueryMsg {
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
 
-    // For sub account, please query it via the main account contract
-    // You can look at account contract for more details
-    #[returns(MainAccountResponse)]
-    QueryMainAccount(QueryMainAccountMsg),
-    #[returns(MainAccountsResponse)]
-    QueryMainAccounts(QueryMainAccountsMsg),
+    // For job account, please query it via the account tracker contract
+    // You can look at account tracker contract for more details
+    #[returns(LegacyAccountResponse)]
+    QueryLegacyAccount(QueryLegacyAccountMsg),
+    #[returns(LegacyAccountsResponse)]
+    QueryLegacyAccounts(QueryLegacyAccountsMsg),
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
@@ -144,6 +165,7 @@ pub struct StateResponse {
 //migrate//{"resolver_address":"terra1a8dxkrapwj4mkpfnrv7vahd0say0lxvd0ft6qv","warp_account_code_id":"10081"}
 #[cw_serde]
 pub struct MigrateMsg {
+    pub warp_job_account_tracker_code_id: Uint64,
     pub warp_account_code_id: Uint64,
     pub resolver_address: String,
 }

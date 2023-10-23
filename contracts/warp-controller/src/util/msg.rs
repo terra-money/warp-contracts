@@ -1,43 +1,33 @@
 use cosmwasm_std::{to_binary, BankMsg, Coin, CosmosMsg, Uint128, Uint64, WasmMsg};
 
-use account::{FreeSubAccountMsg, GenericMsg, OccupySubAccountMsg, WithdrawAssetsMsg};
 use controller::account::{AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
+use job_account::{GenericMsg, WithdrawAssetsMsg};
+use job_account_tracker::{FreeAccountMsg, OccupyAccountMsg};
 
-pub fn build_instantiate_warp_main_account_msg(
-    job_id: Uint64,
+pub fn build_instantiate_warp_job_account_tracker_msg(
     admin_addr: String,
     code_id: u64,
     account_owner: String,
-    native_funds: Vec<Coin>,
-    cw_funds: Option<Vec<CwFund>>,
-    msgs: Option<Vec<CosmosMsg>>,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Instantiate {
         admin: Some(admin_addr),
         code_id,
-        msg: to_binary(&account::InstantiateMsg {
+        msg: to_binary(&job_account_tracker::InstantiateMsg {
             owner: account_owner.clone(),
-            job_id,
-            is_sub_account: false,
-            main_account_addr: None,
-            native_funds: native_funds.clone(),
-            cw_funds: cw_funds.unwrap_or(vec![]),
-            msgs: msgs.unwrap_or(vec![]),
         })
         .unwrap(),
-        // Only send native funds to sub account
         funds: vec![],
-        label: format!("warp main account, owner: {}", account_owner),
+        label: format!("warp account tracker, owner: {}", account_owner),
     })
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn build_instantiate_warp_sub_account_msg(
+pub fn build_instantiate_warp_account_msg(
     job_id: Uint64,
     admin_addr: String,
     code_id: u64,
     account_owner: String,
-    main_account_addr: String,
+    job_account_tracker_addr: String,
     native_funds: Vec<Coin>,
     cw_funds: Option<Vec<CwFund>>,
     msgs: Option<Vec<CosmosMsg>>,
@@ -45,48 +35,41 @@ pub fn build_instantiate_warp_sub_account_msg(
     CosmosMsg::Wasm(WasmMsg::Instantiate {
         admin: Some(admin_addr),
         code_id,
-        msg: to_binary(&account::InstantiateMsg {
+        msg: to_binary(&job_account::InstantiateMsg {
             owner: account_owner.clone(),
             job_id,
-            is_sub_account: true,
-            main_account_addr: Some(main_account_addr.clone()),
+            job_account_tracker_addr,
             native_funds: native_funds.clone(),
             cw_funds: cw_funds.unwrap_or(vec![]),
             msgs: msgs.unwrap_or(vec![]),
         })
         .unwrap(),
         funds: native_funds,
-        label: format!(
-            "warp sub account, main account: {}, owner: {}",
-            main_account_addr, account_owner,
-        ),
+        label: format!("warp account, owner: {}", account_owner,),
     })
 }
 
-pub fn build_free_sub_account_msg(
-    main_account_addr: String,
-    sub_account_addr: String,
-) -> CosmosMsg {
+pub fn build_free_account_msg(job_account_tracker_addr: String, account_addr: String) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: main_account_addr,
-        msg: to_binary(&account::ExecuteMsg::FreeSubAccount(FreeSubAccountMsg {
-            sub_account_addr,
-        }))
+        contract_addr: job_account_tracker_addr,
+        msg: to_binary(&job_account_tracker::ExecuteMsg::FreeAccount(
+            FreeAccountMsg { account_addr },
+        ))
         .unwrap(),
         funds: vec![],
     })
 }
 
-pub fn build_occupy_sub_account_msg(
-    main_account_addr: String,
-    sub_account_addr: String,
+pub fn build_occupy_account_msg(
+    job_account_tracker_addr: String,
+    account_addr: String,
     job_id: Uint64,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: main_account_addr,
-        msg: to_binary(&account::ExecuteMsg::OccupySubAccount(
-            OccupySubAccountMsg {
-                sub_account_addr,
+        contract_addr: job_account_tracker_addr,
+        msg: to_binary(&job_account_tracker::ExecuteMsg::OccupyAccount(
+            OccupyAccountMsg {
+                account_addr,
                 job_id,
             },
         ))
@@ -145,7 +128,7 @@ pub fn build_account_execute_generic_msgs(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_addr,
-        msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+        msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
             msgs: cosmos_msgs_for_account_to_execute,
         }))
         .unwrap(),
@@ -159,9 +142,11 @@ pub fn build_account_withdraw_assets_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_addr,
-        msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
-            asset_infos: assets_to_withdraw,
-        }))
+        msg: to_binary(&job_account::ExecuteMsg::WithdrawAssets(
+            WithdrawAssetsMsg {
+                asset_infos: assets_to_withdraw,
+            },
+        ))
         .unwrap(),
         funds: vec![],
     })

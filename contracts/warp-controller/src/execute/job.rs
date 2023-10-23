@@ -3,31 +3,32 @@ use cosmwasm_std::{
     MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
 };
 
-use crate::contract::{
-    REPLY_ID_CREATE_MAIN_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB, REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
-    REPLY_ID_EXECUTE_JOB,
-};
-use crate::state::{JobQueue, ACCOUNTS, STATE};
-use crate::util::msg::{
-    build_instantiate_warp_main_account_msg, build_instantiate_warp_sub_account_msg,
-};
-use crate::util::{
-    fee::deduct_reward_and_fee_from_native_funds,
-    msg::{
-        build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-        build_free_sub_account_msg, build_occupy_sub_account_msg, build_transfer_cw20_msg,
-        build_transfer_cw721_msg, build_transfer_native_funds_msg,
+use crate::{
+    contract::{
+        REPLY_ID_CREATE_ACCOUNT_AND_JOB, REPLY_ID_CREATE_ACCOUNT_TRACKER_AND_ACCOUNT_AND_JOB,
+        REPLY_ID_EXECUTE_JOB,
     },
-    sub_account::is_sub_account,
+    state::{JobQueue, JOB_ACCOUNT_TRACKERS, LEGACY_ACCOUNTS, STATE},
+    util::{
+        fee::deduct_reward_and_fee_from_native_funds,
+        legacy_account::is_legacy_account,
+        msg::{
+            build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
+            build_free_account_msg, build_instantiate_warp_account_msg,
+            build_instantiate_warp_job_account_tracker_msg, build_occupy_account_msg,
+            build_transfer_cw20_msg, build_transfer_cw721_msg, build_transfer_native_funds_msg,
+        },
+    },
+    ContractError,
 };
-use crate::ContractError;
 
-use account::{FirstFreeSubAccountResponse, GenericMsg};
 use controller::{
     account::CwFund,
     job::{CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg},
     Config,
 };
+use job_account::GenericMsg;
+use job_account_tracker::FirstFreeAccountResponse;
 use resolver::QueryHydrateMsgsMsg;
 
 const MAX_TEXT_LENGTH: usize = 280;
@@ -91,20 +92,7 @@ pub fn create_job(
         ),
     );
 
-    // First try to query main account by account address (query index key which is account by sender)
-    // This can happen when account contract calls controller's create_job
-    // The result would be none if user (account owner) calls create_job directly
-    let main_account = match ACCOUNTS()
-        .idx
-        .account
-        .item(deps.storage, info.sender.clone())?
-    {
-        // create_job is called by account contract
-        Some(record) => Some(record.1),
-        // create_job is called by user
-        None => ACCOUNTS().may_load(deps.storage, info.sender.clone())?,
-    };
-
+    let job_account_tracker = JOB_ACCOUNT_TRACKERS.may_load(deps.storage, &info.sender)?;
     let state = STATE.load(deps.storage)?;
     let mut job = JobQueue::add(
         &mut deps,
@@ -112,7 +100,7 @@ pub fn create_job(
             id: state.current_job_id,
             prev_id: None,
             owner: info.sender.clone(),
-            // Account uses a placeholder value for now, will update it to sub account address if sub account exists or after created
+            // Account uses a placeholder value for now, will update it to job account address if job account exists or after created
             // Update will happen either in create_job (sub account exists) or reply (after creation), so it's atomic
             // And we guarantee we do not read this value before it's updated
             account: info.sender.clone(),
@@ -132,19 +120,15 @@ pub fn create_job(
         },
     )?;
 
-    match main_account {
+    match job_account_tracker {
         None => {
-            // Create main account then create sub account then create job in reply
+            // Create account tracker then create account then create job in reply
             submsgs.push(SubMsg {
-                id: REPLY_ID_CREATE_MAIN_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB,
-                msg: build_instantiate_warp_main_account_msg(
-                    job.id,
+                id: REPLY_ID_CREATE_ACCOUNT_TRACKER_AND_ACCOUNT_AND_JOB,
+                msg: build_instantiate_warp_job_account_tracker_msg(
                     env.contract.address.to_string(),
-                    config.warp_account_code_id.u64(),
+                    config.warp_job_account_tracker_code_id.u64(),
                     info.sender.to_string(),
-                    native_funds_minus_reward_and_fee,
-                    data.cw_funds,
-                    data.account_msgs,
                 ),
                 gas_limit: None,
                 reply_on: ReplyOn::Always,
@@ -152,32 +136,27 @@ pub fn create_job(
 
             attrs.push(Attribute::new(
                 "action",
-                "create_main_account_and_sub_account_and_job",
+                "create_job_account_tracker_and_account_and_job",
             ));
         }
-        Some(main_account) => {
-            if main_account.owner != info.sender {
-                return Err(ContractError::Unauthorized {});
-            }
-            let main_account_addr = main_account.account;
-            let available_sub_account: FirstFreeSubAccountResponse =
-                deps.querier.query_wasm_smart(
-                    main_account_addr.clone(),
-                    &account::QueryMsg::QueryFirstFreeSubAccount(
-                        account::QueryFirstFreeSubAccountMsg {},
-                    ),
-                )?;
-            match available_sub_account.sub_account {
+        Some(job_account_tracker) => {
+            let available_account: FirstFreeAccountResponse = deps.querier.query_wasm_smart(
+                job_account_tracker.clone(),
+                &job_account_tracker::QueryMsg::QueryFirstFreeAccount(
+                    job_account_tracker::QueryFirstFreeAccountMsg {},
+                ),
+            )?;
+            match available_account.account {
                 None => {
-                    // Create sub account then create job in reply
+                    // Create account then create job in reply
                     submsgs.push(SubMsg {
-                        id: REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
-                        msg: build_instantiate_warp_sub_account_msg(
+                        id: REPLY_ID_CREATE_ACCOUNT_AND_JOB,
+                        msg: build_instantiate_warp_account_msg(
                             job.id,
                             env.contract.address.to_string(),
                             config.warp_account_code_id.u64(),
                             info.sender.to_string(),
-                            main_account_addr.clone().to_string(),
+                            job_account_tracker.clone().to_string(),
                             native_funds_minus_reward_and_fee,
                             data.cw_funds,
                             data.account_msgs,
@@ -186,18 +165,18 @@ pub fn create_job(
                         reply_on: ReplyOn::Always,
                     });
 
-                    attrs.push(Attribute::new("action", "create_sub_account_and_job"));
+                    attrs.push(Attribute::new("action", "create_account_and_job"));
                 }
-                Some(sub_account) => {
-                    let sub_account_addr = sub_account.account_addr;
-                    // Update job.account from placeholder value to sub account
-                    job.account = sub_account_addr.clone();
+                Some(available_account) => {
+                    let available_account_addr = available_account.addr;
+                    // Update job.account from placeholder value to job account
+                    job.account = available_account_addr.clone();
                     JobQueue::sync(&mut deps, env, job.clone())?;
 
                     if !native_funds_minus_reward_and_fee.is_empty() {
                         // Fund account in native coins
                         msgs.push(build_transfer_native_funds_msg(
-                            sub_account_addr.clone().to_string(),
+                            available_account_addr.clone().to_string(),
                             native_funds_minus_reward_and_fee,
                         ))
                     }
@@ -211,14 +190,14 @@ pub fn create_job(
                                         .addr_validate(&cw20_fund.contract_addr)?
                                         .to_string(),
                                     info.sender.clone().to_string(),
-                                    sub_account_addr.clone().to_string(),
+                                    available_account_addr.clone().to_string(),
                                     cw20_fund.amount,
                                 ),
                                 CwFund::Cw721(cw721_fund) => build_transfer_cw721_msg(
                                     deps.api
                                         .addr_validate(&cw721_fund.contract_addr)?
                                         .to_string(),
-                                    sub_account_addr.clone().to_string(),
+                                    available_account_addr.clone().to_string(),
                                     cw721_fund.token_id.clone(),
                                 ),
                             })
@@ -228,15 +207,15 @@ pub fn create_job(
                     if let Some(account_msgs) = data.account_msgs {
                         // Account execute msgs
                         msgs.push(build_account_execute_generic_msgs(
-                            sub_account_addr.to_string(),
+                            available_account_addr.to_string(),
                             account_msgs,
                         ));
                     }
 
-                    // Occupy sub account
-                    msgs.push(build_occupy_sub_account_msg(
-                        main_account_addr.to_string(),
-                        sub_account_addr.to_string(),
+                    // Occupy account
+                    msgs.push(build_occupy_account_msg(
+                        job_account_tracker.to_string(),
+                        available_account_addr.to_string(),
                         job.id,
                     ));
 
@@ -282,7 +261,7 @@ pub fn delete_job(
     fee_denom_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let job = JobQueue::get(&deps, data.id.into())?;
-    let main_account_addr = ACCOUNTS().load(deps.storage, job.owner.clone())?.account;
+    let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, job.owner.clone())?;
     let job_account_addr = job.account.clone();
 
     if job.status != JobStatus::Pending {
@@ -318,10 +297,12 @@ pub fn delete_job(
         vec![Coin::new(fee.u128(), config.fee_denom)],
     ));
 
-    if is_sub_account(&main_account_addr, &job_account_addr) {
-        // Free sub account
-        msgs.push(build_free_sub_account_msg(
-            main_account_addr.to_string(),
+    if !is_legacy_account(legacy_account, job_account_addr.clone()) {
+        // For job not using legacy account, job owner must already have account tracker instantiated
+        let job_account_tracker = JOB_ACCOUNT_TRACKERS.load(deps.storage, &job.owner)?;
+        // Free account
+        msgs.push(build_free_account_msg(
+            job_account_tracker.to_string(),
             job_account_addr.to_string(),
         ));
     }
@@ -386,7 +367,7 @@ pub fn update_job(
             // Controller sends update fee to fee collector
             WasmMsg::Execute {
                 contract_addr: job.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
                     msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                         to_address: config.fee_collector.to_string(),
                         amount: vec![Coin::new((fee).u128(), config.fee_denom)],
@@ -419,7 +400,7 @@ pub fn execute_job(
     config: Config,
 ) -> Result<Response, ContractError> {
     let job = JobQueue::get(&deps, data.id.into())?;
-    let main_account_addr = ACCOUNTS().load(deps.storage, job.owner.clone())?.account;
+    let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, job.owner.clone())?;
     let job_account_addr = job.account.clone();
 
     if job.status != JobStatus::Pending {
@@ -453,13 +434,11 @@ pub fn execute_job(
         attrs.push(Attribute::new("error", e.to_string()));
         JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Failed)?;
 
-        if is_sub_account(&main_account_addr, &job_account_addr) {
-            // Free sub account
-            msgs.push(build_free_sub_account_msg(
-                main_account_addr.to_string(),
-                job_account_addr.to_string(),
-            ));
-        }
+        // Withdraw reward to job owner
+        msgs.push(build_account_withdraw_assets_msg(
+            job.account.to_string(),
+            job.assets_to_withdraw,
+        ));
     } else {
         attrs.push(Attribute::new("job_condition_status", "valid"));
         if !resolution? {
@@ -477,7 +456,7 @@ pub fn execute_job(
             id: REPLY_ID_EXECUTE_JOB,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: job.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
                     msgs: deps.querier.query_wasm_smart(
                         config.resolver_address,
                         &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
@@ -499,10 +478,12 @@ pub fn execute_job(
         vec![Coin::new(job.reward.u128(), config.fee_denom)],
     ));
 
-    if is_sub_account(&main_account_addr, &job_account_addr) {
-        // Free sub account
-        msgs.push(build_free_sub_account_msg(
-            main_account_addr.to_string(),
+    if !is_legacy_account(legacy_account, job_account_addr.clone()) {
+        // For job not using legacy account, job owner must already have account tracker instantiated
+        let job_account_tracker = JOB_ACCOUNT_TRACKERS.load(deps.storage, &job.owner)?;
+        // Free account
+        msgs.push(build_free_account_msg(
+            job_account_tracker.to_string(),
             job_account_addr.to_string(),
         ));
     }
@@ -526,7 +507,7 @@ pub fn evict_job(
 ) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
     let job = JobQueue::get(&deps, data.id.into())?;
-    let main_account_addr = ACCOUNTS().load(deps.storage, job.owner.clone())?.account;
+    let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, job.owner.clone())?;
     let job_account_addr = job.account.clone();
 
     let account_amount = deps
@@ -591,10 +572,12 @@ pub fn evict_job(
             vec![Coin::new((job.reward - a).u128(), config.fee_denom.clone())],
         ));
 
-        if is_sub_account(&main_account_addr, &job_account_addr) {
-            // Free sub account
-            msgs.push(build_free_sub_account_msg(
-                main_account_addr.to_string(),
+        if !is_legacy_account(legacy_account, job_account_addr.clone()) {
+            // For job not using legacy account, job owner must already have account tracker instantiated
+            let job_account_tracker = JOB_ACCOUNT_TRACKERS.load(deps.storage, &job.owner)?;
+            // Free account
+            msgs.push(build_free_account_msg(
+                job_account_tracker.to_string(),
                 job_account_addr.to_string(),
             ));
         }

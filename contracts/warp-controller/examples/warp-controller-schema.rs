@@ -2,7 +2,7 @@ use std::env::current_dir;
 use std::fs::create_dir_all;
 
 use controller::{
-    account::{MainAccountResponse, MainAccountsResponse},
+    account::{LegacyAccountResponse, LegacyAccountsResponse},
     job::{JobResponse, JobsResponse},
     QueryMsg, State, StateResponse, {Config, ConfigResponse, ExecuteMsg, InstantiateMsg},
 };
@@ -23,6 +23,6 @@ fn main() {
     export_schema(&schema_for!(StateResponse), &out_dir);
     export_schema(&schema_for!(JobResponse), &out_dir);
     export_schema(&schema_for!(JobsResponse), &out_dir);
-    export_schema(&schema_for!(MainAccountResponse), &out_dir);
-    export_schema(&schema_for!(MainAccountsResponse), &out_dir);
+    export_schema(&schema_for!(LegacyAccountResponse), &out_dir);
+    export_schema(&schema_for!(LegacyAccountsResponse), &out_dir);
 }

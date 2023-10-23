@@ -5,13 +5,13 @@ use cosmwasm_std::{
 
 use crate::{
     error::map_contract_error,
-    state::{JobQueue, ACCOUNTS, STATE},
+    state::{JobQueue, JOB_ACCOUNT_TRACKERS, LEGACY_ACCOUNTS, STATE},
     util::{
+        legacy_account::is_legacy_account,
         msg::{
             build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-            build_occupy_sub_account_msg, build_transfer_native_funds_msg,
+            build_occupy_account_msg, build_transfer_native_funds_msg,
         },
-        sub_account::is_sub_account,
     },
     ContractError,
 };
@@ -51,9 +51,7 @@ pub fn execute_job(
         finished_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
     let fee_plus_reward = fee + finished_job.reward;
 
-    let main_account_addr = ACCOUNTS()
-        .load(deps.storage, finished_job.owner.clone())?
-        .account;
+    let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, finished_job.owner.clone())?;
     let job_account_addr = finished_job.account.clone();
 
     let job_account_amount = deps
@@ -203,16 +201,19 @@ pub fn execute_job(
     }
 
     if recurring_job_created {
-        if is_sub_account(&main_account_addr, &job_account_addr) {
+        if !is_legacy_account(legacy_account, job_account_addr.clone()) {
+            // For job not using legacy account, job owner must already have account tracker instantiated
+            let job_account_tracker =
+                JOB_ACCOUNT_TRACKERS.load(deps.storage, &finished_job.owner)?;
             // Occupy sub account with the new job
-            msgs.push(build_occupy_sub_account_msg(
-                main_account_addr.to_string(),
+            msgs.push(build_occupy_account_msg(
+                job_account_tracker.to_string(),
                 job_account_addr.to_string(),
                 new_job_id,
             ));
         }
     } else {
-        // No new job created, sub account has been free in execute_job, no need to free here again
+        // No new job created, account has been free in execute_job, no need to free here again
         // Job owner withdraw all assets that are listed from warp account to itself
         msgs.push(build_account_withdraw_assets_msg(
             job_account_addr.clone().to_string(),

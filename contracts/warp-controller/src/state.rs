@@ -1,8 +1,8 @@
 use cosmwasm_std::{Addr, DepsMut, Env, Uint128, Uint64};
-use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
 
 use controller::{
-    account::MainAccount,
+    account::LegacyAccount,
     job::{Job, JobStatus, UpdateJobMsg},
     Config, State,
 };
@@ -53,24 +53,34 @@ pub fn FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
     IndexedMap::new("finished_jobs_v3", indexes)
 }
 
-pub struct MainAccountIndexes<'a> {
-    pub account: UniqueIndex<'a, Addr, MainAccount>,
+pub struct LegacyAccountIndexes<'a> {
+    pub account: UniqueIndex<'a, Addr, LegacyAccount>,
 }
 
-impl IndexList<MainAccount> for MainAccountIndexes<'_> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<MainAccount>> + '_> {
-        let v: Vec<&dyn Index<MainAccount>> = vec![&self.account];
+impl IndexList<LegacyAccount> for LegacyAccountIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<LegacyAccount>> + '_> {
+        let v: Vec<&dyn Index<LegacyAccount>> = vec![&self.account];
         Box::new(v.into_iter())
     }
 }
 
+// !!! DEPRECATED !!!
+// LEGACY_ACCOUNTS stores legacy account (all user's jobs share the same account, this is the old way of doing things before introducing job account)
+// As of late 2023, we introduced job account meaning each job will have its own account, no more job sharing the same account
+// We keep this for backward compatibility so user can withdraw from their old accounts
 #[allow(non_snake_case)]
-pub fn ACCOUNTS<'a>() -> IndexedMap<'a, Addr, MainAccount, MainAccountIndexes<'a>> {
-    let indexes = MainAccountIndexes {
+pub fn LEGACY_ACCOUNTS<'a>() -> IndexedMap<'a, Addr, LegacyAccount, LegacyAccountIndexes<'a>> {
+    let indexes = LegacyAccountIndexes {
         account: UniqueIndex::new(|account| account.account.clone(), "accounts__account"),
     };
     IndexedMap::new("accounts", indexes)
 }
+
+// ACCOUNTS_TRACKER stores account tracker, this is the successor of ACCOUNTS
+// Key is user address, value is address of job account tracker contract
+// By querying each user's account tracker contract, we know all accounts owned by that user and each account's availability
+// For more detail, please refer to account tracker contract
+pub const JOB_ACCOUNT_TRACKERS: Map<&Addr, Addr> = Map::new("job_job_account_trackers");
 
 pub const QUERY_PAGE_SIZE: u32 = 50;
 pub const CONFIG: Item<Config> = Item::new("config");
