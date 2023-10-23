@@ -17,6 +17,7 @@ mod tests {
 
     const DUMMY_WARP_CONTROLLER_ADDR: &str = "terra1";
     const USER_1: &str = "terra2";
+    const DUMMY_JOB_ID: Uint64 = Uint64::zero();
 
     fn mock_app() -> App {
         AppBuilder::new().build(|router, _, storage| {
@@ -51,10 +52,12 @@ mod tests {
             Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
             &InstantiateMsg {
                 owner: USER_1.to_string(),
-                msgs: None,
-                funds: None,
+                job_id: DUMMY_JOB_ID,
                 is_sub_account,
                 main_account_addr,
+                native_funds: vec![],
+                cw_funds: vec![],
+                msgs: vec![],
             },
             &[],
             "warp_main_account",

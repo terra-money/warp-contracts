@@ -4,6 +4,7 @@ use cosmwasm_std::{
     StdResult, Uint128, Uint64,
 };
 use cw_storage_plus::Item;
+use cw_utils::{must_pay, nonpayable};
 
 use crate::state::CONFIG;
 use crate::{execute, query, reply, state::STATE, ContractError};
@@ -13,7 +14,7 @@ use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State
 // Reply id for job creation
 // From a totally new user using warp for the first time, does not have account yet, let alone sub account
 // So we create both account and sub account and job
-pub const REPLY_ID_CREATE_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB: u64 = 1;
+pub const REPLY_ID_CREATE_MAIN_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB: u64 = 1;
 // Reply id for job creation
 // From an existing user, who has main account, but does not have available sub account
 // So we create sub account and job
@@ -86,22 +87,44 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
     match msg {
-        ExecuteMsg::CreateJob(data) => execute::job::create_job(deps, env, info, data),
-        ExecuteMsg::DeleteJob(data) => execute::job::delete_job(deps, env, info, data),
-        ExecuteMsg::UpdateJob(data) => execute::job::update_job(deps, env, info, data),
-        ExecuteMsg::ExecuteJob(data) => execute::job::execute_job(deps, env, info, data),
-        ExecuteMsg::EvictJob(data) => execute::job::evict_job(deps, env, info, data),
+        ExecuteMsg::CreateJob(data) => {
+            let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
+            execute::job::create_job(deps, env, info, data, config, fee_denom_paid_amount)
+        }
+        ExecuteMsg::DeleteJob(data) => {
+            let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
+            execute::job::delete_job(deps, env, info, data, config, fee_denom_paid_amount)
+        }
+        ExecuteMsg::UpdateJob(data) => {
+            let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
+            execute::job::update_job(deps, env, info, data, config, fee_denom_paid_amount)
+        }
+        ExecuteMsg::ExecuteJob(data) => {
+            nonpayable(&info).unwrap();
+            execute::job::execute_job(deps, env, info, data, config)
+        }
+        ExecuteMsg::EvictJob(data) => {
+            nonpayable(&info).unwrap();
+            execute::job::evict_job(deps, env, info, data, config)
+        }
 
-        ExecuteMsg::UpdateConfig(data) => execute::controller::update_config(deps, env, info, data),
+        ExecuteMsg::UpdateConfig(data) => {
+            nonpayable(&info).unwrap();
+            execute::controller::update_config(deps, env, info, data)
+        }
 
         ExecuteMsg::MigrateAccounts(data) => {
+            nonpayable(&info).unwrap();
             execute::controller::migrate_accounts(deps, env, info, data)
         }
         ExecuteMsg::MigratePendingJobs(data) => {
+            nonpayable(&info).unwrap();
             execute::controller::migrate_pending_jobs(deps, env, info, data)
         }
         ExecuteMsg::MigrateFinishedJobs(data) => {
+            nonpayable(&info).unwrap();
             execute::controller::migrate_finished_jobs(deps, env, info, data)
         }
     }
@@ -195,18 +218,19 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
     match msg.id {
+        // Main account has been created, now create sub account and job
+        REPLY_ID_CREATE_MAIN_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB => {
+            reply::account::create_main_account_and_sub_account_and_job(deps, env, msg, config)
+        }
         // Sub account has been created, now create job
         REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB => {
             reply::account::create_sub_account_and_job(deps, env, msg)
         }
-        // Main account has been created, now create sub account and job
-        REPLY_ID_CREATE_MAIN_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB => {
-            reply::account::create_main_account_and_sub_account_and_job(deps, env, msg)
-        }
         // Job has been executed
-        REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg),
+        REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg, config),
         _ => Err(ContractError::UnknownReplyId {}),
     }
 }

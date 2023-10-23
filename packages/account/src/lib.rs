@@ -1,6 +1,6 @@
-use controller::account::{AssetInfo, Fund};
+use controller::account::{AssetInfo, CwFund};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, CosmosMsg, Uint64};
+use cosmwasm_std::{Addr, Coin as NativeCoin, CosmosMsg, Uint64};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -24,13 +24,22 @@ pub struct Config {
 
 #[cw_serde]
 pub struct InstantiateMsg {
+    // User who owns this account
     pub owner: String,
+    // ID of the job that is created along with the account
+    pub job_id: Uint64,
+    // Whether this account is a sub account, account can be a main account or a sub account
     pub is_sub_account: bool,
-    pub msgs: Option<Vec<CosmosMsg>>,
-    pub funds: Option<Vec<Fund>>,
     // Only supplied when is_sub_account is true
     // Skipped if it's instantiating a main account
     pub main_account_addr: Option<String>,
+    // Only required when we are instantiate a main account
+    // Since we always want to fund sub account, so we will pass this value around and send it to sub account during instantiation in create main account's reply
+    pub native_funds: Vec<NativeCoin>,
+    // CW20 or CW721 funds, will be transferred to account in reply of account instantiation
+    pub cw_funds: Vec<CwFund>,
+    // List of cosmos msgs to execute after instantiating the account
+    pub msgs: Vec<CosmosMsg>,
 }
 
 #[cw_serde]

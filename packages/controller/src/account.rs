@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint128};
 
 #[cw_serde]
-pub enum Fund {
+pub enum CwFund {
     Cw20(Cw20Fund),
     Cw721(Cw721Fund),
 }

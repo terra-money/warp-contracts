@@ -4,6 +4,7 @@ use account::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, SubAccou
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
+use cw_utils::nonpayable;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -34,7 +35,13 @@ pub fn instantiate(
     )?;
 
     Ok(Response::new()
+        .add_messages(if msg.is_sub_account {
+            msg.msgs.clone()
+        } else {
+            vec![]
+        })
         .add_attribute("action", "instantiate")
+        .add_attribute("job_id", msg.job_id)
         .add_attribute("contract_addr", instantiated_account_addr.clone())
         .add_attribute("is_sub_account", format!("{}", msg.is_sub_account))
         .add_attribute(
@@ -43,8 +50,11 @@ pub fn instantiate(
                 .unwrap_or(instantiated_account_addr.to_string()),
         )
         .add_attribute("owner", msg.owner)
-        .add_attribute("funds", serde_json_wasm::to_string(&info.funds)?)
-        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.funds)?)
+        .add_attribute(
+            "native_funds",
+            serde_json_wasm::to_string(&msg.native_funds)?,
+        )
+        .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.cw_funds)?)
         .add_attribute("account_msgs", serde_json_wasm::to_string(&msg.msgs)?))
 }
 
@@ -64,11 +74,18 @@ pub fn execute(
             .add_messages(data.msgs)
             .add_attribute("action", "generic")),
         ExecuteMsg::WithdrawAssets(data) => {
+            nonpayable(&info).unwrap();
             execute::withdraw::withdraw_assets(deps, env, data, config)
         }
         ExecuteMsg::IbcTransfer(data) => execute::ibc::ibc_transfer(env, data),
-        ExecuteMsg::OccupySubAccount(data) => execute::account::occupy_sub_account(deps, env, data),
-        ExecuteMsg::FreeSubAccount(data) => execute::account::free_sub_account(deps, env, data),
+        ExecuteMsg::OccupySubAccount(data) => {
+            nonpayable(&info).unwrap();
+            execute::account::occupy_sub_account(deps, env, data)
+        }
+        ExecuteMsg::FreeSubAccount(data) => {
+            nonpayable(&info).unwrap();
+            execute::account::free_sub_account(deps, env, data)
+        }
     }
 }
 

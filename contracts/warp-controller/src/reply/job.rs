@@ -1,17 +1,31 @@
-use account::{FreeSubAccountMsg, GenericMsg, OccupySubAccountMsg, WithdrawAssetsMsg};
-use controller::job::{Job, JobStatus};
 use cosmwasm_std::{
-    to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
-    QueryRequest, Reply, Response, StdError, StdResult, SubMsgResult, Uint128, Uint64, WasmMsg,
+    Attribute, BalanceResponse, BankQuery, Coin, DepsMut, Env, QueryRequest, Reply, Response,
+    StdResult, SubMsgResult, Uint128, Uint64,
 };
 
 use crate::{
     error::map_contract_error,
-    state::{JobQueue, ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE},
+    state::{JobQueue, ACCOUNTS, STATE},
+    util::{
+        msg::{
+            build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
+            build_free_sub_account_msg, build_transfer_native_funds_msg,
+        },
+        sub_account::is_sub_account,
+    },
     ContractError,
 };
+use controller::{
+    job::{Job, JobStatus},
+    Config,
+};
 
-pub fn execute_job(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+pub fn execute_job(
+    mut deps: DepsMut,
+    env: Env,
+    msg: Reply,
+    config: Config,
+) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
 
     let new_status = match msg.result {
@@ -32,25 +46,30 @@ pub fn execute_job(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, 
     let mut msgs = vec![];
     let mut new_job_attrs = vec![];
 
-    let config = CONFIG.load(deps.storage)?;
-
-    // Assume reward.amount == warp token allowance
     let fee =
         finished_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+    let fee_plus_reward = fee + finished_job.reward;
 
-    let account_amount = deps
+    let main_account_addr = ACCOUNTS()
+        .load(deps.storage, finished_job.owner.clone())?
+        .account;
+    let job_account_addr = finished_job.account.clone();
+
+    let job_account_amount = deps
         .querier
         .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-            address: finished_job.account.to_string(),
+            address: job_account_addr.to_string(),
             denom: config.fee_denom.clone(),
         }))?
         .amount
         .amount;
 
+    let mut recurring_job_created = false;
+
     if finished_job.recurring {
-        if account_amount < fee + finished_job.reward {
+        if job_account_amount < fee_plus_reward {
             new_job_attrs.push(Attribute::new("action", "recur_job"));
-            new_job_attrs.push(Attribute::new("creation_status", "failed_insufficient_fee"))
+            new_job_attrs.push(Attribute::new("creation_status", "failed_insufficient_fee"));
         } else if !(finished_job.status == JobStatus::Executed
             || finished_job.status == JobStatus::Failed)
         {
@@ -65,7 +84,7 @@ pub fn execute_job(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, 
                 &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
                     vars: finished_job.vars,
                     status: finished_job.status.clone(),
-                    warp_account_addr: Some(finished_job.account.to_string()),
+                    warp_account_addr: Some(finished_job.account.clone().to_string()),
                 }),
             )?;
 
@@ -115,6 +134,7 @@ pub fn execute_job(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, 
             }
 
             if !should_terminate_job {
+                recurring_job_created = true;
                 let new_job = JobQueue::add(
                     &mut deps,
                     Job {
@@ -134,48 +154,25 @@ pub fn execute_job(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, 
                         recurring: finished_job.recurring,
                         msgs: finished_job.msgs.clone(),
                         reward: finished_job.reward,
-                        assets_to_withdraw: finished_job.assets_to_withdraw,
+                        assets_to_withdraw: finished_job.assets_to_withdraw.clone(),
                     },
                 )?;
 
-                msgs.push(
-                    // Job owner's warp account sends fee to fee collector
-                    WasmMsg::Execute {
-                        contract_addr: finished_job.account.to_string(),
-                        msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                            msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                                to_address: config.fee_collector.to_string(),
-                                amount: vec![Coin::new((fee).u128(), config.fee_denom.clone())],
-                            })],
-                        }))?,
-                        funds: vec![],
-                    },
-                );
-
-                msgs.push(
-                    // Job owner's warp account sends reward to controller
-                    WasmMsg::Execute {
-                        contract_addr: finished_job.account.to_string(),
-                        msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                            msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                                to_address: env.contract.address.to_string(),
-                                amount: vec![Coin::new((new_job.reward).u128(), config.fee_denom)],
-                            })],
-                        }))?,
-                        funds: vec![],
-                    },
-                );
-
-                msgs.push(
-                    // Job owner withdraw all assets that are listed from warp account to itself
-                    WasmMsg::Execute {
-                        contract_addr: finished_job.account.to_string(),
-                        msg: to_binary(&account::ExecuteMsg::WithdrawAssets(WithdrawAssetsMsg {
-                            asset_infos: new_job.assets_to_withdraw,
-                        }))?,
-                        funds: vec![],
-                    },
-                );
+                msgs.push(build_account_execute_generic_msgs(
+                    job_account_addr.clone().to_string(),
+                    vec![
+                        // Job owner's warp account sends fee to fee collector
+                        build_transfer_native_funds_msg(
+                            config.fee_collector.to_string(),
+                            vec![Coin::new(fee.u128(), config.fee_denom.clone())],
+                        ),
+                        // Job owner's warp account sends reward to controller
+                        build_transfer_native_funds_msg(
+                            env.contract.address.to_string(),
+                            vec![Coin::new(new_job.reward.u128(), config.fee_denom.clone())],
+                        ),
+                    ],
+                ));
 
                 new_job_attrs.push(Attribute::new("action", "create_job"));
                 new_job_attrs.push(Attribute::new("job_id", new_job.id));
@@ -204,10 +201,25 @@ pub fn execute_job(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, 
         }
     }
 
+    if !recurring_job_created {
+        // Job owner withdraw all assets that are listed from warp account to itself
+        msgs.push(build_account_withdraw_assets_msg(
+            job_account_addr.clone().to_string(),
+            finished_job.assets_to_withdraw,
+        ));
+        if is_sub_account(&main_account_addr, &job_account_addr) {
+            // Free sub account
+            msgs.push(build_free_sub_account_msg(
+                main_account_addr.to_string(),
+                job_account_addr.clone().to_string(),
+            ));
+        }
+    }
+
     Ok(Response::new()
+        .add_messages(msgs)
         .add_attribute("action", "execute_job_reply")
         .add_attribute("job_id", finished_job.id)
         .add_attributes(res_attrs)
-        .add_attributes(new_job_attrs)
-        .add_messages(msgs))
+        .add_attributes(new_job_attrs))
 }

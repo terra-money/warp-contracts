@@ -1,4 +1,4 @@
-use crate::account::{AssetInfo, Fund};
+use crate::account::{AssetInfo, CwFund};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, CosmosMsg, Uint128, Uint64};
 use schemars::JsonSchema;
@@ -74,7 +74,7 @@ pub struct CreateJobMsg {
     pub reward: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
     pub account_msgs: Option<Vec<CosmosMsg>>,
-    pub funds: Option<Vec<Fund>>,
+    pub cw_funds: Option<Vec<CwFund>>,
 }
 
 #[cw_serde]

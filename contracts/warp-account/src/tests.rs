@@ -4,7 +4,7 @@ use account::{ExecuteMsg, GenericMsg, InstantiateMsg};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DistributionMsg, GovMsg, IbcMsg, IbcTimeout,
-    IbcTimeoutBlock, Response, StakingMsg, Uint128, VoteOption, WasmMsg,
+    IbcTimeoutBlock, Response, StakingMsg, Uint128, Uint64, VoteOption, WasmMsg,
 };
 
 #[test]
@@ -19,10 +19,12 @@ fn test_execute_controller() {
         info.clone(),
         InstantiateMsg {
             owner: "vlad".to_string(),
-            funds: None,
-            msgs: None,
+            job_id: Uint64::zero(),
             is_sub_account: false,
             main_account_addr: None,
+            native_funds: vec![],
+            cw_funds: vec![],
+            msgs: vec![],
         },
     );
 
@@ -144,10 +146,12 @@ fn test_execute_owner() {
         info,
         InstantiateMsg {
             owner: "vlad".to_string(),
-            funds: None,
-            msgs: None,
+            job_id: Uint64::zero(),
             is_sub_account: false,
             main_account_addr: None,
+            native_funds: vec![],
+            cw_funds: vec![],
+            msgs: vec![],
         },
     );
 
@@ -271,10 +275,12 @@ fn test_execute_unauth() {
         info,
         InstantiateMsg {
             owner: "vlad".to_string(),
-            funds: None,
-            msgs: None,
+            job_id: Uint64::zero(),
             is_sub_account: false,
             main_account_addr: None,
+            native_funds: vec![],
+            cw_funds: vec![],
+            msgs: vec![],
         },
     );
 

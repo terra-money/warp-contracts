@@ -12,6 +12,12 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
+    #[error("Insufficient funds to pay for reward and fee.")]
+    InsufficientFundsToPayForRewardAndFee {},
+
+    #[error("Insufficient funds to pay for fee.")]
+    InsufficientFundsToPayForFee {},
+
     #[error("Funds array in message does not match funds array in job.")]
     FundsMismatch {},
 

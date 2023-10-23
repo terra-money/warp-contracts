@@ -9,6 +9,7 @@ use cosmwasm_std::{
     StdResult,
 };
 
+use cw_utils::nonpayable;
 use resolver::condition::Condition;
 use resolver::variable::{QueryExpr, Variable};
 use resolver::{
@@ -36,6 +37,7 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info).unwrap();
     match msg {
         ExecuteMsg::ExecuteSimulateQuery(msg) => execute_simulate_query(deps, env, info, msg),
         ExecuteMsg::ExecuteValidateJobCreation(data) => {
