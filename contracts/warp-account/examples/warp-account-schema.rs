@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use account::{Config, ExecuteMsg, InstantiateMsg};
 use controller::{
-    account::{AccountResponse, AccountsResponse},
+    account::{MainAccountResponse, MainAccountsResponse},
     job::{JobResponse, JobsResponse},
 };
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
@@ -19,6 +19,6 @@ fn main() {
     export_schema(&schema_for!(Config), &out_dir);
     export_schema(&schema_for!(JobResponse), &out_dir);
     export_schema(&schema_for!(JobsResponse), &out_dir);
-    export_schema(&schema_for!(AccountResponse), &out_dir);
-    export_schema(&schema_for!(AccountsResponse), &out_dir);
+    export_schema(&schema_for!(MainAccountResponse), &out_dir);
+    export_schema(&schema_for!(MainAccountsResponse), &out_dir);
 }

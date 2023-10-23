@@ -9,7 +9,7 @@ use crate::{
     util::{
         msg::{
             build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-            build_free_sub_account_msg, build_transfer_native_funds_msg,
+            build_occupy_sub_account_msg, build_transfer_native_funds_msg,
         },
         sub_account::is_sub_account,
     },
@@ -45,6 +45,7 @@ pub fn execute_job(
 
     let mut msgs = vec![];
     let mut new_job_attrs = vec![];
+    let new_job_id = state.current_job_id;
 
     let fee =
         finished_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
@@ -138,7 +139,7 @@ pub fn execute_job(
                 let new_job = JobQueue::add(
                     &mut deps,
                     Job {
-                        id: state.current_job_id,
+                        id: new_job_id,
                         prev_id: Some(finished_job.id),
                         owner: finished_job.owner.clone(),
                         account: finished_job.account.clone(),
@@ -201,19 +202,22 @@ pub fn execute_job(
         }
     }
 
-    if !recurring_job_created {
+    if recurring_job_created {
+        if is_sub_account(&main_account_addr, &job_account_addr) {
+            // Occupy sub account with the new job
+            msgs.push(build_occupy_sub_account_msg(
+                main_account_addr.to_string(),
+                job_account_addr.to_string(),
+                new_job_id,
+            ));
+        }
+    } else {
+        // No new job created, sub account has been free in execute_job, no need to free here again
         // Job owner withdraw all assets that are listed from warp account to itself
         msgs.push(build_account_withdraw_assets_msg(
             job_account_addr.clone().to_string(),
             finished_job.assets_to_withdraw,
         ));
-        if is_sub_account(&main_account_addr, &job_account_addr) {
-            // Free sub account
-            msgs.push(build_free_sub_account_msg(
-                main_account_addr.to_string(),
-                job_account_addr.clone().to_string(),
-            ));
-        }
     }
 
     Ok(Response::new()

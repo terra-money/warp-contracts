@@ -3,13 +3,11 @@ use cosmwasm_std::{to_binary, BankMsg, Coin, CosmosMsg, Uint128, Uint64, WasmMsg
 use account::{FreeSubAccountMsg, GenericMsg, OccupySubAccountMsg, WithdrawAssetsMsg};
 use controller::account::{AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 
-pub fn build_instantiate_warp_account_msg(
-    is_sub_account: bool,
+pub fn build_instantiate_warp_main_account_msg(
     job_id: Uint64,
     admin_addr: String,
     code_id: u64,
     account_owner: String,
-    main_account_addr: Option<String>,
     native_funds: Vec<Coin>,
     cw_funds: Option<Vec<CwFund>>,
     msgs: Option<Vec<CosmosMsg>>,
@@ -20,27 +18,47 @@ pub fn build_instantiate_warp_account_msg(
         msg: to_binary(&account::InstantiateMsg {
             owner: account_owner.clone(),
             job_id,
-            is_sub_account,
-            main_account_addr: main_account_addr.clone(),
+            is_sub_account: false,
+            main_account_addr: None,
             native_funds: native_funds.clone(),
             cw_funds: cw_funds.unwrap_or(vec![]),
             msgs: msgs.unwrap_or(vec![]),
         })
         .unwrap(),
         // Only send native funds to sub account
-        funds: if is_sub_account { native_funds } else { vec![] },
+        funds: vec![],
+        label: format!("warp main account, owner: {}", account_owner),
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn build_instantiate_warp_sub_account_msg(
+    job_id: Uint64,
+    admin_addr: String,
+    code_id: u64,
+    account_owner: String,
+    main_account_addr: String,
+    native_funds: Vec<Coin>,
+    cw_funds: Option<Vec<CwFund>>,
+    msgs: Option<Vec<CosmosMsg>>,
+) -> CosmosMsg {
+    CosmosMsg::Wasm(WasmMsg::Instantiate {
+        admin: Some(admin_addr),
+        code_id,
+        msg: to_binary(&account::InstantiateMsg {
+            owner: account_owner.clone(),
+            job_id,
+            is_sub_account: true,
+            main_account_addr: Some(main_account_addr.clone()),
+            native_funds: native_funds.clone(),
+            cw_funds: cw_funds.unwrap_or(vec![]),
+            msgs: msgs.unwrap_or(vec![]),
+        })
+        .unwrap(),
+        funds: native_funds,
         label: format!(
-            "warp {} account, {}owner: {}",
-            if is_sub_account { "sub" } else { "main" },
-            if is_sub_account {
-                format!(
-                    "main account: {}, ",
-                    main_account_addr.clone().clone().unwrap()
-                )
-            } else {
-                "".to_string()
-            },
-            account_owner,
+            "warp sub account, main account: {}, owner: {}",
+            main_account_addr, account_owner,
         ),
     })
 }
@@ -72,26 +90,6 @@ pub fn build_occupy_sub_account_msg(
                 job_id,
             },
         ))
-        .unwrap(),
-        funds: vec![],
-    })
-}
-
-// TODO: add cw20 increase allowance, is increase alliance transitive?
-// If not we have a problem, because we need to increase allowance for warp account, however warp account may not be created yet, so user can only increase allowance for warp controller
-// TODO: test do we need this? maybe user allow controller then controller can send it to sub account without increasing allowance
-pub fn build_increase_cw20_allowance_msg(
-    cw20_token_contract_addr: String,
-    spender_addr: String,
-    amount: Uint128,
-) -> CosmosMsg {
-    CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: cw20_token_contract_addr,
-        msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-            spender: spender_addr,
-            amount,
-            expires: None,
-        })
         .unwrap(),
         funds: vec![],
     })

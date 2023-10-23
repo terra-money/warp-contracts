@@ -8,13 +8,15 @@ use crate::contract::{
     REPLY_ID_EXECUTE_JOB,
 };
 use crate::state::{JobQueue, ACCOUNTS, STATE};
+use crate::util::msg::{
+    build_instantiate_warp_main_account_msg, build_instantiate_warp_sub_account_msg,
+};
 use crate::util::{
     fee::deduct_reward_and_fee_from_native_funds,
     msg::{
         build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-        build_free_sub_account_msg, build_instantiate_warp_account_msg,
-        build_occupy_sub_account_msg, build_transfer_cw20_msg, build_transfer_cw721_msg,
-        build_transfer_native_funds_msg,
+        build_free_sub_account_msg, build_occupy_sub_account_msg, build_transfer_cw20_msg,
+        build_transfer_cw721_msg, build_transfer_native_funds_msg,
     },
     sub_account::is_sub_account,
 };
@@ -100,12 +102,7 @@ pub fn create_job(
         // create_job is called by account contract
         Some(record) => Some(record.1),
         // create_job is called by user
-        None => match ACCOUNTS().may_load(deps.storage, info.sender.clone())? {
-            // User has main account
-            Some(account) => Some(account),
-            // User does not have main account
-            None => None,
-        },
+        None => ACCOUNTS().may_load(deps.storage, info.sender.clone())?,
     };
 
     let state = STATE.load(deps.storage)?;
@@ -140,13 +137,11 @@ pub fn create_job(
             // Create main account then create sub account then create job in reply
             submsgs.push(SubMsg {
                 id: REPLY_ID_CREATE_MAIN_ACCOUNT_AND_SUB_ACCOUNT_AND_JOB,
-                msg: build_instantiate_warp_account_msg(
-                    false,
+                msg: build_instantiate_warp_main_account_msg(
                     job.id,
                     env.contract.address.to_string(),
                     config.warp_account_code_id.u64(),
                     info.sender.to_string(),
-                    None,
                     native_funds_minus_reward_and_fee,
                     data.cw_funds,
                     data.account_msgs,
@@ -177,13 +172,12 @@ pub fn create_job(
                     // Create sub account then create job in reply
                     submsgs.push(SubMsg {
                         id: REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
-                        msg: build_instantiate_warp_account_msg(
-                            true,
+                        msg: build_instantiate_warp_sub_account_msg(
                             job.id,
                             env.contract.address.to_string(),
                             config.warp_account_code_id.u64(),
                             info.sender.to_string(),
-                            Some(main_account_addr.clone().to_string()),
+                            main_account_addr.clone().to_string(),
                             native_funds_minus_reward_and_fee,
                             data.cw_funds,
                             data.account_msgs,
@@ -504,6 +498,14 @@ pub fn execute_job(
         info.sender.to_string(),
         vec![Coin::new(job.reward.u128(), config.fee_denom)],
     ));
+
+    if is_sub_account(&main_account_addr, &job_account_addr) {
+        // Free sub account
+        msgs.push(build_free_sub_account_msg(
+            main_account_addr.to_string(),
+            job_account_addr.to_string(),
+        ));
+    }
 
     Ok(Response::new()
         .add_submessages(submsgs)

@@ -3,7 +3,7 @@ use cosmwasm_std::{
 };
 
 use controller::{
-    account::{Account, CwFund},
+    account::{CwFund, MainAccount},
     Config,
 };
 
@@ -11,7 +11,7 @@ use crate::{
     contract::REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
     state::{JobQueue, ACCOUNTS},
     util::msg::{
-        build_account_execute_generic_msgs, build_instantiate_warp_account_msg,
+        build_account_execute_generic_msgs, build_instantiate_warp_sub_account_msg,
         build_occupy_sub_account_msg, build_transfer_cw20_msg, build_transfer_cw721_msg,
         build_transfer_native_funds_msg,
     },
@@ -44,7 +44,7 @@ pub fn create_main_account_and_sub_account_and_job(
         .find(|attr| attr.key == "job_id")
         .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
         .value;
-    let job_id = u64::from_str_radix(job_id_str.as_str(), 10)?;
+    let job_id = job_id_str.as_str().parse::<u64>()?;
 
     let owner = event
         .attributes
@@ -99,7 +99,7 @@ pub fn create_main_account_and_sub_account_and_job(
     ACCOUNTS().save(
         deps.storage,
         deps.api.addr_validate(&owner)?,
-        &Account {
+        &MainAccount {
             owner: deps.api.addr_validate(&owner.clone())?,
             account: deps.api.addr_validate(&main_account_addr)?,
         },
@@ -108,13 +108,12 @@ pub fn create_main_account_and_sub_account_and_job(
     // Create new sub account then create job in reply
     let create_sub_account_and_job_submsg = SubMsg {
         id: REPLY_ID_CREATE_SUB_ACCOUNT_AND_JOB,
-        msg: build_instantiate_warp_account_msg(
-            true,
+        msg: build_instantiate_warp_sub_account_msg(
             Uint64::from(job_id),
             env.contract.address.to_string(),
             config.warp_account_code_id.u64(),
             owner.clone(),
-            Some(main_account_addr.clone().to_string()),
+            main_account_addr.clone().to_string(),
             native_funds.clone(),
             cw_funds.clone(),
             account_msgs,
@@ -165,7 +164,7 @@ pub fn create_sub_account_and_job(
         .find(|attr| attr.key == "job_id")
         .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
         .value;
-    let job_id = u64::from_str_radix(job_id_str.as_str(), 10)?;
+    let job_id = job_id_str.as_str().parse::<u64>()?;
 
     let owner = event
         .attributes
@@ -225,7 +224,7 @@ pub fn create_sub_account_and_job(
             .value,
     )?;
 
-    let mut job = JobQueue::get(&deps, job_id.into())?;
+    let mut job = JobQueue::get(&deps, job_id)?;
     job.account = sub_account_addr.clone();
     JobQueue::sync(&mut deps, env, job.clone())?;
 

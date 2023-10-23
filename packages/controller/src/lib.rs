@@ -1,4 +1,6 @@
-use crate::account::{AccountResponse, AccountsResponse, QueryAccountMsg, QueryAccountsMsg};
+use crate::account::{
+    MainAccountResponse, MainAccountsResponse, QueryMainAccountMsg, QueryMainAccountsMsg,
+};
 use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, UpdateJobMsg,
@@ -109,10 +111,12 @@ pub enum QueryMsg {
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
 
-    #[returns(AccountResponse)]
-    QueryAccount(QueryAccountMsg),
-    #[returns(AccountsResponse)]
-    QueryAccounts(QueryAccountsMsg),
+    // For sub account, please query it via the main account contract
+    // You can look at account contract for more details
+    #[returns(MainAccountResponse)]
+    QueryMainAccount(QueryMainAccountMsg),
+    #[returns(MainAccountsResponse)]
+    QueryMainAccounts(QueryMainAccountsMsg),
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),

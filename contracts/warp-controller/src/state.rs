@@ -1,9 +1,11 @@
-use controller::account::Account;
 use cosmwasm_std::{Addr, DepsMut, Env, Uint128, Uint64};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
 
-use controller::job::{Job, JobStatus, UpdateJobMsg};
-use controller::{Config, State};
+use controller::{
+    account::MainAccount,
+    job::{Job, JobStatus, UpdateJobMsg},
+    Config, State,
+};
 
 use crate::ContractError;
 
@@ -51,20 +53,20 @@ pub fn FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
     IndexedMap::new("finished_jobs_v3", indexes)
 }
 
-pub struct AccountIndexes<'a> {
-    pub account: UniqueIndex<'a, Addr, Account>,
+pub struct MainAccountIndexes<'a> {
+    pub account: UniqueIndex<'a, Addr, MainAccount>,
 }
 
-impl IndexList<Account> for AccountIndexes<'_> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Account>> + '_> {
-        let v: Vec<&dyn Index<Account>> = vec![&self.account];
+impl IndexList<MainAccount> for MainAccountIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<MainAccount>> + '_> {
+        let v: Vec<&dyn Index<MainAccount>> = vec![&self.account];
         Box::new(v.into_iter())
     }
 }
 
 #[allow(non_snake_case)]
-pub fn ACCOUNTS<'a>() -> IndexedMap<'a, Addr, Account, AccountIndexes<'a>> {
-    let indexes = AccountIndexes {
+pub fn ACCOUNTS<'a>() -> IndexedMap<'a, Addr, MainAccount, MainAccountIndexes<'a>> {
+    let indexes = MainAccountIndexes {
         account: UniqueIndex::new(|account| account.account.clone(), "accounts__account"),
     };
     IndexedMap::new("accounts", indexes)

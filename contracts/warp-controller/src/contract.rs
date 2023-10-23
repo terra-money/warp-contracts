@@ -136,9 +136,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryJob(data) => to_binary(&query::job::query_job(deps, env, data)?),
         QueryMsg::QueryJobs(data) => to_binary(&query::job::query_jobs(deps, env, data)?),
 
-        QueryMsg::QueryAccount(data) => to_binary(&query::account::query_account(deps, env, data)?),
-        QueryMsg::QueryAccounts(data) => {
-            to_binary(&query::account::query_accounts(deps, env, data)?)
+        QueryMsg::QueryMainAccount(data) => {
+            to_binary(&query::account::query_main_account(deps, env, data)?)
+        }
+        QueryMsg::QueryMainAccounts(data) => {
+            to_binary(&query::account::query_main_accounts(deps, env, data)?)
         }
 
         QueryMsg::QueryConfig(data) => {

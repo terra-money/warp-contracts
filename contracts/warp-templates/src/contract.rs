@@ -59,7 +59,6 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    
     match msg {
         ExecuteMsg::SubmitTemplate(data) => submit_template(deps, env, info, data),
         ExecuteMsg::EditTemplate(data) => edit_template(deps, env, info, data),
