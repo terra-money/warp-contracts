@@ -1,11 +1,10 @@
-use cosmwasm_std::{
-    testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, BankMsg, Coin, CosmosMsg, DistributionMsg, GovMsg, IbcMsg, IbcTimeout,
-    IbcTimeoutBlock, Response, StakingMsg, Uint128, Uint64, VoteOption, WasmMsg,
-};
-
 use crate::contract::{execute, instantiate};
 use crate::ContractError;
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::{
+    to_binary, BankMsg, Coin, CosmosMsg, DistributionMsg, GovMsg, IbcMsg, IbcTimeout,
+    IbcTimeoutBlock, Response, StakingMsg, Uint128, VoteOption, WasmMsg,
+};
 use legacy_account::{ExecuteMsg, GenericMsg, InstantiateMsg};
 
 #[test]
@@ -20,11 +19,7 @@ fn test_execute_controller() {
         info.clone(),
         InstantiateMsg {
             owner: "vlad".to_string(),
-            job_id: Uint64::zero(),
-            job_account_tracker_addr: "vlad".to_string(),
-            native_funds: vec![],
-            cw_funds: vec![],
-            msgs: vec![],
+            funds: None,
         },
     );
 
@@ -146,11 +141,7 @@ fn test_execute_owner() {
         info,
         InstantiateMsg {
             owner: "vlad".to_string(),
-            job_id: Uint64::zero(),
-            job_account_tracker_addr: "vlad".to_string(),
-            native_funds: vec![],
-            cw_funds: vec![],
-            msgs: vec![],
+            funds: None,
         },
     );
 
@@ -274,11 +265,7 @@ fn test_execute_unauth() {
         info,
         InstantiateMsg {
             owner: "vlad".to_string(),
-            job_id: Uint64::zero(),
-            job_account_tracker_addr: "vlad".to_string(),
-            native_funds: vec![],
-            cw_funds: vec![],
-            msgs: vec![],
+            funds: None,
         },
     );
 
