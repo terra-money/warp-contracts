@@ -17,11 +17,11 @@ use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State
 // Reply id for job creation
 // From a totally new user using warp for the first time, does not have account tracker yet, let alone free account
 // So we create account account and account and job
-pub const REPLY_ID_CREATE_ACCOUNT_TRACKER_AND_ACCOUNT_AND_JOB: u64 = 1;
+pub const REPLY_ID_CREATE_JOB_ACCOUNT_TRACKER_AND_JOB_ACCOUNT_AND_JOB: u64 = 1;
 // Reply id for job creation
 // From an existing user, who has account tracker, but does not have available account
 // So we create account and job
-pub const REPLY_ID_CREATE_ACCOUNT_AND_JOB: u64 = 2;
+pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 2;
 // Reply id for job execution
 pub const REPLY_ID_EXECUTE_JOB: u64 = 3;
 
@@ -253,12 +253,14 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     match msg.id {
-        // Account tracker has been created, now create account and job
-        REPLY_ID_CREATE_ACCOUNT_TRACKER_AND_ACCOUNT_AND_JOB => {
+        // Job account tracker has been created, now create job account and job
+        REPLY_ID_CREATE_JOB_ACCOUNT_TRACKER_AND_JOB_ACCOUNT_AND_JOB => {
             reply::account::create_job_account_tracker_and_account_and_job(deps, env, msg, config)
         }
-        // Account has been created, now create job
-        REPLY_ID_CREATE_ACCOUNT_AND_JOB => reply::account::create_account_and_job(deps, env, msg),
+        // Job account has been created, now create job
+        REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => {
+            reply::account::create_job_account_and_job(deps, env, msg)
+        }
         // Job has been executed
         REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg, config),
         _ => Err(ContractError::UnknownReplyId {}),

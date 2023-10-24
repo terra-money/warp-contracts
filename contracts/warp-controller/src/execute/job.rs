@@ -5,8 +5,8 @@ use cosmwasm_std::{
 
 use crate::{
     contract::{
-        REPLY_ID_CREATE_ACCOUNT_AND_JOB, REPLY_ID_CREATE_ACCOUNT_TRACKER_AND_ACCOUNT_AND_JOB,
-        REPLY_ID_EXECUTE_JOB,
+        REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
+        REPLY_ID_CREATE_JOB_ACCOUNT_TRACKER_AND_JOB_ACCOUNT_AND_JOB, REPLY_ID_EXECUTE_JOB,
     },
     state::{JobQueue, JOB_ACCOUNT_TRACKERS, LEGACY_ACCOUNTS, STATE},
     util::{
@@ -124,7 +124,7 @@ pub fn create_job(
         None => {
             // Create account tracker then create account then create job in reply
             submsgs.push(SubMsg {
-                id: REPLY_ID_CREATE_ACCOUNT_TRACKER_AND_ACCOUNT_AND_JOB,
+                id: REPLY_ID_CREATE_JOB_ACCOUNT_TRACKER_AND_JOB_ACCOUNT_AND_JOB,
                 msg: build_instantiate_warp_job_account_tracker_msg(
                     env.contract.address.to_string(),
                     config.warp_job_account_tracker_code_id.u64(),
@@ -150,7 +150,7 @@ pub fn create_job(
                 None => {
                     // Create account then create job in reply
                     submsgs.push(SubMsg {
-                        id: REPLY_ID_CREATE_ACCOUNT_AND_JOB,
+                        id: REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
                         msg: build_instantiate_warp_account_msg(
                             job.id,
                             env.contract.address.to_string(),

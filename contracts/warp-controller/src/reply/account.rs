@@ -5,7 +5,7 @@ use cosmwasm_std::{
 use controller::{account::CwFund, Config};
 
 use crate::{
-    contract::REPLY_ID_CREATE_ACCOUNT_AND_JOB,
+    contract::REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
     state::{JobQueue, JOB_ACCOUNT_TRACKERS},
     util::msg::{
         build_account_execute_generic_msgs, build_instantiate_warp_account_msg,
@@ -102,7 +102,7 @@ pub fn create_job_account_tracker_and_account_and_job(
 
     // Create new job account then create job in reply
     let create_account_and_job_submsg = SubMsg {
-        id: REPLY_ID_CREATE_ACCOUNT_AND_JOB,
+        id: REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
         msg: build_instantiate_warp_account_msg(
             Uint64::from(job_id),
             env.contract.address.to_string(),
@@ -133,7 +133,7 @@ pub fn create_job_account_tracker_and_account_and_job(
         ))
 }
 
-pub fn create_account_and_job(
+pub fn create_job_account_and_job(
     mut deps: DepsMut,
     env: Env,
     msg: Reply,
@@ -168,17 +168,19 @@ pub fn create_account_and_job(
         .ok_or_else(|| StdError::generic_err("cannot find `owner` attribute"))?
         .value;
 
-    let main_account_addr = deps.api.addr_validate(
+    let job_account_tracker_addr = deps.api.addr_validate(
         &event
             .attributes
             .iter()
             .cloned()
-            .find(|attr| attr.key == "main_account_addr")
-            .ok_or_else(|| StdError::generic_err("cannot find `main_account_addr` attribute"))?
+            .find(|attr| attr.key == "job_account_tracker_addr")
+            .ok_or_else(|| {
+                StdError::generic_err("cannot find `job_account_tracker_addr` attribute")
+            })?
             .value,
     )?;
 
-    let sub_account_addr = deps.api.addr_validate(
+    let job_account_addr = deps.api.addr_validate(
         &event
             .attributes
             .iter()
@@ -219,7 +221,7 @@ pub fn create_account_and_job(
     )?;
 
     let mut job = JobQueue::get(&deps, job_id)?;
-    job.account = sub_account_addr.clone();
+    job.account = job_account_addr.clone();
     JobQueue::sync(&mut deps, env, job.clone())?;
 
     let mut msgs: Vec<CosmosMsg> = vec![];
@@ -227,7 +229,7 @@ pub fn create_account_and_job(
     if !native_funds.is_empty() {
         // Fund account in native coins
         msgs.push(build_transfer_native_funds_msg(
-            sub_account_addr.clone().to_string(),
+            job_account_addr.clone().to_string(),
             native_funds.clone(),
         ))
     }
@@ -241,14 +243,14 @@ pub fn create_account_and_job(
                         .addr_validate(&cw20_fund.contract_addr)?
                         .to_string(),
                     owner.clone(),
-                    sub_account_addr.clone().to_string(),
+                    job_account_addr.clone().to_string(),
                     cw20_fund.amount,
                 ),
                 CwFund::Cw721(cw721_fund) => build_transfer_cw721_msg(
                     deps.api
                         .addr_validate(&cw721_fund.contract_addr)?
                         .to_string(),
-                    sub_account_addr.clone().to_string(),
+                    job_account_addr.clone().to_string(),
                     cw721_fund.token_id.clone(),
                 ),
             })
@@ -258,24 +260,24 @@ pub fn create_account_and_job(
     if let Some(account_msgs) = account_msgs {
         // Account execute msgs
         msgs.push(build_account_execute_generic_msgs(
-            sub_account_addr.to_string(),
+            job_account_addr.to_string(),
             account_msgs,
         ));
     }
 
     // Occupy job account
     msgs.push(build_occupy_account_msg(
-        main_account_addr.to_string(),
-        sub_account_addr.to_string(),
+        job_account_tracker_addr.to_string(),
+        job_account_addr.to_string(),
         job.id,
     ));
 
     Ok(Response::new()
         .add_messages(msgs)
-        .add_attribute("action", "create_account_and_job_reply")
+        .add_attribute("action", "create_job_account_and_job_reply")
         // .add_attribute("job_id", value)
         .add_attribute("owner", owner)
-        .add_attribute("account_address", sub_account_addr)
+        .add_attribute("job_account_address", job_account_addr)
         .add_attribute("native_funds", serde_json_wasm::to_string(&native_funds)?)
         .add_attribute(
             "cw_funds",
