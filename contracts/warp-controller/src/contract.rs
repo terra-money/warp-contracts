@@ -44,6 +44,16 @@ pub fn instantiate(
         a_max: msg.a_max,
         a_min: msg.a_min,
         q_max: msg.q_max,
+        creation_fee_min: msg.creation_fee_min,
+        creation_fee_max: msg.creation_fee_max,
+        burn_fee_min: msg.burn_fee_min,
+        maintenance_fee_min: msg.maintenance_fee_min,
+        maintenance_fee_max: msg.maintenance_fee_max,
+        duration_days_left: msg.duration_days_left,
+        duration_days_right: msg.duration_days_right,
+        queue_size_left: msg.queue_size_left,
+        queue_size_right: msg.queue_size_right,
+        burn_fee_rate: msg.burn_fee_rate,
     };
 
     if config.a_max < config.a_min {
@@ -183,6 +193,17 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             a_max: v1_config.a_max,
             a_min: v1_config.a_min,
             q_max: v1_config.q_max,
+            creation_fee_min: Uint128::new(0),
+            creation_fee_max: Uint128::new(0),
+            burn_fee_min: Uint128::new(0),
+            maintenance_fee_min: Uint128::new(0),
+            maintenance_fee_max: Uint128::new(0),
+            // real values
+            duration_days_left: Uint128::new(10),
+            duration_days_right: Uint128::new(100),
+            queue_size_left: Uint128::new(5000),
+            queue_size_right: Uint128::new(50000),
+            burn_fee_rate: Uint128::new(25),
         },
     )?;
 

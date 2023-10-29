@@ -11,6 +11,8 @@ use cosmwasm_std::{
 };
 use resolver::QueryHydrateMsgsMsg;
 
+use super::fee::{compute_burn_fee, compute_creation_fee, compute_maintenance_fee};
+
 const MAX_TEXT_LENGTH: usize = 280;
 
 pub fn create_job(
@@ -35,7 +37,7 @@ pub fn create_job(
     }
 
     let _validate_conditions_and_variables: Option<String> = deps.querier.query_wasm_smart(
-        config.resolver_address,
+        &config.resolver_address,
         &resolver::QueryMsg::QueryValidateJobCreation(resolver::QueryValidateJobCreationMsg {
             condition: data.condition.clone(),
             terminate_condition: data.terminate_condition.clone(),
@@ -79,8 +81,11 @@ pub fn create_job(
         },
     )?;
 
-    // Assume reward.amount == warp token allowance
-    let fee = data.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+    let creation_fee = compute_creation_fee(Uint128::from(state.q), &config);
+    let maintenance_fee = compute_maintenance_fee(data.duration_days, &config);
+    let burn_fee = compute_burn_fee(data.reward, &config);
+
+    let total_fees = creation_fee + maintenance_fee + burn_fee;
 
     let reward_send_msgs = vec![
         // Job sends reward to controller
@@ -94,13 +99,34 @@ pub fn create_job(
             }))?,
             funds: vec![],
         },
-        // Job owner sends fee to fee collector
+    ];
+
+    let fee_send_msgs = vec![
         WasmMsg::Execute {
             contract_addr: account.account.to_string(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
-                    amount: vec![Coin::new((fee).u128(), config.fee_denom)],
+                    amount: vec![Coin::new(creation_fee.u128(), config.fee_denom.clone())],
+                })],
+            }))?,
+            funds: vec![],
+        },
+        WasmMsg::Execute {
+            contract_addr: account.account.to_string(),
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msgs: vec![CosmosMsg::Bank(BankMsg::Send {
+                    to_address: config.fee_collector.to_string(),
+                    amount: vec![Coin::new(maintenance_fee.u128(), config.fee_denom.clone())],
+                })],
+            }))?,
+            funds: vec![],
+        },
+        WasmMsg::Execute {
+            contract_addr: account.account.to_string(),
+            msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                msgs: vec![CosmosMsg::Bank(BankMsg::Burn {
+                    amount: vec![Coin::new(burn_fee.u128(), config.fee_denom.clone())],
                 })],
             }))?,
             funds: vec![],
@@ -119,6 +145,7 @@ pub fn create_job(
 
     Ok(Response::new()
         .add_messages(reward_send_msgs)
+        .add_messages(fee_send_msgs)
         .add_attribute("action", "create_job")
         .add_attribute("job_id", job.id)
         .add_attribute("job_owner", job.owner)
@@ -127,7 +154,10 @@ pub fn create_job(
         .add_attribute("job_condition", serde_json_wasm::to_string(&job.condition)?)
         .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
         .add_attribute("job_reward", job.reward)
-        .add_attribute("job_creation_fee", fee)
+        .add_attribute("job_creation_fee", creation_fee.to_string())
+        .add_attribute("job_maintenance_fee", maintenance_fee.to_string())
+        .add_attribute("job_burn_fee", burn_fee.to_string())
+        .add_attribute("job_total_fees", total_fees.to_string())
         .add_attribute("job_last_updated_time", job.last_update_time)
         .add_messages(account_msgs))
 }

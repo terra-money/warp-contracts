@@ -22,6 +22,18 @@ pub struct Config {
     pub creation_fee_percentage: Uint64,
     pub cancellation_fee_percentage: Uint64,
     pub resolver_address: Addr,
+    pub creation_fee_min: Uint128,
+    pub creation_fee_max: Uint128,
+    pub burn_fee_min: Uint128,
+    pub maintenance_fee_min: Uint128,
+    pub maintenance_fee_max: Uint128,
+    // duration_days fn interval [left, right]
+    pub duration_days_left: Uint128,
+    pub duration_days_right: Uint128,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Uint128,
+    pub queue_size_right: Uint128,
+    pub burn_fee_rate: Uint128,
     // maximum time for evictions
     pub t_max: Uint64,
     // minimum time for evictions
@@ -57,6 +69,18 @@ pub struct InstantiateMsg {
     pub a_max: Uint128,
     pub a_min: Uint128,
     pub q_max: Uint64,
+    pub creation_fee_min: Uint128,
+    pub creation_fee_max: Uint128,
+    pub burn_fee_min: Uint128,
+    pub maintenance_fee_min: Uint128,
+    pub maintenance_fee_max: Uint128,
+    // duration_days fn interval [left, right]
+    pub duration_days_left: Uint128,
+    pub duration_days_right: Uint128,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Uint128,
+    pub queue_size_right: Uint128,
+    pub burn_fee_rate: Uint128,
 }
 
 //execute
@@ -89,6 +113,18 @@ pub struct UpdateConfigMsg {
     pub a_max: Option<Uint128>,
     pub a_min: Option<Uint128>,
     pub q_max: Option<Uint64>,
+    pub creation_fee_min: Option<Uint128>,
+    pub creation_fee_max: Option<Uint128>,
+    pub burn_fee_min: Option<Uint128>,
+    pub maintenance_fee_min: Option<Uint128>,
+    pub maintenance_fee_max: Option<Uint128>,
+    // duration_days fn interval [left, right]
+    pub duration_days_left: Option<Uint128>,
+    pub duration_days_right: Option<Uint128>,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Option<Uint128>,
+    pub queue_size_right: Option<Uint128>,
+    pub burn_fee_rate: Option<Uint128>,
 }
 
 #[cw_serde]

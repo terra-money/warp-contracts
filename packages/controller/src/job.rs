@@ -70,6 +70,7 @@ pub struct CreateJobMsg {
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,
+    pub duration_days: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
     pub account_msgs: Option<Vec<CosmosMsg>>,
 }
