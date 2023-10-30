@@ -132,25 +132,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    //STATE
-    #[cw_serde]
-    pub struct V1State {
-        pub current_job_id: Uint64,
-        pub current_template_id: Uint64,
-        pub q: Uint64,
-    }
-
-    const V1STATE: Item<V1State> = Item::new("state");
-    let v1_state = V1STATE.load(deps.storage)?;
-
-    STATE.save(
-        deps.storage,
-        &State {
-            current_job_id: v1_state.current_job_id,
-            q: v1_state.q,
-        },
-    )?;
-
     //CONFIG
     #[cw_serde]
     pub struct V1Config {
@@ -161,6 +142,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         pub minimum_reward: Uint128,
         pub creation_fee_percentage: Uint64,
         pub cancellation_fee_percentage: Uint64,
+        pub resolver_address: Addr,
         // maximum time for evictions
         pub t_max: Uint64,
         // minimum time for evictions
@@ -183,27 +165,26 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             owner: v1_config.owner,
             fee_denom: v1_config.fee_denom,
             fee_collector: v1_config.fee_collector,
-            warp_account_code_id: msg.warp_account_code_id,
+            warp_account_code_id: v1_config.warp_account_code_id,
             minimum_reward: v1_config.minimum_reward,
             creation_fee_percentage: v1_config.creation_fee_percentage,
             cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
-            resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
+            resolver_address: v1_config.resolver_address,
             t_max: v1_config.t_max,
             t_min: v1_config.t_min,
             a_max: v1_config.a_max,
             a_min: v1_config.a_min,
             q_max: v1_config.q_max,
-            creation_fee_min: Uint128::new(0),
-            creation_fee_max: Uint128::new(0),
-            burn_fee_min: Uint128::new(0),
-            maintenance_fee_min: Uint128::new(0),
-            maintenance_fee_max: Uint128::new(0),
-            // real values
-            duration_days_left: Uint128::new(10),
-            duration_days_right: Uint128::new(100),
-            queue_size_left: Uint128::new(5000),
-            queue_size_right: Uint128::new(50000),
-            burn_fee_rate: Uint128::new(25),
+            creation_fee_min: msg.creation_fee_min,
+            creation_fee_max: msg.creation_fee_max,
+            burn_fee_min: msg.burn_fee_min,
+            maintenance_fee_min: msg.maintenance_fee_min,
+            maintenance_fee_max: msg.maintenance_fee_max,
+            duration_days_left: msg.duration_days_left,
+            duration_days_right: msg.duration_days_right,
+            queue_size_left: msg.queue_size_left,
+            queue_size_right: msg.queue_size_right,
+            burn_fee_rate: msg.burn_fee_rate,
         },
     )?;
 

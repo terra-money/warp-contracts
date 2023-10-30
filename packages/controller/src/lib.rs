@@ -22,6 +22,16 @@ pub struct Config {
     pub creation_fee_percentage: Uint64,
     pub cancellation_fee_percentage: Uint64,
     pub resolver_address: Addr,
+    // maximum time for evictions
+    pub t_max: Uint64,
+    // minimum time for evictions
+    pub t_min: Uint64,
+    // maximum fee for evictions
+    pub a_max: Uint128,
+    // minimum fee for evictions
+    pub a_min: Uint128,
+    // maximum length of queue modifier for evictions
+    pub q_max: Uint64,
     pub creation_fee_min: Uint128,
     pub creation_fee_max: Uint128,
     pub burn_fee_min: Uint128,
@@ -34,16 +44,6 @@ pub struct Config {
     pub queue_size_left: Uint128,
     pub queue_size_right: Uint128,
     pub burn_fee_rate: Uint128,
-    // maximum time for evictions
-    pub t_max: Uint64,
-    // minimum time for evictions
-    pub t_min: Uint64,
-    // maximum fee for evictions
-    pub a_max: Uint128,
-    // minimum fee for evictions
-    pub a_min: Uint128,
-    // maximum length of queue modifier for evictions
-    pub q_max: Uint64,
 }
 
 #[cw_serde]
@@ -177,9 +177,18 @@ pub struct StateResponse {
     pub state: State,
 }
 
-//migrate//{"resolver_address":"terra1a8dxkrapwj4mkpfnrv7vahd0say0lxvd0ft6qv","warp_account_code_id":"10081"}
 #[cw_serde]
 pub struct MigrateMsg {
-    pub warp_account_code_id: Uint64,
-    pub resolver_address: String,
+    pub creation_fee_min: Uint128,
+    pub creation_fee_max: Uint128,
+    pub burn_fee_min: Uint128,
+    pub maintenance_fee_min: Uint128,
+    pub maintenance_fee_max: Uint128,
+    // duration_days fn interval [left, right]
+    pub duration_days_left: Uint128,
+    pub duration_days_right: Uint128,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Uint128,
+    pub queue_size_right: Uint128,
+    pub burn_fee_rate: Uint128,
 }
