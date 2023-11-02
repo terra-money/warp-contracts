@@ -75,7 +75,7 @@ pub fn execute_validate_job_creation(
         QueryValidateJobCreationMsg {
             terminate_condition: data.terminate_condition,
             vars: data.vars,
-            executions: data.executions
+            executions: data.executions,
         },
     )?;
 

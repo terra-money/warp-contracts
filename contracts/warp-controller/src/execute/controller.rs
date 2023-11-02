@@ -4,18 +4,17 @@ use controller::{MigrateAccountsMsg, MigrateJobsMsg, UpdateConfigMsg};
 use cosmwasm_schema::cw_serde;
 
 use controller::account::AssetInfo;
-use controller::job::{Job, JobStatus};
+use controller::job::{Execution, Job, JobStatus};
 use cosmwasm_std::{
-    to_binary, Addr, DepsMut, Env, MessageInfo, Order, Response, Uint128, Uint64, WasmMsg,
+    to_binary, Addr, DepsMut, Env, MessageInfo, Order, Response, StdError, Uint128, Uint64, WasmMsg,
 };
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex, UniqueIndex};
-use resolver::condition::{Condition, StringValue};
+use resolver::condition::StringValue;
 use resolver::variable::{
     ExternalExpr, ExternalVariable, FnValue, QueryExpr, QueryVariable, StaticVariable, UpdateFn,
     Variable, VariableKind,
 };
 
-//JOBS
 #[cw_serde]
 pub struct V1Job {
     pub id: Uint64,
@@ -25,9 +24,10 @@ pub struct V1Job {
     pub description: String,
     pub labels: Vec<String>,
     pub status: JobStatus,
-    pub condition: Condition,
-    pub msgs: Vec<String>,
-    pub vars: Vec<V1Variable>,
+    pub terminate_condition: Option<String>,
+    pub condition: String,
+    pub msgs: String,
+    pub vars: String,
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,
@@ -47,12 +47,14 @@ pub struct V1StaticVariable {
     pub name: String,
     pub value: String,
     pub update_fn: Option<UpdateFn>,
+    pub encode: bool,
 }
 
 #[cw_serde]
 pub struct V1ExternalVariable {
     pub kind: VariableKind,
     pub name: String,
+    pub encode: bool,
     pub init_fn: ExternalExpr,
     pub reinitialize: bool,
     pub value: Option<String>, //none if uninitialized
@@ -63,6 +65,7 @@ pub struct V1ExternalVariable {
 pub struct V1QueryVariable {
     pub kind: VariableKind,
     pub name: String,
+    pub encode: bool,
     pub init_fn: QueryExpr,
     pub reinitialize: bool,
     pub value: Option<String>, //none if uninitialized
@@ -228,15 +231,20 @@ pub fn migrate_pending_jobs(
         .take(msg.limit as usize)
         .collect();
     let job_keys = job_keys?;
+
     for job_key in job_keys {
         let v1_job = V1_PENDING_JOBS().load(deps.storage, job_key)?;
         let mut new_vars = vec![];
-        for var in v1_job.vars {
+
+        let job_vars: Vec<V1Variable> = serde_json_wasm::from_str(&v1_job.vars)
+            .map_err(|e| StdError::generic_err(e.to_string()))?;
+
+        for var in job_vars {
             new_vars.push(match var {
                 V1Variable::Static(v) => Variable::Static(StaticVariable {
                     kind: v.kind,
                     name: v.name,
-                    encode: false,
+                    encode: v.encode,
                     init_fn: FnValue::String(StringValue::Simple(v.value.clone())),
                     reinitialize: false,
                     value: Some(v.value.clone()),
@@ -245,7 +253,7 @@ pub fn migrate_pending_jobs(
                 V1Variable::External(v) => Variable::External(ExternalVariable {
                     kind: v.kind,
                     name: v.name,
-                    encode: false,
+                    encode: v.encode,
                     init_fn: v.init_fn,
                     reinitialize: v.reinitialize,
                     value: v.value,
@@ -254,7 +262,7 @@ pub fn migrate_pending_jobs(
                 V1Variable::Query(v) => Variable::Query(QueryVariable {
                     kind: v.kind,
                     name: v.name,
-                    encode: false,
+                    encode: v.encode,
                     init_fn: v.init_fn,
                     reinitialize: v.reinitialize,
                     value: v.value,
@@ -262,14 +270,6 @@ pub fn migrate_pending_jobs(
                 }),
             })
         }
-
-        let mut new_msgs = "[".to_string();
-
-        for msg in v1_job.msgs {
-            new_msgs.push_str(msg.as_str());
-        }
-
-        new_msgs.push(']');
 
         let warp_account = ACCOUNTS().load(deps.storage, v1_job.owner.clone())?;
 
@@ -287,8 +287,10 @@ pub fn migrate_pending_jobs(
                 labels: v1_job.labels,
                 status: v1_job.status,
                 terminate_condition: None,
-                // TODO: migrate executions
-                executions: vec![],
+                executions: vec![Execution {
+                    condition: v1_job.condition,
+                    msgs: v1_job.msgs,
+                }],
                 vars: serde_json_wasm::to_string(&new_vars)?,
                 recurring: v1_job.recurring,
                 requeue_on_evict: v1_job.requeue_on_evict,
@@ -336,15 +338,20 @@ pub fn migrate_finished_jobs(
         .take(msg.limit as usize)
         .collect();
     let job_keys = job_keys?;
+
     for job_key in job_keys {
         let v1_job = V1_FINISHED_JOBS().load(deps.storage, job_key)?;
         let mut new_vars = vec![];
-        for var in v1_job.vars {
+
+        let job_vars: Vec<V1Variable> = serde_json_wasm::from_str(&v1_job.vars)
+            .map_err(|e| StdError::generic_err(e.to_string()))?;
+
+        for var in job_vars {
             new_vars.push(match var {
                 V1Variable::Static(v) => Variable::Static(StaticVariable {
                     kind: v.kind,
                     name: v.name,
-                    encode: false,
+                    encode: v.encode,
                     init_fn: FnValue::String(StringValue::Simple(v.value.clone())),
                     reinitialize: false,
                     value: Some(v.value.clone()),
@@ -353,7 +360,7 @@ pub fn migrate_finished_jobs(
                 V1Variable::External(v) => Variable::External(ExternalVariable {
                     kind: v.kind,
                     name: v.name,
-                    encode: false,
+                    encode: v.encode,
                     init_fn: v.init_fn,
                     reinitialize: v.reinitialize,
                     value: v.value,
@@ -362,7 +369,7 @@ pub fn migrate_finished_jobs(
                 V1Variable::Query(v) => Variable::Query(QueryVariable {
                     kind: v.kind,
                     name: v.name,
-                    encode: false,
+                    encode: v.encode,
                     init_fn: v.init_fn,
                     reinitialize: v.reinitialize,
                     value: v.value,
@@ -370,14 +377,6 @@ pub fn migrate_finished_jobs(
                 }),
             })
         }
-
-        let mut new_msgs = "[".to_string();
-
-        for msg in v1_job.msgs {
-            new_msgs.push_str(msg.as_str());
-        }
-
-        new_msgs.push(']');
 
         let warp_account = ACCOUNTS().load(deps.storage, v1_job.owner.clone())?;
 
@@ -394,8 +393,10 @@ pub fn migrate_finished_jobs(
                 description: v1_job.description,
                 labels: v1_job.labels,
                 status: v1_job.status,
-                // TODO: migrate executions
-                executions: vec![],
+                executions: vec![Execution {
+                    condition: v1_job.condition,
+                    msgs: v1_job.msgs,
+                }],
                 terminate_condition: None,
                 vars: serde_json_wasm::to_string(&new_vars)?,
                 recurring: v1_job.recurring,
