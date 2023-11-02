@@ -3,7 +3,7 @@ use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
 use account::GenericMsg;
 use controller::job::{
-    CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
+    CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Execution, Job, JobStatus, UpdateJobMsg,
 };
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
@@ -39,10 +39,9 @@ pub fn create_job(
     let _validate_conditions_and_variables: Option<String> = deps.querier.query_wasm_smart(
         &config.resolver_address,
         &resolver::QueryMsg::QueryValidateJobCreation(resolver::QueryValidateJobCreationMsg {
-            condition: data.condition.clone(),
             terminate_condition: data.terminate_condition.clone(),
             vars: data.vars.clone(),
-            msgs: data.msgs.clone(),
+            executions: data.executions.clone(),
         }),
     )?;
 
@@ -68,12 +67,11 @@ pub fn create_job(
             last_update_time: Uint64::from(env.block.time.seconds()),
             name: data.name,
             status: JobStatus::Pending,
-            condition: data.condition.clone(),
             terminate_condition: data.terminate_condition,
             recurring: data.recurring,
             requeue_on_evict: data.requeue_on_evict,
             vars: data.vars,
-            msgs: data.msgs,
+            executions: data.executions,
             reward: data.reward,
             description: data.description,
             labels: data.labels,
@@ -151,8 +149,10 @@ pub fn create_job(
         .add_attribute("job_owner", job.owner)
         .add_attribute("job_name", job.name)
         .add_attribute("job_status", serde_json_wasm::to_string(&job.status)?)
-        .add_attribute("job_condition", serde_json_wasm::to_string(&job.condition)?)
-        .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
+        .add_attribute(
+            "job_executions",
+            serde_json_wasm::to_string(&job.executions)?,
+        )
         .add_attribute("job_reward", job.reward)
         .add_attribute("job_creation_fee", creation_fee.to_string())
         .add_attribute("job_maintenance_fee", maintenance_fee.to_string())
@@ -276,8 +276,10 @@ pub fn update_job(
         .add_attribute("job_owner", job.owner)
         .add_attribute("job_name", job.name)
         .add_attribute("job_status", serde_json_wasm::to_string(&job.status)?)
-        .add_attribute("job_condition", serde_json_wasm::to_string(&job.condition)?)
-        .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
+        .add_attribute(
+            "job_executions",
+            serde_json_wasm::to_string(&job.executions)?,
+        )
         .add_attribute("job_reward", job.reward)
         .add_attribute("job_update_fee", fee)
         .add_attribute("job_last_updated_time", job.last_update_time))
@@ -306,49 +308,47 @@ pub fn execute_job(
         }),
     )?;
 
-    let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
-        config.resolver_address.clone(),
-        &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
-            condition: job.condition,
-            vars: vars.clone(),
-            warp_account_addr: Some(job.account.to_string()),
-        }),
-    );
-
     let mut attrs = vec![];
     let mut submsgs = vec![];
 
-    if let Err(e) = resolution {
-        attrs.push(Attribute::new("job_condition_status", "invalid"));
-        attrs.push(Attribute::new("error", e.to_string()));
-        JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Failed)?;
-    } else {
-        attrs.push(Attribute::new("job_condition_status", "valid"));
-        if !resolution? {
-            return Ok(Response::new()
-                .add_attribute("action", "execute_job")
-                .add_attribute("condition", "false")
-                .add_attribute("job_id", job.id));
-        }
+    for Execution { condition, msgs } in job.executions {
+        let resolution: StdResult<bool> = deps
+            .querier
+            .query_wasm_smart(config.resolver_address.clone(), &condition);
 
-        submsgs.push(SubMsg {
-            id: job.id.u64(),
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: job.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                    msgs: deps.querier.query_wasm_smart(
-                        config.resolver_address,
-                        &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
-                            msgs: job.msgs,
-                            vars,
-                        }),
-                    )?,
-                }))?,
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Always,
-        });
+        match resolution {
+            Ok(true) => {
+                submsgs.push(SubMsg {
+                    id: job.id.u64(),
+                    msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: job.account.to_string(),
+                        msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
+                            msgs: deps.querier.query_wasm_smart(
+                                config.resolver_address,
+                                &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                                    msgs,
+                                    vars,
+                                }),
+                            )?,
+                        }))?,
+                        funds: vec![],
+                    }),
+                    gas_limit: None,
+                    reply_on: ReplyOn::Always,
+                });
+                break;
+            }
+            Ok(false) => {
+                // Continue to the next condition
+                continue;
+            }
+            Err(e) => {
+                attrs.push(Attribute::new("job_condition_status", "invalid"));
+                attrs.push(Attribute::new("error", e.to_string()));
+                JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Failed)?;
+                break;
+            }
+        }
     }
 
     // Controller sends reward to executor

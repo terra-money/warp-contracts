@@ -286,9 +286,9 @@ pub fn migrate_pending_jobs(
                 description: v1_job.description,
                 labels: v1_job.labels,
                 status: v1_job.status,
-                condition: serde_json_wasm::to_string(&v1_job.condition)?,
                 terminate_condition: None,
-                msgs: new_msgs.to_string(),
+                // TODO: migrate executions
+                executions: vec![],
                 vars: serde_json_wasm::to_string(&new_vars)?,
                 recurring: v1_job.recurring,
                 requeue_on_evict: v1_job.requeue_on_evict,
@@ -394,9 +394,9 @@ pub fn migrate_finished_jobs(
                 description: v1_job.description,
                 labels: v1_job.labels,
                 status: v1_job.status,
-                condition: serde_json_wasm::to_string(&v1_job.condition)?,
+                // TODO: migrate executions
+                executions: vec![],
                 terminate_condition: None,
-                msgs: new_msgs,
                 vars: serde_json_wasm::to_string(&new_vars)?,
                 recurring: v1_job.recurring,
                 requeue_on_evict: v1_job.requeue_on_evict,

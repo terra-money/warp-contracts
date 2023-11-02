@@ -439,12 +439,11 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                                 description: finished_job.description,
                                 labels: finished_job.labels,
                                 status: JobStatus::Pending,
-                                condition: finished_job.condition.clone(),
                                 terminate_condition: finished_job.terminate_condition.clone(),
                                 vars: new_vars,
                                 requeue_on_evict: finished_job.requeue_on_evict,
                                 recurring: finished_job.recurring,
-                                msgs: finished_job.msgs.clone(),
+                                executions: finished_job.executions.clone(),
                                 reward: finished_job.reward,
                                 assets_to_withdraw: finished_job.assets_to_withdraw,
                             },
@@ -506,12 +505,8 @@ pub fn reply(mut deps: DepsMut, env: Env, msg: Reply) -> Result<Response, Contra
                             serde_json_wasm::to_string(&new_job.status)?,
                         ));
                         new_job_attrs.push(Attribute::new(
-                            "job_condition",
-                            serde_json_wasm::to_string(&new_job.condition)?,
-                        ));
-                        new_job_attrs.push(Attribute::new(
-                            "job_msgs",
-                            serde_json_wasm::to_string(&new_job.msgs)?,
+                            "job_executions",
+                            serde_json_wasm::to_string(&new_job.executions)?,
                         ));
                         new_job_attrs.push(Attribute::new("job_reward", new_job.reward));
                         new_job_attrs.push(Attribute::new("job_creation_fee", fee));

@@ -33,9 +33,8 @@ pub struct Job {
     pub description: String,
     pub labels: Vec<String>,
     pub status: JobStatus,
-    pub condition: String,
     pub terminate_condition: Option<String>,
-    pub msgs: String,
+    pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
     pub requeue_on_evict: bool,
@@ -59,13 +58,18 @@ pub enum JobStatus {
 }
 
 #[cw_serde]
+pub struct Execution {
+    pub condition: String,
+    pub msgs: String,
+}
+
+#[cw_serde]
 pub struct CreateJobMsg {
     pub name: String,
     pub description: String,
     pub labels: Vec<String>,
-    pub condition: String,
     pub terminate_condition: Option<String>,
-    pub msgs: String,
+    pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
     pub requeue_on_evict: bool,
