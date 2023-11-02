@@ -86,19 +86,19 @@ pub struct InstantiateMsg {
 //execute
 #[cw_serde]
 pub enum ExecuteMsg {
-    CreateJob(CreateJobMsg),
-    DeleteJob(DeleteJobMsg),
-    UpdateJob(UpdateJobMsg),
-    ExecuteJob(ExecuteJobMsg),
-    EvictJob(EvictJobMsg),
+    CreateJob(Box<CreateJobMsg>),
+    DeleteJob(Box<DeleteJobMsg>),
+    UpdateJob(Box<UpdateJobMsg>),
+    ExecuteJob(Box<ExecuteJobMsg>),
+    EvictJob(Box<EvictJobMsg>),
 
-    CreateAccount(CreateAccountMsg),
+    CreateAccount(Box<CreateAccountMsg>),
 
-    UpdateConfig(UpdateConfigMsg),
+    UpdateConfig(Box<UpdateConfigMsg>),
 
-    MigrateAccounts(MigrateAccountsMsg),
-    MigratePendingJobs(MigrateJobsMsg),
-    MigrateFinishedJobs(MigrateJobsMsg),
+    MigrateAccounts(Box<MigrateAccountsMsg>),
+    MigratePendingJobs(Box<MigrateJobsMsg>),
+    MigrateFinishedJobs(Box<MigrateJobsMsg>),
 }
 
 #[cw_serde]

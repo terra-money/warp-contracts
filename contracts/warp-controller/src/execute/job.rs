@@ -124,7 +124,7 @@ pub fn create_job(
             contract_addr: account.account.to_string(),
             msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
                 msgs: vec![CosmosMsg::Bank(BankMsg::Burn {
-                    amount: vec![Coin::new(burn_fee.u128(), config.fee_denom.clone())],
+                    amount: vec![Coin::new(burn_fee.u128(), config.fee_denom)],
                 })],
             }))?,
             funds: vec![],

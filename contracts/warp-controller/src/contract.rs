@@ -90,24 +90,26 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateJob(data) => execute::job::create_job(deps, env, info, data),
-        ExecuteMsg::DeleteJob(data) => execute::job::delete_job(deps, env, info, data),
-        ExecuteMsg::UpdateJob(data) => execute::job::update_job(deps, env, info, data),
-        ExecuteMsg::ExecuteJob(data) => execute::job::execute_job(deps, env, info, data),
-        ExecuteMsg::EvictJob(data) => execute::job::evict_job(deps, env, info, data),
+        ExecuteMsg::CreateJob(data) => execute::job::create_job(deps, env, info, *data),
+        ExecuteMsg::DeleteJob(data) => execute::job::delete_job(deps, env, info, *data),
+        ExecuteMsg::UpdateJob(data) => execute::job::update_job(deps, env, info, *data),
+        ExecuteMsg::ExecuteJob(data) => execute::job::execute_job(deps, env, info, *data),
+        ExecuteMsg::EvictJob(data) => execute::job::evict_job(deps, env, info, *data),
 
-        ExecuteMsg::CreateAccount(data) => execute::account::create_account(deps, env, info, data),
+        ExecuteMsg::CreateAccount(data) => execute::account::create_account(deps, env, info, *data),
 
-        ExecuteMsg::UpdateConfig(data) => execute::controller::update_config(deps, env, info, data),
+        ExecuteMsg::UpdateConfig(data) => {
+            execute::controller::update_config(deps, env, info, *data)
+        }
 
         ExecuteMsg::MigrateAccounts(data) => {
-            execute::controller::migrate_accounts(deps, env, info, data)
+            execute::controller::migrate_accounts(deps, env, info, *data)
         }
         ExecuteMsg::MigratePendingJobs(data) => {
-            execute::controller::migrate_pending_jobs(deps, env, info, data)
+            execute::controller::migrate_pending_jobs(deps, env, info, *data)
         }
         ExecuteMsg::MigrateFinishedJobs(data) => {
-            execute::controller::migrate_finished_jobs(deps, env, info, data)
+            execute::controller::migrate_finished_jobs(deps, env, info, *data)
         }
     }
 }
