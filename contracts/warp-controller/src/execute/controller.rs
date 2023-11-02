@@ -16,7 +16,7 @@ use resolver::variable::{
 };
 
 #[cw_serde]
-pub struct V1Job {
+pub struct OldJob {
     pub id: Uint64,
     pub owner: Addr,
     pub last_update_time: Uint64,
@@ -35,14 +35,14 @@ pub struct V1Job {
 }
 
 #[cw_serde]
-pub enum V1Variable {
-    Static(V1StaticVariable),
-    External(V1ExternalVariable),
-    Query(V1QueryVariable),
+pub enum OldVariable {
+    Static(OldStaticVariable),
+    External(OldExternalVariable),
+    Query(OldQueryVariable),
 }
 
 #[cw_serde]
-pub struct V1StaticVariable {
+pub struct OldStaticVariable {
     pub kind: VariableKind,
     pub name: String,
     pub value: String,
@@ -51,7 +51,7 @@ pub struct V1StaticVariable {
 }
 
 #[cw_serde]
-pub struct V1ExternalVariable {
+pub struct OldExternalVariable {
     pub kind: VariableKind,
     pub name: String,
     pub encode: bool,
@@ -62,7 +62,7 @@ pub struct V1ExternalVariable {
 }
 
 #[cw_serde]
-pub struct V1QueryVariable {
+pub struct OldQueryVariable {
     pub kind: VariableKind,
     pub name: String,
     pub encode: bool,
@@ -72,14 +72,14 @@ pub struct V1QueryVariable {
     pub update_fn: Option<UpdateFn>,
 }
 
-pub struct V1JobIndexes<'a> {
-    pub reward: UniqueIndex<'a, (u128, u64), V1Job>,
-    pub publish_time: MultiIndex<'a, u64, V1Job, u64>,
+pub struct OldJobIndexes<'a> {
+    pub reward: UniqueIndex<'a, (u128, u64), OldJob>,
+    pub publish_time: MultiIndex<'a, u64, OldJob, u64>,
 }
 
-impl IndexList<V1Job> for V1JobIndexes<'_> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<V1Job>> + '_> {
-        let v: Vec<&dyn Index<V1Job>> = vec![&self.reward, &self.publish_time];
+impl IndexList<OldJob> for OldJobIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<OldJob>> + '_> {
+        let v: Vec<&dyn Index<OldJob>> = vec![&self.reward, &self.publish_time];
         Box::new(v.into_iter())
     }
 }
@@ -211,37 +211,37 @@ pub fn migrate_pending_jobs(
     let start_after = start_after.map(Bound::exclusive);
 
     #[allow(non_snake_case)]
-    pub fn V1_PENDING_JOBS<'a>() -> IndexedMap<'a, u64, V1Job, V1JobIndexes<'a>> {
-        let indexes = V1JobIndexes {
+    pub fn OLD_PENDING_JOBS<'a>() -> IndexedMap<'a, u64, OldJob, OldJobIndexes<'a>> {
+        let indexes = OldJobIndexes {
             reward: UniqueIndex::new(
                 |job| (job.reward.u128(), job.id.u64()),
-                "pending_jobs__reward_v2",
+                "pending_jobs__reward_v3",
             ),
             publish_time: MultiIndex::new(
                 |_pk, job| job.last_update_time.u64(),
-                "pending_jobs_v2",
-                "pending_jobs__publish_timestamp_v2",
+                "pending_jobs_v3",
+                "pending_jobs__publish_timestamp_v3",
             ),
         };
-        IndexedMap::new("pending_jobs_v2", indexes)
+        IndexedMap::new("pending_jobs_v3", indexes)
     }
 
-    let job_keys: Result<Vec<_>, _> = V1_PENDING_JOBS()
+    let job_keys: Result<Vec<_>, _> = OLD_PENDING_JOBS()
         .keys(deps.storage, start_after, None, Order::Ascending)
         .take(msg.limit as usize)
         .collect();
     let job_keys = job_keys?;
 
     for job_key in job_keys {
-        let v1_job = V1_PENDING_JOBS().load(deps.storage, job_key)?;
+        let old_job = OLD_PENDING_JOBS().load(deps.storage, job_key)?;
         let mut new_vars = vec![];
 
-        let job_vars: Vec<V1Variable> = serde_json_wasm::from_str(&v1_job.vars)
+        let job_vars: Vec<OldVariable> = serde_json_wasm::from_str(&old_job.vars)
             .map_err(|e| StdError::generic_err(e.to_string()))?;
 
         for var in job_vars {
             new_vars.push(match var {
-                V1Variable::Static(v) => Variable::Static(StaticVariable {
+                OldVariable::Static(v) => Variable::Static(StaticVariable {
                     kind: v.kind,
                     name: v.name,
                     encode: v.encode,
@@ -250,7 +250,7 @@ pub fn migrate_pending_jobs(
                     value: Some(v.value.clone()),
                     update_fn: v.update_fn,
                 }),
-                V1Variable::External(v) => Variable::External(ExternalVariable {
+                OldVariable::External(v) => Variable::External(ExternalVariable {
                     kind: v.kind,
                     name: v.name,
                     encode: v.encode,
@@ -259,7 +259,7 @@ pub fn migrate_pending_jobs(
                     value: v.value,
                     update_fn: v.update_fn,
                 }),
-                V1Variable::Query(v) => Variable::Query(QueryVariable {
+                OldVariable::Query(v) => Variable::Query(QueryVariable {
                     kind: v.kind,
                     name: v.name,
                     encode: v.encode,
@@ -271,31 +271,31 @@ pub fn migrate_pending_jobs(
             })
         }
 
-        let warp_account = ACCOUNTS().load(deps.storage, v1_job.owner.clone())?;
+        let warp_account = ACCOUNTS().load(deps.storage, old_job.owner.clone())?;
 
         PENDING_JOBS().save(
             deps.storage,
             job_key,
             &Job {
-                id: v1_job.id,
+                id: old_job.id,
                 prev_id: None,
-                owner: v1_job.owner,
+                owner: old_job.owner,
                 account: warp_account.account,
-                last_update_time: v1_job.last_update_time,
-                name: v1_job.name,
-                description: v1_job.description,
-                labels: v1_job.labels,
-                status: v1_job.status,
+                last_update_time: old_job.last_update_time,
+                name: old_job.name,
+                description: old_job.description,
+                labels: old_job.labels,
+                status: old_job.status,
                 terminate_condition: None,
                 executions: vec![Execution {
-                    condition: v1_job.condition,
-                    msgs: v1_job.msgs,
+                    condition: old_job.condition,
+                    msgs: old_job.msgs,
                 }],
                 vars: serde_json_wasm::to_string(&new_vars)?,
-                recurring: v1_job.recurring,
-                requeue_on_evict: v1_job.requeue_on_evict,
-                reward: v1_job.reward,
-                assets_to_withdraw: v1_job.assets_to_withdraw,
+                recurring: old_job.recurring,
+                requeue_on_evict: old_job.requeue_on_evict,
+                reward: old_job.reward,
+                assets_to_withdraw: old_job.assets_to_withdraw,
             },
         )?;
     }
@@ -318,37 +318,37 @@ pub fn migrate_finished_jobs(
     let start_after = start_after.map(Bound::exclusive);
 
     #[allow(non_snake_case)]
-    pub fn V1_FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, V1Job, V1JobIndexes<'a>> {
-        let indexes = V1JobIndexes {
+    pub fn OLD_FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, OldJob, OldJobIndexes<'a>> {
+        let indexes = OldJobIndexes {
             reward: UniqueIndex::new(
                 |job| (job.reward.u128(), job.id.u64()),
-                "finished_jobs__reward_v2",
+                "finished_jobs__reward_v3",
             ),
             publish_time: MultiIndex::new(
                 |_pk, job| job.last_update_time.u64(),
-                "finished_jobs_v2",
-                "finished_jobs__publish_timestamp_v2",
+                "finished_jobs_v3",
+                "finished_jobs__publish_timestamp_v3",
             ),
         };
-        IndexedMap::new("finished_jobs_v2", indexes)
+        IndexedMap::new("finished_jobs_v3", indexes)
     }
 
-    let job_keys: Result<Vec<_>, _> = V1_FINISHED_JOBS()
+    let job_keys: Result<Vec<_>, _> = OLD_FINISHED_JOBS()
         .keys(deps.storage, start_after, None, Order::Ascending)
         .take(msg.limit as usize)
         .collect();
     let job_keys = job_keys?;
 
     for job_key in job_keys {
-        let v1_job = V1_FINISHED_JOBS().load(deps.storage, job_key)?;
+        let old_job = OLD_FINISHED_JOBS().load(deps.storage, job_key)?;
         let mut new_vars = vec![];
 
-        let job_vars: Vec<V1Variable> = serde_json_wasm::from_str(&v1_job.vars)
+        let job_vars: Vec<OldVariable> = serde_json_wasm::from_str(&old_job.vars)
             .map_err(|e| StdError::generic_err(e.to_string()))?;
 
         for var in job_vars {
             new_vars.push(match var {
-                V1Variable::Static(v) => Variable::Static(StaticVariable {
+                OldVariable::Static(v) => Variable::Static(StaticVariable {
                     kind: v.kind,
                     name: v.name,
                     encode: v.encode,
@@ -357,7 +357,7 @@ pub fn migrate_finished_jobs(
                     value: Some(v.value.clone()),
                     update_fn: v.update_fn,
                 }),
-                V1Variable::External(v) => Variable::External(ExternalVariable {
+                OldVariable::External(v) => Variable::External(ExternalVariable {
                     kind: v.kind,
                     name: v.name,
                     encode: v.encode,
@@ -366,7 +366,7 @@ pub fn migrate_finished_jobs(
                     value: v.value,
                     update_fn: v.update_fn,
                 }),
-                V1Variable::Query(v) => Variable::Query(QueryVariable {
+                OldVariable::Query(v) => Variable::Query(QueryVariable {
                     kind: v.kind,
                     name: v.name,
                     encode: v.encode,
@@ -378,31 +378,31 @@ pub fn migrate_finished_jobs(
             })
         }
 
-        let warp_account = ACCOUNTS().load(deps.storage, v1_job.owner.clone())?;
+        let warp_account = ACCOUNTS().load(deps.storage, old_job.owner.clone())?;
 
         FINISHED_JOBS().save(
             deps.storage,
             job_key,
             &Job {
-                id: v1_job.id,
+                id: old_job.id,
                 prev_id: None,
-                owner: v1_job.owner,
+                owner: old_job.owner,
                 account: warp_account.account,
-                last_update_time: v1_job.last_update_time,
-                name: v1_job.name,
-                description: v1_job.description,
-                labels: v1_job.labels,
-                status: v1_job.status,
+                last_update_time: old_job.last_update_time,
+                name: old_job.name,
+                description: old_job.description,
+                labels: old_job.labels,
+                status: old_job.status,
                 executions: vec![Execution {
-                    condition: v1_job.condition,
-                    msgs: v1_job.msgs,
+                    condition: old_job.condition,
+                    msgs: old_job.msgs,
                 }],
                 terminate_condition: None,
                 vars: serde_json_wasm::to_string(&new_vars)?,
-                recurring: v1_job.recurring,
-                requeue_on_evict: v1_job.requeue_on_evict,
-                reward: v1_job.reward,
-                assets_to_withdraw: v1_job.assets_to_withdraw,
+                recurring: old_job.recurring,
+                requeue_on_evict: old_job.requeue_on_evict,
+                reward: old_job.reward,
+                assets_to_withdraw: old_job.assets_to_withdraw,
             },
         )?;
     }
