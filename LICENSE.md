@@ -1,21 +1,37 @@
-MIT License
+Copyright 2023 Terraform Labs Pte Ltd
 
-Copyright (c) 2022 Terra
+Warp Protocol is Licensed under the Apache License, Version 2.0 with Common Clause License Condition v1.0 and Additional License Condition v1.0 (the "License");
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+You may not use this file except in compliance with the License.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+You may obtain a copy of the Apache License, Version 2.0 license at http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+See the License for the specific language governing permissions and limitations under the License.
+
+**Commons Clause License Condition v1.0**
+
+The Software is provided to you by the Licensor under the License, as defined below, subject to the following condition.
+
+Without limiting other conditions in the License, the grant of rights under the License will not include, and the License does not grant to you, the right to Sell the Software.
+
+For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you under the License to provide to third parties or any other persons, for a fee or other monetary or non-monetary consideration (including without limitation fees for hosting or consulting/ support services related to the Software), a product or service whose value derives, entirely, substantially or similarly, from the functionality of the Software. Any license notice or attribution required by the License must also include this Commons Clause License Condition notice.
+
+Software: Warp Protocol
+
+License: Apache 2.0 
+
+Licensor: Terraform Labs Pte Ltd 
+
+**Additional License Condition v1.0**
+
+The terms below are in addition to the Apache 2.0 license terms and the Commons Clause License Conditions v1.0. 
+
+Copying Restrictions:
+
+Despite the terms of the License, no person or entity shall be permitted to copy, or reproduce in any form, any portion of the Software.
+
+Redistribution Restrictions:
+
+Despite the terms of the License, no person or entity shall be permitted to redistribute, share, or make publicly available any portion of the software or derivative works thereof.
