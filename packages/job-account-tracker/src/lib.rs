@@ -17,12 +17,12 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
-    OccupyAccount(OccupyAccountMsg),
+    TakeAccount(TakeAccountMsg),
     FreeAccount(FreeAccountMsg),
 }
 
 #[cw_serde]
-pub struct OccupyAccountMsg {
+pub struct TakeAccountMsg {
     pub account_addr: String,
     pub job_id: Uint64,
 }
@@ -38,7 +38,7 @@ pub enum QueryMsg {
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
     #[returns(AccountsResponse)]
-    QueryOccupiedAccounts(QueryOccupiedAccountsMsg),
+    QueryTakenAccounts(QueryTakenAccountsMsg),
     #[returns(AccountsResponse)]
     QueryFreeAccounts(QueryFreeAccountsMsg),
     #[returns(FirstFreeAccountResponse)]
@@ -54,7 +54,7 @@ pub struct ConfigResponse {
 }
 
 #[cw_serde]
-pub struct QueryOccupiedAccountsMsg {
+pub struct QueryTakenAccountsMsg {
     pub start_after: Option<String>,
     pub limit: Option<u32>,
 }

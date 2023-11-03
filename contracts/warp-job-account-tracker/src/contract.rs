@@ -41,9 +41,9 @@ pub fn execute(
         return Err(ContractError::Unauthorized {});
     }
     match msg {
-        ExecuteMsg::OccupyAccount(data) => {
+        ExecuteMsg::TakeAccount(data) => {
             nonpayable(&info).unwrap();
-            execute::account::occupy_account(deps, data)
+            execute::account::taken_account(deps, data)
         }
         ExecuteMsg::FreeAccount(data) => {
             nonpayable(&info).unwrap();
@@ -56,8 +56,8 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::account::query_config(deps)?),
-        QueryMsg::QueryOccupiedAccounts(data) => {
-            to_binary(&query::account::query_occupied_accounts(deps, data)?)
+        QueryMsg::QueryTakenAccounts(data) => {
+            to_binary(&query::account::query_taken_accounts(deps, data)?)
         }
         QueryMsg::QueryFreeAccounts(data) => {
             to_binary(&query::account::query_free_accounts(deps, data)?)

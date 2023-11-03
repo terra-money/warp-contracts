@@ -9,7 +9,7 @@ use crate::{
     state::{JobQueue, JOB_ACCOUNT_TRACKERS},
     util::msg::{
         build_account_execute_generic_msgs, build_instantiate_warp_account_msg,
-        build_occupy_account_msg, build_transfer_cw20_msg, build_transfer_cw721_msg,
+        build_taken_account_msg, build_transfer_cw20_msg, build_transfer_cw721_msg,
         build_transfer_native_funds_msg,
     },
     ContractError,
@@ -266,7 +266,7 @@ pub fn create_job_account_and_job(
     }
 
     // Occupy job account
-    msgs.push(build_occupy_account_msg(
+    msgs.push(build_taken_account_msg(
         job_account_tracker_addr.to_string(),
         job_account_addr.to_string(),
         job.id,

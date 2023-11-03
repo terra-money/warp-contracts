@@ -10,7 +10,7 @@ use crate::{
         legacy_account::is_legacy_account,
         msg::{
             build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-            build_occupy_account_msg, build_transfer_native_funds_msg,
+            build_taken_account_msg, build_transfer_native_funds_msg,
         },
     },
     ContractError,
@@ -206,7 +206,7 @@ pub fn execute_job(
             let job_account_tracker =
                 JOB_ACCOUNT_TRACKERS.load(deps.storage, &finished_job.owner)?;
             // Occupy job account with the new job
-            msgs.push(build_occupy_account_msg(
+            msgs.push(build_taken_account_msg(
                 job_account_tracker.to_string(),
                 job_account_addr.to_string(),
                 new_job_id,

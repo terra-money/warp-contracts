@@ -15,7 +15,7 @@ use crate::{
         msg::{
             build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
             build_free_account_msg, build_instantiate_warp_account_msg,
-            build_instantiate_warp_job_account_tracker_msg, build_occupy_account_msg,
+            build_instantiate_warp_job_account_tracker_msg, build_taken_account_msg,
             build_transfer_cw20_msg, build_transfer_cw721_msg, build_transfer_native_funds_msg,
         },
     },
@@ -213,7 +213,7 @@ pub fn create_job(
                     }
 
                     // Occupy account
-                    msgs.push(build_occupy_account_msg(
+                    msgs.push(build_taken_account_msg(
                         job_account_tracker.to_string(),
                         available_account_addr.to_string(),
                         job.id,

@@ -1,11 +1,11 @@
 use cosmwasm_std::{Deps, Order, StdResult};
 use cw_storage_plus::Bound;
 
-use crate::state::{CONFIG, FREE_ACCOUNTS, OCCUPIED_ACCOUNTS};
+use crate::state::{CONFIG, FREE_ACCOUNTS, TAKEN_ACCOUNTS};
 
 use job_account_tracker::{
     Account, AccountsResponse, ConfigResponse, FirstFreeAccountResponse, QueryFreeAccountsMsg,
-    QueryOccupiedAccountsMsg,
+    QueryTakenAccountsMsg,
 };
 
 const QUERY_LIMIT: u32 = 50;
@@ -30,12 +30,12 @@ pub fn query_first_free_account(deps: Deps) -> StdResult<FirstFreeAccountRespons
     }
 }
 
-pub fn query_occupied_accounts(
+pub fn query_taken_accounts(
     deps: Deps,
-    data: QueryOccupiedAccountsMsg,
+    data: QueryTakenAccountsMsg,
 ) -> StdResult<AccountsResponse> {
     let iter = match data.start_after {
-        Some(start_after) => OCCUPIED_ACCOUNTS.range(
+        Some(start_after) => TAKEN_ACCOUNTS.range(
             deps.storage,
             Some(Bound::exclusive(
                 &deps.api.addr_validate(start_after.as_str()).unwrap(),
@@ -43,7 +43,7 @@ pub fn query_occupied_accounts(
             None,
             Order::Descending,
         ),
-        None => OCCUPIED_ACCOUNTS.range(deps.storage, None, None, Order::Descending),
+        None => TAKEN_ACCOUNTS.range(deps.storage, None, None, Order::Descending),
     };
     let accounts = iter
         .take(data.limit.unwrap_or(QUERY_LIMIT) as usize)

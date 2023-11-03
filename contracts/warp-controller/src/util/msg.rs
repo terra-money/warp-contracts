@@ -2,7 +2,7 @@ use cosmwasm_std::{to_binary, BankMsg, Coin, CosmosMsg, Uint128, Uint64, WasmMsg
 
 use controller::account::{AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use job_account::{GenericMsg, WithdrawAssetsMsg};
-use job_account_tracker::{FreeAccountMsg, OccupyAccountMsg};
+use job_account_tracker::{FreeAccountMsg, TakeAccountMsg};
 
 pub fn build_instantiate_warp_job_account_tracker_msg(
     admin_addr: String,
@@ -60,15 +60,15 @@ pub fn build_free_account_msg(job_account_tracker_addr: String, account_addr: St
     })
 }
 
-pub fn build_occupy_account_msg(
+pub fn build_taken_account_msg(
     job_account_tracker_addr: String,
     account_addr: String,
     job_id: Uint64,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: job_account_tracker_addr,
-        msg: to_binary(&job_account_tracker::ExecuteMsg::OccupyAccount(
-            OccupyAccountMsg {
+        msg: to_binary(&job_account_tracker::ExecuteMsg::TakeAccount(
+            TakeAccountMsg {
                 account_addr,
                 job_id,
             },

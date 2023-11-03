@@ -5,8 +5,8 @@ mod tests {
     use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
     use job_account_tracker::{
         Account, AccountsResponse, Config, ConfigResponse, ExecuteMsg, FirstFreeAccountResponse,
-        FreeAccountMsg, InstantiateMsg, OccupyAccountMsg, QueryConfigMsg, QueryFirstFreeAccountMsg,
-        QueryFreeAccountsMsg, QueryMsg, QueryOccupiedAccountsMsg,
+        FreeAccountMsg, InstantiateMsg, QueryConfigMsg, QueryFirstFreeAccountMsg,
+        QueryFreeAccountsMsg, QueryMsg, QueryTakenAccountsMsg, TakeAccountMsg,
     };
 
     use crate::{
@@ -115,7 +115,7 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_job_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryOccupiedAccounts(QueryOccupiedAccountsMsg {
+                &QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
                     start_after: None,
                     limit: None
                 })
@@ -215,7 +215,7 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_job_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryOccupiedAccounts(QueryOccupiedAccountsMsg {
+                &QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
                     start_after: None,
                     limit: None
                 })
@@ -230,19 +230,19 @@ mod tests {
         let _ = app.execute_contract(
             Addr::unchecked(USER_1),
             warp_job_account_tracker_contract_addr.clone(),
-            &ExecuteMsg::OccupyAccount(OccupyAccountMsg {
+            &ExecuteMsg::TakeAccount(TakeAccountMsg {
                 account_addr: DUMMY_WARP_ACCOUNT_2_ADDR.to_string(),
                 job_id: DUMMY_JOB_1_ID,
             }),
             &[],
         );
 
-        // Cannot occupy account twice
+        // Cannot take account twice
         assert_err(
             app.execute_contract(
                 Addr::unchecked(USER_1),
                 warp_job_account_tracker_contract_addr.clone(),
-                &ExecuteMsg::OccupyAccount(OccupyAccountMsg {
+                &ExecuteMsg::TakeAccount(TakeAccountMsg {
                     account_addr: DUMMY_WARP_ACCOUNT_2_ADDR.to_string(),
                     job_id: DUMMY_JOB_2_ID,
                 }),
@@ -279,7 +279,7 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_job_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryOccupiedAccounts(QueryOccupiedAccountsMsg {
+                &QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
                     start_after: None,
                     limit: None
                 })
@@ -335,7 +335,7 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_job_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryOccupiedAccounts(QueryOccupiedAccountsMsg {
+                &QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
                     start_after: None,
                     limit: None
                 })

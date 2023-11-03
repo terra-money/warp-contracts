@@ -3,7 +3,7 @@ use cosmwasm_std::{to_binary, Deps, Env, MessageInfo, Response, WasmMsg};
 use crate::ContractError;
 use controller::{Config, MigrateJobAccountsMsg};
 use job_account_tracker::{
-    AccountsResponse, MigrateMsg, QueryFreeAccountsMsg, QueryOccupiedAccountsMsg,
+    AccountsResponse, MigrateMsg, QueryFreeAccountsMsg, QueryTakenAccountsMsg,
 };
 
 pub fn migrate_free_job_accounts(
@@ -50,7 +50,7 @@ pub fn migrate_occupied_job_accounts(
 
     let occupied_job_accounts: AccountsResponse = deps.querier.query_wasm_smart(
         msg.job_account_tracker_addr,
-        &job_account_tracker::QueryMsg::QueryOccupiedAccounts(QueryOccupiedAccountsMsg {
+        &job_account_tracker::QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
             start_after: msg.start_after,
             limit: Some(msg.limit as u32),
         }),
