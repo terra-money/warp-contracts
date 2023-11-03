@@ -179,16 +179,16 @@ pub struct StateResponse {
 
 #[cw_serde]
 pub struct MigrateMsg {
-    pub creation_fee_min: Uint128,
-    pub creation_fee_max: Uint128,
-    pub burn_fee_min: Uint128,
-    pub maintenance_fee_min: Uint128,
-    pub maintenance_fee_max: Uint128,
-    // duration_days fn interval [left, right]
-    pub duration_days_left: Uint128,
-    pub duration_days_right: Uint128,
-    // queue_size fn interval [left, right]
-    pub queue_size_left: Uint128,
-    pub queue_size_right: Uint128,
-    pub burn_fee_rate: Uint128,
+    // pub creation_fee_min: Uint128,
+    // pub creation_fee_max: Uint128,
+    // pub burn_fee_min: Uint128,
+    // pub maintenance_fee_min: Uint128,
+    // pub maintenance_fee_max: Uint128,
+    // // duration_days fn interval [left, right]
+    // pub duration_days_left: Uint128,
+    // pub duration_days_right: Uint128,
+    // // queue_size fn interval [left, right]
+    // pub queue_size_left: Uint128,
+    // pub queue_size_right: Uint128,
+    // pub burn_fee_rate: Uint128,
 }
