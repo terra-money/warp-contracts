@@ -4,30 +4,12 @@ use controller::account::{AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, 
 use job_account::{GenericMsg, WithdrawAssetsMsg};
 use job_account_tracker::{FreeAccountMsg, TakeAccountMsg};
 
-pub fn build_instantiate_warp_job_account_tracker_msg(
-    admin_addr: String,
-    code_id: u64,
-    account_owner: String,
-) -> CosmosMsg {
-    CosmosMsg::Wasm(WasmMsg::Instantiate {
-        admin: Some(admin_addr),
-        code_id,
-        msg: to_binary(&job_account_tracker::InstantiateMsg {
-            owner: account_owner.clone(),
-        })
-        .unwrap(),
-        funds: vec![],
-        label: format!("warp account tracker, owner: {}", account_owner),
-    })
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn build_instantiate_warp_account_msg(
     job_id: Uint64,
     admin_addr: String,
     code_id: u64,
     account_owner: String,
-    job_account_tracker_addr: String,
     native_funds: Vec<Coin>,
     cw_funds: Option<Vec<CwFund>>,
     msgs: Option<Vec<CosmosMsg>>,
@@ -38,7 +20,6 @@ pub fn build_instantiate_warp_account_msg(
         msg: to_binary(&job_account::InstantiateMsg {
             owner: account_owner.clone(),
             job_id,
-            job_account_tracker_addr,
             native_funds: native_funds.clone(),
             cw_funds: cw_funds.unwrap_or(vec![]),
             msgs: msgs.unwrap_or(vec![]),
@@ -49,11 +30,18 @@ pub fn build_instantiate_warp_account_msg(
     })
 }
 
-pub fn build_free_account_msg(job_account_tracker_addr: String, account_addr: String) -> CosmosMsg {
+pub fn build_free_account_msg(
+    job_account_tracker_addr: String,
+    account_owner_addr: String,
+    account_addr: String,
+) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: job_account_tracker_addr,
         msg: to_binary(&job_account_tracker::ExecuteMsg::FreeAccount(
-            FreeAccountMsg { account_addr },
+            FreeAccountMsg {
+                account_owner_addr,
+                account_addr,
+            },
         ))
         .unwrap(),
         funds: vec![],
@@ -62,6 +50,7 @@ pub fn build_free_account_msg(job_account_tracker_addr: String, account_addr: St
 
 pub fn build_taken_account_msg(
     job_account_tracker_addr: String,
+    account_owner_addr: String,
     account_addr: String,
     job_id: Uint64,
 ) -> CosmosMsg {
@@ -69,6 +58,7 @@ pub fn build_taken_account_msg(
         contract_addr: job_account_tracker_addr,
         msg: to_binary(&job_account_tracker::ExecuteMsg::TakeAccount(
             TakeAccountMsg {
+                account_owner_addr,
                 account_addr,
                 job_id,
             },

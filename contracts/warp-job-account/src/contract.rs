@@ -20,7 +20,6 @@ pub fn instantiate(
         &Config {
             owner: deps.api.addr_validate(&msg.owner)?,
             creator_addr: info.sender,
-            job_account_tracker_addr: deps.api.addr_validate(&msg.job_account_tracker_addr)?,
         },
     )?;
 
@@ -29,7 +28,6 @@ pub fn instantiate(
         .add_attribute("action", "instantiate")
         .add_attribute("job_id", msg.job_id)
         .add_attribute("contract_addr", instantiated_account_addr)
-        .add_attribute("job_account_tracker_addr", msg.job_account_tracker_addr)
         .add_attribute("owner", msg.owner)
         .add_attribute(
             "native_funds",

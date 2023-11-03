@@ -38,14 +38,14 @@ pub enum ContractError {
     #[error("Error resolving JSON path")]
     ResolveError {},
 
-    #[error("Sub account already occupied")]
-    AccountAlreadyOccupiedError {},
+    #[error("Sub account already taken")]
+    AccountAlreadyTakenError {},
 
     #[error("Sub account already free")]
     AccountAlreadyFreeError {},
 
-    #[error("Sub account should be occupied but it is free")]
-    AccountNotOccupiedError {},
+    #[error("Sub account should be taken but it is free")]
+    AccountNotTakenError {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {

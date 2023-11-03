@@ -10,7 +10,7 @@ use job_account_tracker::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryM
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let instantiated_account_addr = env.contract.address;
@@ -18,15 +18,18 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            owner: deps.api.addr_validate(&msg.owner)?,
-            creator_addr: info.sender,
+            // owner: deps.api.addr_validate(&msg.owner)?,
+            // creator_addr: info.sender,
+            admin: deps.api.addr_validate(&msg.admin)?,
+            warp_addr: deps.api.addr_validate(&msg.warp_addr)?,
         },
     )?;
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_attribute("contract_addr", instantiated_account_addr.clone())
-        .add_attribute("owner", msg.owner))
+        .add_attribute("admin", msg.admin)
+        .add_attribute("warp_addr", msg.warp_addr))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -37,7 +40,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.owner && info.sender != config.creator_addr {
+    if info.sender != config.admin && info.sender != config.warp_addr {
         return Err(ContractError::Unauthorized {});
     }
     match msg {
@@ -62,8 +65,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryFreeAccounts(data) => {
             to_binary(&query::account::query_free_accounts(deps, data)?)
         }
-        QueryMsg::QueryFirstFreeAccount(_) => {
-            to_binary(&query::account::query_first_free_account(deps)?)
+        QueryMsg::QueryFirstFreeAccount(data) => {
+            to_binary(&query::account::query_first_free_account(deps, data)?)
         }
     }
 }

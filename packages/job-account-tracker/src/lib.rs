@@ -3,15 +3,15 @@ use cosmwasm_std::{Addr, Uint64};
 
 #[cw_serde]
 pub struct Config {
-    pub owner: Addr,
+    pub admin: Addr,
     // Address of warp controller contract
-    pub creator_addr: Addr,
+    pub warp_addr: Addr,
 }
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    // User who owns this account
-    pub owner: String,
+    pub admin: String,
+    pub warp_addr: String,
 }
 
 #[cw_serde]
@@ -23,12 +23,14 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub struct TakeAccountMsg {
+    pub account_owner_addr: String,
     pub account_addr: String,
     pub job_id: Uint64,
 }
 
 #[cw_serde]
 pub struct FreeAccountMsg {
+    pub account_owner_addr: String,
     pub account_addr: String,
 }
 
@@ -55,12 +57,14 @@ pub struct ConfigResponse {
 
 #[cw_serde]
 pub struct QueryTakenAccountsMsg {
+    pub account_owner_addr: String,
     pub start_after: Option<String>,
     pub limit: Option<u32>,
 }
 
 #[cw_serde]
 pub struct QueryFreeAccountsMsg {
+    pub account_owner_addr: String,
     pub start_after: Option<String>,
     pub limit: Option<u32>,
 }
@@ -68,7 +72,7 @@ pub struct QueryFreeAccountsMsg {
 #[cw_serde]
 pub struct Account {
     pub addr: Addr,
-    pub occupied_by_job_id: Option<Uint64>,
+    pub taken_by_job_id: Option<Uint64>,
 }
 
 #[cw_serde]
@@ -78,7 +82,9 @@ pub struct AccountsResponse {
 }
 
 #[cw_serde]
-pub struct QueryFirstFreeAccountMsg {}
+pub struct QueryFirstFreeAccountMsg {
+    pub account_owner_addr: String,
+}
 
 #[cw_serde]
 pub struct FirstFreeAccountResponse {

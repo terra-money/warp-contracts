@@ -4,18 +4,14 @@ use cosmwasm_std::{
 };
 
 use crate::{
-    contract::{
-        REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
-        REPLY_ID_CREATE_JOB_ACCOUNT_TRACKER_AND_JOB_ACCOUNT_AND_JOB, REPLY_ID_EXECUTE_JOB,
-    },
-    state::{JobQueue, JOB_ACCOUNT_TRACKERS, LEGACY_ACCOUNTS, STATE},
+    contract::{REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB, REPLY_ID_EXECUTE_JOB},
+    state::{JobQueue, LEGACY_ACCOUNTS, STATE},
     util::{
         fee::deduct_reward_and_fee_from_native_funds,
         legacy_account::is_legacy_account,
         msg::{
             build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-            build_free_account_msg, build_instantiate_warp_account_msg,
-            build_instantiate_warp_job_account_tracker_msg, build_taken_account_msg,
+            build_free_account_msg, build_instantiate_warp_account_msg, build_taken_account_msg,
             build_transfer_cw20_msg, build_transfer_cw721_msg, build_transfer_native_funds_msg,
         },
     },
@@ -52,6 +48,9 @@ pub fn create_job(
     if data.reward < config.minimum_reward || data.reward.is_zero() {
         return Err(ContractError::RewardTooSmall {});
     }
+
+    let job_owner = info.sender.clone();
+    let job_account_tracker_address_ref = &config.job_account_tracker_address.to_string();
 
     let _validate_conditions_and_variables: Option<String> = deps.querier.query_wasm_smart(
         config.resolver_address,
@@ -92,14 +91,13 @@ pub fn create_job(
         ),
     );
 
-    let job_account_tracker = JOB_ACCOUNT_TRACKERS.may_load(deps.storage, &info.sender)?;
     let state = STATE.load(deps.storage)?;
     let mut job = JobQueue::add(
         &mut deps,
         Job {
             id: state.current_job_id,
             prev_id: None,
-            owner: info.sender.clone(),
+            owner: job_owner.clone(),
             // Account uses a placeholder value for now, will update it to job account address if job account exists or after created
             // Update will happen either in create_job (exists free job account) or reply (after creation), so it's atomic
             // And we guarantee we do not read this value before it's updated
@@ -120,129 +118,109 @@ pub fn create_job(
         },
     )?;
 
-    match job_account_tracker {
+    let available_account: FirstFreeAccountResponse = deps.querier.query_wasm_smart(
+        job_account_tracker_address_ref,
+        &job_account_tracker::QueryMsg::QueryFirstFreeAccount(
+            job_account_tracker::QueryFirstFreeAccountMsg {
+                account_owner_addr: job_owner.to_string(),
+            },
+        ),
+    )?;
+    match available_account.account {
         None => {
-            // Create account tracker then create account then create job in reply
+            // Create account then create job in reply
             submsgs.push(SubMsg {
-                id: REPLY_ID_CREATE_JOB_ACCOUNT_TRACKER_AND_JOB_ACCOUNT_AND_JOB,
-                msg: build_instantiate_warp_job_account_tracker_msg(
+                id: REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
+                msg: build_instantiate_warp_account_msg(
+                    job.id,
                     env.contract.address.to_string(),
-                    config.warp_job_account_tracker_code_id.u64(),
+                    config.warp_account_code_id.u64(),
                     info.sender.to_string(),
+                    native_funds_minus_reward_and_fee,
+                    data.cw_funds,
+                    data.account_msgs,
                 ),
                 gas_limit: None,
                 reply_on: ReplyOn::Always,
             });
 
-            attrs.push(Attribute::new(
-                "action",
-                "create_job_account_tracker_and_account_and_job",
-            ));
+            attrs.push(Attribute::new("action", "create_account_and_job"));
         }
-        Some(job_account_tracker) => {
-            let available_account: FirstFreeAccountResponse = deps.querier.query_wasm_smart(
-                job_account_tracker.clone(),
-                &job_account_tracker::QueryMsg::QueryFirstFreeAccount(
-                    job_account_tracker::QueryFirstFreeAccountMsg {},
-                ),
-            )?;
-            match available_account.account {
-                None => {
-                    // Create account then create job in reply
-                    submsgs.push(SubMsg {
-                        id: REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
-                        msg: build_instantiate_warp_account_msg(
-                            job.id,
-                            env.contract.address.to_string(),
-                            config.warp_account_code_id.u64(),
-                            info.sender.to_string(),
-                            job_account_tracker.clone().to_string(),
-                            native_funds_minus_reward_and_fee,
-                            data.cw_funds,
-                            data.account_msgs,
-                        ),
-                        gas_limit: None,
-                        reply_on: ReplyOn::Always,
-                    });
+        Some(available_account) => {
+            let available_account_addr = available_account.addr;
+            // Update job.account from placeholder value to job account
+            job.account = available_account_addr.clone();
+            JobQueue::sync(&mut deps, env, job.clone())?;
 
-                    attrs.push(Attribute::new("action", "create_account_and_job"));
-                }
-                Some(available_account) => {
-                    let available_account_addr = available_account.addr;
-                    // Update job.account from placeholder value to job account
-                    job.account = available_account_addr.clone();
-                    JobQueue::sync(&mut deps, env, job.clone())?;
+            if !native_funds_minus_reward_and_fee.is_empty() {
+                // Fund account in native coins
+                msgs.push(build_transfer_native_funds_msg(
+                    available_account_addr.clone().to_string(),
+                    native_funds_minus_reward_and_fee,
+                ))
+            }
 
-                    if !native_funds_minus_reward_and_fee.is_empty() {
-                        // Fund account in native coins
-                        msgs.push(build_transfer_native_funds_msg(
+            if let Some(cw_funds) = data.cw_funds {
+                // Fund account in CW20 / CW721 tokens
+                for cw_fund in cw_funds {
+                    msgs.push(match cw_fund {
+                        CwFund::Cw20(cw20_fund) => build_transfer_cw20_msg(
+                            deps.api
+                                .addr_validate(&cw20_fund.contract_addr)?
+                                .to_string(),
+                            info.sender.clone().to_string(),
                             available_account_addr.clone().to_string(),
-                            native_funds_minus_reward_and_fee,
-                        ))
-                    }
-
-                    if let Some(cw_funds) = data.cw_funds {
-                        // Fund account in CW20 / CW721 tokens
-                        for cw_fund in cw_funds {
-                            msgs.push(match cw_fund {
-                                CwFund::Cw20(cw20_fund) => build_transfer_cw20_msg(
-                                    deps.api
-                                        .addr_validate(&cw20_fund.contract_addr)?
-                                        .to_string(),
-                                    info.sender.clone().to_string(),
-                                    available_account_addr.clone().to_string(),
-                                    cw20_fund.amount,
-                                ),
-                                CwFund::Cw721(cw721_fund) => build_transfer_cw721_msg(
-                                    deps.api
-                                        .addr_validate(&cw721_fund.contract_addr)?
-                                        .to_string(),
-                                    available_account_addr.clone().to_string(),
-                                    cw721_fund.token_id.clone(),
-                                ),
-                            })
-                        }
-                    }
-
-                    if let Some(account_msgs) = data.account_msgs {
-                        // Account execute msgs
-                        msgs.push(build_account_execute_generic_msgs(
-                            available_account_addr.to_string(),
-                            account_msgs,
-                        ));
-                    }
-
-                    // Occupy account
-                    msgs.push(build_taken_account_msg(
-                        job_account_tracker.to_string(),
-                        available_account_addr.to_string(),
-                        job.id,
-                    ));
-
-                    attrs.push(Attribute::new("action", "create_job"));
-                    attrs.push(Attribute::new("job_id", job.id));
-                    attrs.push(Attribute::new("job_owner", job.owner));
-                    attrs.push(Attribute::new("job_name", job.name));
-                    attrs.push(Attribute::new(
-                        "job_status",
-                        serde_json_wasm::to_string(&job.status)?,
-                    ));
-                    attrs.push(Attribute::new(
-                        "job_condition",
-                        serde_json_wasm::to_string(&job.condition)?,
-                    ));
-                    attrs.push(Attribute::new(
-                        "job_msgs",
-                        serde_json_wasm::to_string(&job.msgs)?,
-                    ));
-                    attrs.push(Attribute::new("job_reward", job.reward));
-                    attrs.push(Attribute::new("job_creation_fee", fee));
-                    attrs.push(Attribute::new(
-                        "job_last_updated_time",
-                        job.last_update_time,
-                    ));
+                            cw20_fund.amount,
+                        ),
+                        CwFund::Cw721(cw721_fund) => build_transfer_cw721_msg(
+                            deps.api
+                                .addr_validate(&cw721_fund.contract_addr)?
+                                .to_string(),
+                            available_account_addr.clone().to_string(),
+                            cw721_fund.token_id.clone(),
+                        ),
+                    })
                 }
             }
+
+            if let Some(account_msgs) = data.account_msgs {
+                // Account execute msgs
+                msgs.push(build_account_execute_generic_msgs(
+                    available_account_addr.to_string(),
+                    account_msgs,
+                ));
+            }
+
+            // Take account
+            msgs.push(build_taken_account_msg(
+                config.job_account_tracker_address.to_string(),
+                job_owner.to_string(),
+                available_account_addr.to_string(),
+                job.id,
+            ));
+
+            attrs.push(Attribute::new("action", "create_job"));
+            attrs.push(Attribute::new("job_id", job.id));
+            attrs.push(Attribute::new("job_owner", job.owner));
+            attrs.push(Attribute::new("job_name", job.name));
+            attrs.push(Attribute::new(
+                "job_status",
+                serde_json_wasm::to_string(&job.status)?,
+            ));
+            attrs.push(Attribute::new(
+                "job_condition",
+                serde_json_wasm::to_string(&job.condition)?,
+            ));
+            attrs.push(Attribute::new(
+                "job_msgs",
+                serde_json_wasm::to_string(&job.msgs)?,
+            ));
+            attrs.push(Attribute::new("job_reward", job.reward));
+            attrs.push(Attribute::new("job_creation_fee", fee));
+            attrs.push(Attribute::new(
+                "job_last_updated_time",
+                job.last_update_time,
+            ));
         }
     }
 
@@ -298,11 +276,10 @@ pub fn delete_job(
     ));
 
     if !is_legacy_account(legacy_account, job_account_addr.clone()) {
-        // For job not using legacy account, job owner must already have account tracker instantiated
-        let job_account_tracker = JOB_ACCOUNT_TRACKERS.load(deps.storage, &job.owner)?;
         // Free account
         msgs.push(build_free_account_msg(
-            job_account_tracker.to_string(),
+            config.job_account_tracker_address.to_string(),
+            job.owner.to_string(),
             job_account_addr.to_string(),
         ));
     }
@@ -479,11 +456,10 @@ pub fn execute_job(
     ));
 
     if !is_legacy_account(legacy_account, job_account_addr.clone()) {
-        // For job not using legacy account, job owner must already have account tracker instantiated
-        let job_account_tracker = JOB_ACCOUNT_TRACKERS.load(deps.storage, &job.owner)?;
         // Free account
         msgs.push(build_free_account_msg(
-            job_account_tracker.to_string(),
+            config.job_account_tracker_address.to_string(),
+            job.owner.to_string(),
             job_account_addr.to_string(),
         ));
     }
@@ -573,11 +549,10 @@ pub fn evict_job(
         ));
 
         if !is_legacy_account(legacy_account, job_account_addr.clone()) {
-            // For job not using legacy account, job owner must already have account tracker instantiated
-            let job_account_tracker = JOB_ACCOUNT_TRACKERS.load(deps.storage, &job.owner)?;
             // Free account
             msgs.push(build_free_account_msg(
-                job_account_tracker.to_string(),
+                config.job_account_tracker_address.to_string(),
+                job.owner.to_string(),
                 job_account_addr.to_string(),
             ));
         }

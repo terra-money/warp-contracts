@@ -20,7 +20,6 @@ fn test_execute_controller() {
         InstantiateMsg {
             owner: "vlad".to_string(),
             job_id: Uint64::zero(),
-            job_account_tracker_addr: "vlad".to_string(),
             native_funds: vec![],
             cw_funds: vec![],
             msgs: vec![],
@@ -146,7 +145,6 @@ fn test_execute_owner() {
         InstantiateMsg {
             owner: "vlad".to_string(),
             job_id: Uint64::zero(),
-            job_account_tracker_addr: "vlad".to_string(),
             native_funds: vec![],
             cw_funds: vec![],
             msgs: vec![],
@@ -274,7 +272,6 @@ fn test_execute_unauth() {
         InstantiateMsg {
             owner: "vlad".to_string(),
             job_id: Uint64::zero(),
-            job_account_tracker_addr: "vlad".to_string(),
             native_funds: vec![],
             cw_funds: vec![],
             msgs: vec![],

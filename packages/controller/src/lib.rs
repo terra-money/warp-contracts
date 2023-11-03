@@ -17,11 +17,14 @@ pub struct Config {
     pub owner: Addr,
     pub fee_denom: String,
     pub fee_collector: Addr,
-    pub warp_job_account_tracker_code_id: Uint64,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
     pub creation_fee_percentage: Uint64,
     pub cancellation_fee_percentage: Uint64,
+    // By querying job account tracker contract
+    // We know all accounts owned by that user and each account's availability
+    // For more detail, please refer to job account tracker contract
+    pub job_account_tracker_address: Addr,
     pub resolver_address: Addr,
     // maximum time for evictions
     pub t_max: Uint64,
@@ -48,12 +51,12 @@ pub struct InstantiateMsg {
     pub owner: Option<String>,
     pub fee_denom: String,
     pub fee_collector: Option<String>,
-    pub warp_job_account_tracker_code_id: Uint64,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
     pub creation_fee: Uint64,
     pub cancellation_fee: Uint64,
     pub resolver_address: String,
+    pub job_account_tracker_address: String,
     pub t_max: Uint64,
     pub t_min: Uint64,
     pub a_max: Uint128,
@@ -73,9 +76,9 @@ pub enum ExecuteMsg {
     UpdateConfig(UpdateConfigMsg),
 
     MigrateLegacyAccounts(MigrateLegacyAccountsMsg),
-    MigrateJobAccountTrackers(MigrateJobAccountTrackersMsg),
+    MigrateJobAccountTracker(MigrateJobAccountTrackerMsg),
     MigrateFreeJobAccounts(MigrateJobAccountsMsg),
-    MigrateOccupiedJobAccounts(MigrateJobAccountsMsg),
+    MigrateTakenJobAccounts(MigrateJobAccountsMsg),
 
     MigratePendingJobs(MigrateJobsMsg),
     MigrateFinishedJobs(MigrateJobsMsg),
@@ -103,15 +106,13 @@ pub struct MigrateLegacyAccountsMsg {
 }
 
 #[cw_serde]
-pub struct MigrateJobAccountTrackersMsg {
+pub struct MigrateJobAccountTrackerMsg {
     pub warp_job_account_tracker_code_id: Uint64,
-    pub start_after: Option<String>,
-    pub limit: u8,
 }
 
 #[cw_serde]
 pub struct MigrateJobAccountsMsg {
-    pub job_account_tracker_addr: String,
+    pub account_owner_addr: String,
     pub warp_job_account_code_id: Uint64,
     pub start_after: Option<String>,
     pub limit: u8,
@@ -165,7 +166,7 @@ pub struct StateResponse {
 //migrate//{"resolver_address":"terra1a8dxkrapwj4mkpfnrv7vahd0say0lxvd0ft6qv","warp_account_code_id":"10081"}
 #[cw_serde]
 pub struct MigrateMsg {
-    pub warp_job_account_tracker_code_id: Uint64,
     pub warp_account_code_id: Uint64,
     pub resolver_address: String,
+    pub job_account_tracker_address: String,
 }

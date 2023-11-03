@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, DepsMut, Env, Uint128, Uint64};
-use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
 
 use controller::{
     account::LegacyAccount,
@@ -75,12 +75,6 @@ pub fn LEGACY_ACCOUNTS<'a>() -> IndexedMap<'a, Addr, LegacyAccount, LegacyAccoun
     };
     IndexedMap::new("accounts", indexes)
 }
-
-// ACCOUNTS_TRACKER stores account tracker, this is the successor of ACCOUNTS
-// Key is user address, value is address of job account tracker contract
-// By querying each user's account tracker contract, we know all accounts owned by that user and each account's availability
-// For more detail, please refer to account tracker contract
-pub const JOB_ACCOUNT_TRACKERS: Map<&Addr, Addr> = Map::new("job_job_account_trackers");
 
 pub const QUERY_PAGE_SIZE: u32 = 50;
 pub const CONFIG: Item<Config> = Item::new("config");

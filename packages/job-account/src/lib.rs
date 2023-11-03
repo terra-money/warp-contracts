@@ -9,9 +9,6 @@ pub struct Config {
     pub owner: Addr,
     // Address of warp controller contract
     pub creator_addr: Addr,
-
-    // Address of account tracker contract
-    pub job_account_tracker_addr: Addr,
 }
 
 #[cw_serde]
@@ -20,12 +17,6 @@ pub struct InstantiateMsg {
     pub owner: String,
     // ID of the job that is created along with the account
     pub job_id: Uint64,
-
-    // Account tracker tracks all accounts owned by user
-    // Store it inside account for easier lookup, though most of time we only lookup account from account tracker
-    // But store it enables us the other way around
-    pub job_account_tracker_addr: String,
-
     // Native funds
     pub native_funds: Vec<NativeCoin>,
     // CW20 or CW721 funds, will be transferred to account in reply of account instantiation

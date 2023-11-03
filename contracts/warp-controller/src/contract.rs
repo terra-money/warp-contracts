@@ -15,15 +15,11 @@ use crate::{
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
 // Reply id for job creation
-// From a totally new user using warp for the first time, does not have account tracker yet, let alone free account
-// So we create account account and account and job
-pub const REPLY_ID_CREATE_JOB_ACCOUNT_TRACKER_AND_JOB_ACCOUNT_AND_JOB: u64 = 1;
-// Reply id for job creation
-// From an existing user, who has account tracker, but does not have available account
-// So we create account and job
-pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 2;
+// For user does not have available account
+// So we create new job account account and job
+pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 1;
 // Reply id for job execution
-pub const REPLY_ID_EXECUTE_JOB: u64 = 3;
+pub const REPLY_ID_EXECUTE_JOB: u64 = 2;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -45,12 +41,12 @@ pub fn instantiate(
         fee_collector: deps
             .api
             .addr_validate(&msg.fee_collector.unwrap_or_else(|| info.sender.to_string()))?,
-        warp_job_account_tracker_code_id: msg.warp_job_account_tracker_code_id,
         warp_account_code_id: msg.warp_account_code_id,
         minimum_reward: msg.minimum_reward,
         creation_fee_percentage: msg.creation_fee,
         cancellation_fee_percentage: msg.cancellation_fee,
         resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
+        job_account_tracker_address: deps.api.addr_validate(&msg.job_account_tracker_address)?,
         t_max: msg.t_max,
         t_min: msg.t_min,
         a_max: msg.a_max,
@@ -123,28 +119,17 @@ pub fn execute(
             nonpayable(&info).unwrap();
             migrate::legacy_account::migrate_legacy_accounts(deps, info, data, config)
         }
-        ExecuteMsg::MigrateJobAccountTrackers(data) => {
+        ExecuteMsg::MigrateJobAccountTracker(data) => {
             nonpayable(&info).unwrap();
-            migrate::job_account_tracker::migrate_job_account_trackers(
-                deps.as_ref(),
-                info,
-                data,
-                config,
-            )
+            migrate::job_account_tracker::migrate_job_account_tracker(info, data, config)
         }
         ExecuteMsg::MigrateFreeJobAccounts(data) => {
             nonpayable(&info).unwrap();
             migrate::job_account::migrate_free_job_accounts(deps.as_ref(), env, info, data, config)
         }
-        ExecuteMsg::MigrateOccupiedJobAccounts(data) => {
+        ExecuteMsg::MigrateTakenJobAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::job_account::migrate_occupied_job_accounts(
-                deps.as_ref(),
-                env,
-                info,
-                data,
-                config,
-            )
+            migrate::job_account::migrate_taken_job_accounts(deps.as_ref(), env, info, data, config)
         }
 
         ExecuteMsg::MigratePendingJobs(data) => {
@@ -232,12 +217,14 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             owner: v1_config.owner,
             fee_denom: v1_config.fee_denom,
             fee_collector: v1_config.fee_collector,
-            warp_job_account_tracker_code_id: msg.warp_job_account_tracker_code_id,
             warp_account_code_id: msg.warp_account_code_id,
             minimum_reward: v1_config.minimum_reward,
             creation_fee_percentage: v1_config.creation_fee_percentage,
             cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
             resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
+            job_account_tracker_address: deps
+                .api
+                .addr_validate(&msg.job_account_tracker_address)?,
             t_max: v1_config.t_max,
             t_min: v1_config.t_min,
             a_max: v1_config.a_max,
@@ -253,13 +240,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     match msg.id {
-        // Job account tracker has been created, now create job account and job
-        REPLY_ID_CREATE_JOB_ACCOUNT_TRACKER_AND_JOB_ACCOUNT_AND_JOB => {
-            reply::account::create_job_account_tracker_and_account_and_job(deps, env, msg, config)
-        }
         // Job account has been created, now create job
         REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => {
-            reply::account::create_job_account_and_job(deps, env, msg)
+            reply::account::create_job_account_and_job(deps, env, msg, config)
         }
         // Job has been executed
         REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg, config),

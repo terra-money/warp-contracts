@@ -5,7 +5,7 @@ use cosmwasm_std::{
 
 use crate::{
     error::map_contract_error,
-    state::{JobQueue, JOB_ACCOUNT_TRACKERS, LEGACY_ACCOUNTS, STATE},
+    state::{JobQueue, LEGACY_ACCOUNTS, STATE},
     util::{
         legacy_account::is_legacy_account,
         msg::{
@@ -202,12 +202,10 @@ pub fn execute_job(
 
     if recurring_job_created {
         if !is_legacy_account(legacy_account, job_account_addr.clone()) {
-            // For job not using legacy account, job owner must already have account tracker instantiated
-            let job_account_tracker =
-                JOB_ACCOUNT_TRACKERS.load(deps.storage, &finished_job.owner)?;
-            // Occupy job account with the new job
+            // Take job account with the new job
             msgs.push(build_taken_account_msg(
-                job_account_tracker.to_string(),
+                config.job_account_tracker_address.to_string(),
+                finished_job.owner.to_string(),
                 job_account_addr.to_string(),
                 new_job_id,
             ));
