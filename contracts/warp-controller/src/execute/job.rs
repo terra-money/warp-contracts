@@ -1,3 +1,8 @@
+use crate::state::{JobQueue, STATE};
+use crate::ContractError;
+use controller::job::{
+    CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Execution, Job, JobStatus, UpdateJobMsg,
+};
 use cosmwasm_std::{
     to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
     MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
@@ -5,7 +10,7 @@ use cosmwasm_std::{
 
 use crate::{
     contract::{REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB, REPLY_ID_EXECUTE_JOB},
-    state::{JobQueue, LEGACY_ACCOUNTS, STATE},
+    state::LEGACY_ACCOUNTS,
     util::{
         fee::deduct_reward_and_fee_from_native_funds,
         legacy_account::is_legacy_account,
@@ -15,17 +20,14 @@ use crate::{
             build_transfer_cw20_msg, build_transfer_cw721_msg, build_transfer_native_funds_msg,
         },
     },
-    ContractError,
 };
 
-use controller::{
-    account::CwFund,
-    job::{CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg},
-    Config,
-};
+use controller::{account::CwFund, Config};
 use job_account::GenericMsg;
 use job_account_tracker::FirstFreeAccountResponse;
 use resolver::QueryHydrateMsgsMsg;
+
+use super::fee::{compute_burn_fee, compute_creation_fee, compute_maintenance_fee};
 
 const MAX_TEXT_LENGTH: usize = 280;
 
@@ -49,21 +51,27 @@ pub fn create_job(
         return Err(ContractError::RewardTooSmall {});
     }
 
+    let state = STATE.load(deps.storage)?;
+
     let job_owner = info.sender.clone();
     let job_account_tracker_address_ref = &config.job_account_tracker_address.to_string();
 
     let _validate_conditions_and_variables: Option<String> = deps.querier.query_wasm_smart(
-        config.resolver_address,
+        &config.resolver_address,
         &resolver::QueryMsg::QueryValidateJobCreation(resolver::QueryValidateJobCreationMsg {
-            condition: data.condition.clone(),
             terminate_condition: data.terminate_condition.clone(),
             vars: data.vars.clone(),
-            msgs: data.msgs.clone(),
+            executions: data.executions.clone(),
         }),
     )?;
 
-    let fee = data.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
-    let reward_plus_fee = data.reward + fee;
+    let creation_fee = compute_creation_fee(Uint128::from(state.q), &config);
+    let maintenance_fee = compute_maintenance_fee(data.duration_days, &config);
+    let burn_fee = compute_burn_fee(data.reward, &config);
+
+    let total_fees = creation_fee + maintenance_fee + burn_fee;
+
+    let reward_plus_fee = data.reward + total_fees;
     if reward_plus_fee > fee_denom_paid_amount {
         return Err(ContractError::InsufficientFundsToPayForRewardAndFee {});
     }
@@ -81,13 +89,12 @@ pub fn create_job(
 
     // Job owner sends reward to controller when it calls create_job
     // Reward stays at controller, no need to send it elsewhere
-
     msgs.push(
         // Job owner sends fee to controller when it calls create_job
         // Controller sends fee to fee collector
         build_transfer_native_funds_msg(
             config.fee_collector.to_string(),
-            vec![Coin::new(fee.u128(), config.fee_denom.clone())],
+            vec![Coin::new(total_fees.u128(), config.fee_denom.clone())],
         ),
     );
 
@@ -105,12 +112,11 @@ pub fn create_job(
             last_update_time: Uint64::from(env.block.time.seconds()),
             name: data.name,
             status: JobStatus::Pending,
-            condition: data.condition.clone(),
             terminate_condition: data.terminate_condition,
             recurring: data.recurring,
             requeue_on_evict: data.requeue_on_evict,
             vars: data.vars,
-            msgs: data.msgs,
+            executions: data.executions,
             reward: data.reward,
             description: data.description,
             labels: data.labels,
@@ -126,6 +132,7 @@ pub fn create_job(
             },
         ),
     )?;
+
     match available_account.account {
         None => {
             // Create account then create job in reply
@@ -208,15 +215,17 @@ pub fn create_job(
                 serde_json_wasm::to_string(&job.status)?,
             ));
             attrs.push(Attribute::new(
-                "job_condition",
-                serde_json_wasm::to_string(&job.condition)?,
-            ));
-            attrs.push(Attribute::new(
-                "job_msgs",
-                serde_json_wasm::to_string(&job.msgs)?,
+                "job_executions",
+                serde_json_wasm::to_string(&job.executions)?,
             ));
             attrs.push(Attribute::new("job_reward", job.reward));
-            attrs.push(Attribute::new("job_creation_fee", fee));
+            attrs.push(Attribute::new("job_creation_fee", creation_fee.to_string()));
+            attrs.push(Attribute::new(
+                "job_maintenance_fee",
+                maintenance_fee.to_string(),
+            ));
+            attrs.push(Attribute::new("job_burn_fee", burn_fee.to_string()));
+            attrs.push(Attribute::new("job_total_fees", total_fees.to_string()));
             attrs.push(Attribute::new(
                 "job_last_updated_time",
                 job.last_update_time,
@@ -324,6 +333,7 @@ pub fn update_job(
 
     let job = JobQueue::update(&mut deps, env.clone(), data)?;
 
+    // TODO: add creation fee
     let fee = added_reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
 
     if !added_reward.is_zero() && fee.is_zero() {
@@ -362,8 +372,10 @@ pub fn update_job(
         .add_attribute("job_owner", job.owner)
         .add_attribute("job_name", job.name)
         .add_attribute("job_status", serde_json_wasm::to_string(&job.status)?)
-        .add_attribute("job_condition", serde_json_wasm::to_string(&job.condition)?)
-        .add_attribute("job_msgs", serde_json_wasm::to_string(&job.msgs)?)
+        .add_attribute(
+            "job_executions",
+            serde_json_wasm::to_string(&job.executions)?,
+        )
         .add_attribute("job_reward", job.reward)
         .add_attribute("job_update_fee", fee)
         .add_attribute("job_last_updated_time", job.last_update_time))
@@ -393,60 +405,48 @@ pub fn execute_job(
         }),
     )?;
 
-    let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
-        config.resolver_address.clone(),
-        &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
-            condition: job.condition,
-            vars: vars.clone(),
-            warp_account_addr: Some(job.account.to_string()),
-        }),
-    );
-
     let mut attrs = vec![];
     let mut msgs = vec![];
     let mut submsgs = vec![];
 
-    if let Err(e) = resolution {
-        attrs.push(Attribute::new("job_condition_status", "invalid"));
-        attrs.push(Attribute::new("error", e.to_string()));
-        JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Failed)?;
+    for Execution { condition, msgs } in job.executions {
+        let resolution: StdResult<bool> = deps
+            .querier
+            .query_wasm_smart(config.resolver_address.clone(), &condition);
 
-        // Withdraw reward to job owner
-        msgs.push(build_account_withdraw_assets_msg(
-            job.account.to_string(),
-            job.assets_to_withdraw,
-        ));
-    } else {
-        attrs.push(Attribute::new("job_condition_status", "valid"));
-        if !resolution? {
-            // TODO: do we want to return OK?
-            // this means if a keeper accidentally executes a job whose condition is unmet
-            // It still cost keeper TX fee
-            // Shouldn't we return error so keeper will fail during simulation?
-            return Ok(Response::new()
-                .add_attribute("action", "execute_job")
-                .add_attribute("condition", "false")
-                .add_attribute("job_id", job.id));
+        match resolution {
+            Ok(true) => {
+                submsgs.push(SubMsg {
+                    id: REPLY_ID_EXECUTE_JOB,
+                    msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: job.account.to_string(),
+                        msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
+                            msgs: deps.querier.query_wasm_smart(
+                                config.resolver_address,
+                                &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                                    msgs,
+                                    vars,
+                                }),
+                            )?,
+                        }))?,
+                        funds: vec![],
+                    }),
+                    gas_limit: None,
+                    reply_on: ReplyOn::Always,
+                });
+                break;
+            }
+            Ok(false) => {
+                // Continue to the next condition
+                continue;
+            }
+            Err(e) => {
+                attrs.push(Attribute::new("job_condition_status", "invalid"));
+                attrs.push(Attribute::new("error", e.to_string()));
+                JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Failed)?;
+                break;
+            }
         }
-
-        submsgs.push(SubMsg {
-            id: REPLY_ID_EXECUTE_JOB,
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: job.account.to_string(),
-                msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
-                    msgs: deps.querier.query_wasm_smart(
-                        config.resolver_address,
-                        &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
-                            msgs: job.msgs,
-                            vars,
-                        }),
-                    )?,
-                }))?,
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Always,
-        });
     }
 
     // Controller sends reward to executor

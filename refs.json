@@ -12,15 +12,15 @@
       "codeId": "9626"
     },
     "warp-controller": {
-      "codeId": "9629",
-      "address": "terra1evfl60alw2kf60levpmc5py6wa5m64eymvsy5zgnkw9kcr9vlnsqntjwma"
+      "codeId": "11362",
+      "address": "terra1fqcfh8vpqsl7l5yjjtq5wwu6sv989txncq5fa756tv7lywqexraq5vnjvt"
     },
     "warp-resolver": {
-      "codeId": "9627",
-      "address": "terra14ut3phcu9cc64prrz8uup6evfnc73evpy8fxqxfujpp0tdyhf39q7ksvj3"
+      "codeId": "9263",
+      "address": "terra1lxfx6n792aw3hg47tchmyuhv5t30f334gus67pc250qx5zljadws65elnf"
     },
     "warp-templates": {
-      "codeId": "9628",
+      "codeId": "9263",
       "address": "terra17xm2ewyg60y7eypnwav33fwm23hxs3qyd8qk9tnntj4d0rp2vvhsgkpwwp"
     }
   },

@@ -1,7 +1,7 @@
 pub mod condition;
 pub mod variable;
 
-use controller::job::{ExternalInput, JobStatus};
+use controller::job::{Execution, ExternalInput, JobStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{CosmosMsg, QueryRequest};
 #[cw_serde]
@@ -71,18 +71,16 @@ pub struct ExecuteApplyVarFnMsg {
 
 #[cw_serde]
 pub struct ExecuteValidateJobCreationMsg {
-    pub condition: String,
     pub terminate_condition: Option<String>,
     pub vars: String,
-    pub msgs: String,
+    pub executions: Vec<Execution>,
 }
 
 #[cw_serde]
 pub struct QueryValidateJobCreationMsg {
-    pub condition: String,
     pub terminate_condition: Option<String>,
     pub vars: String,
-    pub msgs: String,
+    pub executions: Vec<Execution>,
 }
 
 #[cw_serde]

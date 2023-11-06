@@ -34,9 +34,8 @@ pub struct Job {
     pub description: String,
     pub labels: Vec<String>,
     pub status: JobStatus,
-    pub condition: String,
     pub terminate_condition: Option<String>,
-    pub msgs: String,
+    pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
     pub requeue_on_evict: bool,
@@ -62,17 +61,23 @@ pub enum JobStatus {
 // Create a job using job account, if job account does not exist, create it
 // Each job account will only be used for 1 job, therefore we achieve funds isolation
 #[cw_serde]
+pub struct Execution {
+    pub condition: String,
+    pub msgs: String,
+}
+
+#[cw_serde]
 pub struct CreateJobMsg {
     pub name: String,
     pub description: String,
     pub labels: Vec<String>,
-    pub condition: String,
     pub terminate_condition: Option<String>,
-    pub msgs: String,
+    pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
     pub requeue_on_evict: bool,
     pub reward: Uint128,
+    pub duration_days: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
     pub account_msgs: Option<Vec<CosmosMsg>>,
     pub cw_funds: Option<Vec<CwFund>>,

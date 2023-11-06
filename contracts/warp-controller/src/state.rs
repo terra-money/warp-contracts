@@ -26,15 +26,15 @@ pub fn PENDING_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
     let indexes = JobIndexes {
         reward: UniqueIndex::new(
             |job| (job.reward.u128(), job.id.u64()),
-            "pending_jobs__reward_v3",
+            "pending_jobs__reward_v5",
         ),
         publish_time: MultiIndex::new(
             |_pk, job| job.last_update_time.u64(),
-            "pending_jobs_v3",
-            "pending_jobs__publish_timestamp_v3",
+            "pending_jobs_v5",
+            "pending_jobs__publish_timestamp_v5",
         ),
     };
-    IndexedMap::new("pending_jobs_v3", indexes)
+    IndexedMap::new("pending_jobs_v5", indexes)
 }
 
 #[allow(non_snake_case)]
@@ -42,15 +42,15 @@ pub fn FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
     let indexes = JobIndexes {
         reward: UniqueIndex::new(
             |job| (job.reward.u128(), job.id.u64()),
-            "finished_jobs__reward_v3",
+            "finished_jobs__reward_v5",
         ),
         publish_time: MultiIndex::new(
             |_pk, job| job.last_update_time.u64(),
-            "finished_jobs_v3",
-            "finished_jobs__publish_timestamp_v3",
+            "finished_jobs_v5",
+            "finished_jobs__publish_timestamp_v5",
         ),
     };
-    IndexedMap::new("finished_jobs_v3", indexes)
+    IndexedMap::new("finished_jobs_v5", indexes)
 }
 
 pub struct LegacyAccountIndexes<'a> {
@@ -121,9 +121,8 @@ impl JobQueue {
                 description: job.description,
                 labels: job.labels,
                 status: JobStatus::Pending,
-                condition: job.condition,
+                executions: job.executions,
                 terminate_condition: job.terminate_condition,
-                msgs: job.msgs,
                 vars: job.vars,
                 recurring: job.recurring,
                 requeue_on_evict: job.requeue_on_evict,
@@ -153,9 +152,8 @@ impl JobQueue {
                 description: data.description.unwrap_or(job.description),
                 labels: data.labels.unwrap_or(job.labels),
                 status: job.status,
-                condition: job.condition,
+                executions: job.executions,
                 terminate_condition: job.terminate_condition,
-                msgs: job.msgs,
                 vars: job.vars,
                 recurring: job.recurring,
                 requeue_on_evict: job.requeue_on_evict,
@@ -187,9 +185,8 @@ impl JobQueue {
             description: job.description,
             labels: job.labels,
             status,
-            condition: job.condition,
             terminate_condition: job.terminate_condition,
-            msgs: job.msgs,
+            executions: job.executions,
             vars: job.vars,
             recurring: job.recurring,
             requeue_on_evict: job.requeue_on_evict,

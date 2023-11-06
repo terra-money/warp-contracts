@@ -52,6 +52,16 @@ pub fn instantiate(
         a_max: msg.a_max,
         a_min: msg.a_min,
         q_max: msg.q_max,
+        creation_fee_min: msg.creation_fee_min,
+        creation_fee_max: msg.creation_fee_max,
+        burn_fee_min: msg.burn_fee_min,
+        maintenance_fee_min: msg.maintenance_fee_min,
+        maintenance_fee_max: msg.maintenance_fee_max,
+        duration_days_left: msg.duration_days_left,
+        duration_days_right: msg.duration_days_right,
+        queue_size_left: msg.queue_size_left,
+        queue_size_right: msg.queue_size_right,
+        burn_fee_rate: msg.burn_fee_rate,
     };
 
     if config.a_max < config.a_min {
@@ -90,55 +100,62 @@ pub fn execute(
     let config = CONFIG.load(deps.storage)?;
     match msg {
         ExecuteMsg::CreateJob(data) => {
-            let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
-            execute::job::create_job(deps, env, info, data, config, fee_denom_paid_amount)
+            // IBC denoms can be passed alongside native, can't use must_pay
+            let fee_denom_paid_amount = info
+                .funds
+                .iter()
+                .find(|f| f.denom == config.fee_denom)
+                .unwrap()
+                .amount;
+
+            execute::job::create_job(deps, env, info, *data, config, fee_denom_paid_amount)
         }
         ExecuteMsg::DeleteJob(data) => {
             let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
-            execute::job::delete_job(deps, env, info, data, config, fee_denom_paid_amount)
+            execute::job::delete_job(deps, env, info, *data, config, fee_denom_paid_amount)
         }
         ExecuteMsg::UpdateJob(data) => {
             let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
-            execute::job::update_job(deps, env, info, data, config, fee_denom_paid_amount)
+            execute::job::update_job(deps, env, info, *data, config, fee_denom_paid_amount)
         }
         ExecuteMsg::ExecuteJob(data) => {
             nonpayable(&info).unwrap();
-            execute::job::execute_job(deps, env, info, data, config)
+            execute::job::execute_job(deps, env, info, *data, config)
         }
         ExecuteMsg::EvictJob(data) => {
             nonpayable(&info).unwrap();
-            execute::job::evict_job(deps, env, info, data, config)
+            execute::job::evict_job(deps, env, info, *data, config)
         }
-
         ExecuteMsg::UpdateConfig(data) => {
             nonpayable(&info).unwrap();
-            execute::controller::update_config(deps, env, info, data, config)
+            execute::controller::update_config(deps, env, info, *data, config)
         }
-
         ExecuteMsg::MigrateLegacyAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::legacy_account::migrate_legacy_accounts(deps, info, data, config)
-        }
-        ExecuteMsg::MigrateJobAccountTracker(data) => {
-            nonpayable(&info).unwrap();
-            migrate::job_account_tracker::migrate_job_account_tracker(info, data, config)
+            migrate::legacy_account::migrate_legacy_accounts(deps, info, *data, config)
         }
         ExecuteMsg::MigrateFreeJobAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::job_account::migrate_free_job_accounts(deps.as_ref(), env, info, data, config)
+            migrate::job_account::migrate_free_job_accounts(deps.as_ref(), env, info, *data, config)
         }
         ExecuteMsg::MigrateTakenJobAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::job_account::migrate_taken_job_accounts(deps.as_ref(), env, info, data, config)
+            migrate::job_account::migrate_taken_job_accounts(
+                deps.as_ref(),
+                env,
+                info,
+                *data,
+                config,
+            )
         }
 
         ExecuteMsg::MigratePendingJobs(data) => {
             nonpayable(&info).unwrap();
-            migrate::job::migrate_pending_jobs(deps, env, info, data, config)
+            migrate::job::migrate_pending_jobs(deps, env, info, *data)
         }
         ExecuteMsg::MigrateFinishedJobs(data) => {
             nonpayable(&info).unwrap();
-            migrate::job::migrate_finished_jobs(deps, env, info, data, config)
+            migrate::job::migrate_finished_jobs(deps, env, info, *data)
         }
     }
 }
@@ -166,25 +183,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    //STATE
-    #[cw_serde]
-    pub struct V1State {
-        pub current_job_id: Uint64,
-        pub current_template_id: Uint64,
-        pub q: Uint64,
-    }
-
-    const V1STATE: Item<V1State> = Item::new("state");
-    let v1_state = V1STATE.load(deps.storage)?;
-
-    STATE.save(
-        deps.storage,
-        &State {
-            current_job_id: v1_state.current_job_id,
-            q: v1_state.q,
-        },
-    )?;
-
     //CONFIG
     #[cw_serde]
     pub struct V1Config {
@@ -205,6 +203,18 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         pub a_min: Uint128,
         // maximum length of queue modifier for evictions
         pub q_max: Uint64,
+        pub creation_fee_min: Uint128,
+        pub creation_fee_max: Uint128,
+        pub burn_fee_min: Uint128,
+        pub maintenance_fee_min: Uint128,
+        pub maintenance_fee_max: Uint128,
+        // duration_days fn interval [left, right]
+        pub duration_days_left: Uint128,
+        pub duration_days_right: Uint128,
+        // queue_size fn interval [left, right]
+        pub queue_size_left: Uint128,
+        pub queue_size_right: Uint128,
+        pub burn_fee_rate: Uint128,
     }
 
     const V1CONFIG: Item<V1Config> = Item::new("config");
@@ -230,6 +240,16 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             a_max: v1_config.a_max,
             a_min: v1_config.a_min,
             q_max: v1_config.q_max,
+            creation_fee_min: v1_config.creation_fee_min,
+            creation_fee_max: v1_config.creation_fee_max,
+            burn_fee_min: v1_config.burn_fee_min,
+            maintenance_fee_min: v1_config.maintenance_fee_min,
+            maintenance_fee_max: v1_config.maintenance_fee_max,
+            duration_days_left: v1_config.duration_days_left,
+            duration_days_right: v1_config.duration_days_right,
+            queue_size_left: v1_config.queue_size_left,
+            queue_size_right: v1_config.queue_size_right,
+            burn_fee_rate: v1_config.burn_fee_rate,
         },
     )?;
 

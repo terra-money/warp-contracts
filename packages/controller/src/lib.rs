@@ -36,6 +36,18 @@ pub struct Config {
     pub a_min: Uint128,
     // maximum length of queue modifier for evictions
     pub q_max: Uint64,
+    pub creation_fee_min: Uint128,
+    pub creation_fee_max: Uint128,
+    pub burn_fee_min: Uint128,
+    pub maintenance_fee_min: Uint128,
+    pub maintenance_fee_max: Uint128,
+    // duration_days fn interval [left, right]
+    pub duration_days_left: Uint128,
+    pub duration_days_right: Uint128,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Uint128,
+    pub queue_size_right: Uint128,
+    pub burn_fee_rate: Uint128,
 }
 
 #[cw_serde]
@@ -62,26 +74,37 @@ pub struct InstantiateMsg {
     pub a_max: Uint128,
     pub a_min: Uint128,
     pub q_max: Uint64,
+    pub creation_fee_min: Uint128,
+    pub creation_fee_max: Uint128,
+    pub burn_fee_min: Uint128,
+    pub maintenance_fee_min: Uint128,
+    pub maintenance_fee_max: Uint128,
+    // duration_days fn interval [left, right]
+    pub duration_days_left: Uint128,
+    pub duration_days_right: Uint128,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Uint128,
+    pub queue_size_right: Uint128,
+    pub burn_fee_rate: Uint128,
 }
 
 //execute
 #[cw_serde]
 pub enum ExecuteMsg {
-    CreateJob(CreateJobMsg),
-    DeleteJob(DeleteJobMsg),
-    UpdateJob(UpdateJobMsg),
-    ExecuteJob(ExecuteJobMsg),
-    EvictJob(EvictJobMsg),
+    CreateJob(Box<CreateJobMsg>),
+    DeleteJob(Box<DeleteJobMsg>),
+    UpdateJob(Box<UpdateJobMsg>),
+    ExecuteJob(Box<ExecuteJobMsg>),
+    EvictJob(Box<EvictJobMsg>),
 
-    UpdateConfig(UpdateConfigMsg),
+    UpdateConfig(Box<UpdateConfigMsg>),
 
-    MigrateLegacyAccounts(MigrateLegacyAccountsMsg),
-    MigrateJobAccountTracker(MigrateJobAccountTrackerMsg),
-    MigrateFreeJobAccounts(MigrateJobAccountsMsg),
-    MigrateTakenJobAccounts(MigrateJobAccountsMsg),
+    MigrateLegacyAccounts(Box<MigrateLegacyAccountsMsg>),
+    MigrateFreeJobAccounts(Box<MigrateJobAccountsMsg>),
+    MigrateTakenJobAccounts(Box<MigrateJobAccountsMsg>),
 
-    MigratePendingJobs(MigrateJobsMsg),
-    MigrateFinishedJobs(MigrateJobsMsg),
+    MigratePendingJobs(Box<MigrateJobsMsg>),
+    MigrateFinishedJobs(Box<MigrateJobsMsg>),
 }
 
 #[cw_serde]
@@ -96,6 +119,18 @@ pub struct UpdateConfigMsg {
     pub a_max: Option<Uint128>,
     pub a_min: Option<Uint128>,
     pub q_max: Option<Uint64>,
+    pub creation_fee_min: Option<Uint128>,
+    pub creation_fee_max: Option<Uint128>,
+    pub burn_fee_min: Option<Uint128>,
+    pub maintenance_fee_min: Option<Uint128>,
+    pub maintenance_fee_max: Option<Uint128>,
+    // duration_days fn interval [left, right]
+    pub duration_days_left: Option<Uint128>,
+    pub duration_days_right: Option<Uint128>,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Option<Uint128>,
+    pub queue_size_right: Option<Uint128>,
+    pub burn_fee_rate: Option<Uint128>,
 }
 
 #[cw_serde]
@@ -103,11 +138,6 @@ pub struct MigrateLegacyAccountsMsg {
     pub warp_legacy_account_code_id: Uint64,
     pub start_after: Option<String>,
     pub limit: u8,
-}
-
-#[cw_serde]
-pub struct MigrateJobAccountTrackerMsg {
-    pub warp_job_account_tracker_code_id: Uint64,
 }
 
 #[cw_serde]
@@ -163,7 +193,6 @@ pub struct StateResponse {
     pub state: State,
 }
 
-//migrate//{"resolver_address":"terra1a8dxkrapwj4mkpfnrv7vahd0say0lxvd0ft6qv","warp_account_code_id":"10081"}
 #[cw_serde]
 pub struct MigrateMsg {
     pub warp_account_code_id: Uint64,

@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     Attribute, BalanceResponse, BankQuery, Coin, DepsMut, Env, QueryRequest, Reply, Response,
-    StdResult, SubMsgResult, Uint128, Uint64,
+    StdError, StdResult, SubMsgResult, Uint128, Uint64,
 };
 
 use crate::{
@@ -33,7 +33,35 @@ pub fn execute_job(
         SubMsgResult::Err(_) => JobStatus::Failed,
     };
 
-    let finished_job = JobQueue::finalize(&mut deps, env.clone(), msg.id, new_status)?;
+    let reply = msg
+        .result
+        .clone()
+        .into_result()
+        .map_err(StdError::generic_err)?;
+
+    // TODO: how to get this event
+    let event = reply
+        .events
+        .iter()
+        .find(|event| {
+            event
+                .attributes
+                .iter()
+                .any(|attr| attr.key == "action" && attr.value == "execute_job")
+        })
+        .ok_or_else(|| StdError::generic_err("cannot find `execute_job` event"))?;
+
+    let job_id_str = event
+        .attributes
+        .iter()
+        .cloned()
+        .find(|attr| attr.key == "job_id")
+        .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
+        .value;
+
+    let job_id = job_id_str.as_str().parse::<u64>()?;
+
+    let finished_job = JobQueue::finalize(&mut deps, env.clone(), job_id, new_status)?;
 
     let res_attrs = match msg.result {
         SubMsgResult::Err(e) => vec![Attribute::new(
@@ -146,12 +174,11 @@ pub fn execute_job(
                         description: finished_job.description,
                         labels: finished_job.labels,
                         status: JobStatus::Pending,
-                        condition: finished_job.condition.clone(),
+                        executions: finished_job.executions,
                         terminate_condition: finished_job.terminate_condition.clone(),
                         vars: new_vars,
                         requeue_on_evict: finished_job.requeue_on_evict,
                         recurring: finished_job.recurring,
-                        msgs: finished_job.msgs.clone(),
                         reward: finished_job.reward,
                         assets_to_withdraw: finished_job.assets_to_withdraw.clone(),
                     },
@@ -182,12 +209,8 @@ pub fn execute_job(
                     serde_json_wasm::to_string(&new_job.status)?,
                 ));
                 new_job_attrs.push(Attribute::new(
-                    "job_condition",
-                    serde_json_wasm::to_string(&new_job.condition)?,
-                ));
-                new_job_attrs.push(Attribute::new(
-                    "job_msgs",
-                    serde_json_wasm::to_string(&new_job.msgs)?,
+                    "job_executions",
+                    serde_json_wasm::to_string(&new_job.executions)?,
                 ));
                 new_job_attrs.push(Attribute::new("job_reward", new_job.reward));
                 new_job_attrs.push(Attribute::new("job_creation_fee", fee));

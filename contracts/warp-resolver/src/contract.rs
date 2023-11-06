@@ -75,10 +75,9 @@ pub fn execute_validate_job_creation(
         deps.as_ref(),
         env,
         QueryValidateJobCreationMsg {
-            condition: data.condition,
             terminate_condition: data.terminate_condition,
             vars: data.vars,
-            msgs: data.msgs,
+            executions: data.executions,
         },
     )?;
 
@@ -197,46 +196,48 @@ fn query_validate_job_creation(
     _env: Env,
     data: QueryValidateJobCreationMsg,
 ) -> StdResult<String> {
-    let _condition: Condition = serde_json_wasm::from_str(&data.condition)
-        .map_err(|e| StdError::generic_err(format!("Condition input invalid: {}", e)))?;
-    let terminate_condition_str = data.terminate_condition.clone().unwrap_or("".to_string());
-    if !terminate_condition_str.is_empty() {
-        let _terminate_condition: Condition = serde_json_wasm::from_str(&terminate_condition_str)
-            .map_err(|e| {
-            StdError::generic_err(format!("Terminate condition input invalid: {}", e))
-        })?;
-    }
-    let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
-        .map_err(|e| StdError::generic_err(format!("Vars input invalid: {}", e)))?;
+    for execution in data.executions {
+        let _condition: Condition = serde_json_wasm::from_str(&execution.condition)
+            .map_err(|e| StdError::generic_err(format!("Condition input invalid: {}", e)))?;
+        let terminate_condition_str = data.terminate_condition.clone().unwrap_or("".to_string());
+        if !terminate_condition_str.is_empty() {
+            let _terminate_condition: Condition =
+                serde_json_wasm::from_str(&terminate_condition_str).map_err(|e| {
+                    StdError::generic_err(format!("Terminate condition input invalid: {}", e))
+                })?;
+        }
+        let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
+            .map_err(|e| StdError::generic_err(format!("Vars input invalid: {}", e)))?;
 
-    if !vars_valid(&vars) {
-        return Err(StdError::generic_err(
-            ContractError::InvalidVariables {}.to_string(),
-        ));
-    }
+        if !vars_valid(&vars) {
+            return Err(StdError::generic_err(
+                ContractError::InvalidVariables {}.to_string(),
+            ));
+        }
 
-    if has_duplicates(&vars) {
-        return Err(StdError::generic_err(
-            ContractError::VariablesContainDuplicates {}.to_string(),
-        ));
-    }
+        if has_duplicates(&vars) {
+            return Err(StdError::generic_err(
+                ContractError::VariablesContainDuplicates {}.to_string(),
+            ));
+        }
 
-    if !(string_vars_in_vector(&vars, &data.condition)
-        && string_vars_in_vector(&vars, &terminate_condition_str)
-        && string_vars_in_vector(&vars, &data.msgs))
-    {
-        return Err(StdError::generic_err(
-            ContractError::VariablesMissingFromVector {}.to_string(),
-        ));
-    }
+        if !(string_vars_in_vector(&vars, &execution.condition)
+            && string_vars_in_vector(&vars, &terminate_condition_str)
+            && string_vars_in_vector(&vars, &execution.msgs))
+        {
+            return Err(StdError::generic_err(
+                ContractError::VariablesMissingFromVector {}.to_string(),
+            ));
+        }
 
-    if !msgs_valid(&data.msgs, &vars).map_err(|e| StdError::generic_err(e.to_string()))? {
-        return Err(StdError::generic_err(
-            ContractError::MsgError {
-                msg: "msgs are invalid".to_string(),
-            }
-            .to_string(),
-        ));
+        if !msgs_valid(&execution.msgs, &vars).map_err(|e| StdError::generic_err(e.to_string()))? {
+            return Err(StdError::generic_err(
+                ContractError::MsgError {
+                    msg: "msgs are invalid".to_string(),
+                }
+                .to_string(),
+            ));
+        }
     }
 
     Ok("".to_string())
