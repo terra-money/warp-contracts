@@ -296,7 +296,7 @@ pub fn delete_job(
 
     // Job owner withdraw all assets that are listed from warp account to itself
     msgs.push(build_account_withdraw_assets_msg(
-        job_account_addr.clone().to_string(),
+        job_account_addr.to_string(),
         job.assets_to_withdraw,
     ));
 
@@ -332,7 +332,7 @@ pub fn update_job(
         return Err(ContractError::NameTooShort {});
     }
 
-    let job = JobQueue::update(&mut deps, env.clone(), data)?;
+    let job = JobQueue::update(&mut deps, env, data)?;
 
     let fee = compute_burn_fee(added_reward, &config);
 
@@ -489,7 +489,7 @@ pub fn evict_job(
     let account_amount = deps
         .querier
         .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-            address: job_account_addr.clone().to_string(),
+            address: job_account_addr.to_string(),
             denom: config.fee_denom.clone(),
         }))?
         .amount

@@ -116,7 +116,7 @@ pub fn execute_job(
                 &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
                     vars: finished_job.vars,
                     status: finished_job.status.clone(),
-                    warp_account_addr: Some(finished_job.account.clone().to_string()),
+                    warp_account_addr: Some(finished_job.account.to_string()),
                 }),
             )?;
 

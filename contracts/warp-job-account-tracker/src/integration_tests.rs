@@ -353,7 +353,7 @@ mod tests {
         // Query taken accounts
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_job_account_tracker_contract_addr,
                 &QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
