@@ -7,5 +7,5 @@ pub const CONFIG: Item<Config> = Item::new("config");
 // Key is the (account owner address, account address), value is the ID of the pending job currently using it
 pub const TAKEN_ACCOUNTS: Map<(&Addr, &Addr), Uint64> = Map::new("taken_accounts");
 
-// Key is the (account owner address, account address), value is a dummy data that is always true to make it behave like a set
+// Key is the (account owner address, account address), value is id of the last job which reserved it
 pub const FREE_ACCOUNTS: Map<(&Addr, &Addr), bool> = Map::new("free_accounts");

@@ -14,13 +14,6 @@ use crate::{
 
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 
-// Reply id for job creation
-// For user does not have available account
-// So we create new job account account and job
-pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 1;
-// Reply id for job execution
-pub const REPLY_ID_EXECUTE_JOB: u64 = 2;
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -259,13 +252,10 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+
     match msg.id {
-        // Job account has been created, now create job
-        REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => {
-            reply::account::create_job_account_and_job(deps, env, msg, config)
-        }
-        // Job has been executed
-        REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg, config),
-        _ => Err(ContractError::UnknownReplyId {}),
+        // use 0 as hack to call create_job_account_and_job
+        0 => reply::account::create_job_account_and_job(deps, env, msg, config),
+        _id => reply::job::execute_job(deps, env, msg, config),
     }
 }

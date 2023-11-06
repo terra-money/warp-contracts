@@ -9,7 +9,6 @@ use cosmwasm_std::{
 };
 
 use crate::{
-    contract::{REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB, REPLY_ID_EXECUTE_JOB},
     state::LEGACY_ACCOUNTS,
     util::{
         fee::deduct_reward_and_fee_from_native_funds,
@@ -138,7 +137,7 @@ pub fn create_job(
         None => {
             // Create account then create job in reply
             submsgs.push(SubMsg {
-                id: REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
+                id: 0,
                 msg: build_instantiate_warp_account_msg(
                     job.id,
                     env.contract.address.to_string(),
@@ -417,7 +416,7 @@ pub fn execute_job(
         match resolution {
             Ok(true) => {
                 submsgs.push(SubMsg {
-                    id: REPLY_ID_EXECUTE_JOB,
+                    id: data.id.u64(),
                     msg: CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: job.account.to_string(),
                         msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
