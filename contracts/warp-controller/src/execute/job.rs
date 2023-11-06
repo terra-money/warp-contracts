@@ -121,6 +121,7 @@ pub fn create_job(
             description: data.description,
             labels: data.labels,
             assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
+            duration_days: data.duration_days,
         },
     )?;
 
@@ -162,7 +163,7 @@ pub fn create_job(
             if !native_funds_minus_reward_and_fee.is_empty() {
                 // Fund account in native coins
                 msgs.push(build_transfer_native_funds_msg(
-                    available_account_addr.clone().to_string(),
+                    available_account_addr.to_string(),
                     native_funds_minus_reward_and_fee,
                 ))
             }
@@ -333,8 +334,7 @@ pub fn update_job(
 
     let job = JobQueue::update(&mut deps, env.clone(), data)?;
 
-    // TODO: add creation fee
-    let fee = added_reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
+    let fee = compute_burn_fee(added_reward, &config);
 
     if !added_reward.is_zero() && fee.is_zero() {
         return Err(ContractError::RewardTooSmall {});

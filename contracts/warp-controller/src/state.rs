@@ -128,6 +128,7 @@ impl JobQueue {
                 requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
                 assets_to_withdraw: job.assets_to_withdraw,
+                duration_days: job.duration_days,
             }),
         })
     }
@@ -159,6 +160,7 @@ impl JobQueue {
                 requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward + added_reward,
                 assets_to_withdraw: job.assets_to_withdraw,
+                duration_days: job.duration_days,
             }),
         })
     }
@@ -192,6 +194,7 @@ impl JobQueue {
             requeue_on_evict: job.requeue_on_evict,
             reward: job.reward,
             assets_to_withdraw: job.assets_to_withdraw,
+            duration_days: job.duration_days,
         };
 
         FINISHED_JOBS().update(deps.storage, job_id, |j| match j {

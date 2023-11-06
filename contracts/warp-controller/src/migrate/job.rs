@@ -100,6 +100,7 @@ pub fn migrate_pending_jobs(
                 requeue_on_evict: old_job.requeue_on_evict,
                 reward: old_job.reward,
                 assets_to_withdraw: old_job.assets_to_withdraw,
+                duration_days: Uint128::from(30u128),
             },
         )?;
     }
@@ -167,6 +168,7 @@ pub fn migrate_finished_jobs(
                 requeue_on_evict: old_job.requeue_on_evict,
                 reward: old_job.reward,
                 assets_to_withdraw: old_job.assets_to_withdraw,
+                duration_days: Uint128::from(30u128),
             },
         )?;
     }

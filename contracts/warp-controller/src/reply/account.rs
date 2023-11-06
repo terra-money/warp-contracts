@@ -96,7 +96,7 @@ pub fn create_job_account_and_job(
     if !native_funds.is_empty() {
         // Fund account in native coins
         msgs.push(build_transfer_native_funds_msg(
-            job_account_addr.clone().to_string(),
+            job_account_addr.to_string(),
             native_funds.clone(),
         ))
     }

@@ -39,6 +39,7 @@ pub struct Job {
     pub vars: String,
     pub recurring: bool,
     pub requeue_on_evict: bool,
+    pub duration_days: Uint128,
     pub reward: Uint128,
     pub assets_to_withdraw: Vec<AssetInfo>,
 }

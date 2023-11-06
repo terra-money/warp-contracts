@@ -5,6 +5,7 @@ use cosmwasm_std::{
 
 use crate::{
     error::map_contract_error,
+    execute::fee::{compute_burn_fee, compute_creation_fee, compute_maintenance_fee},
     state::{JobQueue, LEGACY_ACCOUNTS, STATE},
     util::{
         legacy_account::is_legacy_account,
@@ -75,9 +76,13 @@ pub fn execute_job(
     let mut new_job_attrs = vec![];
     let new_job_id = state.current_job_id;
 
-    let fee =
-        finished_job.reward * Uint128::from(config.creation_fee_percentage) / Uint128::new(100);
-    let fee_plus_reward = fee + finished_job.reward;
+    let creation_fee = compute_creation_fee(Uint128::from(state.q), &config);
+    let maintenance_fee = compute_maintenance_fee(finished_job.duration_days, &config);
+    let burn_fee = compute_burn_fee(finished_job.reward, &config);
+
+    let total_fees = creation_fee + maintenance_fee + burn_fee;
+
+    let reward_plus_fee = finished_job.reward + total_fees;
 
     let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, finished_job.owner.clone())?;
     let job_account_addr = finished_job.account.clone();
@@ -94,7 +99,7 @@ pub fn execute_job(
     let mut recurring_job_created = false;
 
     if finished_job.recurring {
-        if job_account_amount < fee_plus_reward {
+        if job_account_amount < reward_plus_fee {
             new_job_attrs.push(Attribute::new("action", "recur_job"));
             new_job_attrs.push(Attribute::new("creation_status", "failed_insufficient_fee"));
         } else if !(finished_job.status == JobStatus::Executed
@@ -181,16 +186,17 @@ pub fn execute_job(
                         recurring: finished_job.recurring,
                         reward: finished_job.reward,
                         assets_to_withdraw: finished_job.assets_to_withdraw.clone(),
+                        duration_days: finished_job.duration_days,
                     },
                 )?;
 
                 msgs.push(build_account_execute_generic_msgs(
-                    job_account_addr.clone().to_string(),
+                    job_account_addr.to_string(),
                     vec![
                         // Job owner's warp account sends fee to fee collector
                         build_transfer_native_funds_msg(
                             config.fee_collector.to_string(),
-                            vec![Coin::new(fee.u128(), config.fee_denom.clone())],
+                            vec![Coin::new(total_fees.u128(), config.fee_denom.clone())],
                         ),
                         // Job owner's warp account sends reward to controller
                         build_transfer_native_funds_msg(
@@ -213,7 +219,13 @@ pub fn execute_job(
                     serde_json_wasm::to_string(&new_job.executions)?,
                 ));
                 new_job_attrs.push(Attribute::new("job_reward", new_job.reward));
-                new_job_attrs.push(Attribute::new("job_creation_fee", fee));
+                new_job_attrs.push(Attribute::new("job_creation_fee", creation_fee.to_string()));
+                new_job_attrs.push(Attribute::new(
+                    "job_maintenance_fee",
+                    maintenance_fee.to_string(),
+                ));
+                new_job_attrs.push(Attribute::new("job_burn_fee", burn_fee.to_string()));
+                new_job_attrs.push(Attribute::new("job_total_fees", total_fees.to_string()));
                 new_job_attrs.push(Attribute::new(
                     "job_last_updated_time",
                     new_job.last_update_time,
@@ -237,7 +249,7 @@ pub fn execute_job(
         // No new job created, account has been free in execute_job, no need to free here again
         // Job owner withdraw all assets that are listed from warp account to itself
         msgs.push(build_account_withdraw_assets_msg(
-            job_account_addr.clone().to_string(),
+            job_account_addr.to_string(),
             finished_job.assets_to_withdraw,
         ));
     }

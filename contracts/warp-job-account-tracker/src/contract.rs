@@ -27,7 +27,7 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
-        .add_attribute("contract_addr", instantiated_account_addr.clone())
+        .add_attribute("contract_addr", instantiated_account_addr)
         .add_attribute("admin", msg.admin)
         .add_attribute("warp_addr", msg.warp_addr))
 }
