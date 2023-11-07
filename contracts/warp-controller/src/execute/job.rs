@@ -64,7 +64,7 @@ pub fn create_job(
         }),
     )?;
 
-    let creation_fee = compute_creation_fee(Uint128::from(state.q), &config);
+    let creation_fee = compute_creation_fee(state.q, &config);
     let maintenance_fee = compute_maintenance_fee(data.duration_days, &config);
     let burn_fee = compute_burn_fee(data.reward, &config);
 
@@ -445,7 +445,6 @@ pub fn evict_job(
     data: EvictJobMsg,
     config: Config,
 ) -> Result<Response, ContractError> {
-    let state = STATE.load(deps.storage)?;
     let job = JobQueue::get(&deps, data.id.into())?;
     let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, job.owner.clone())?;
     let job_account_addr = job.account.clone();
@@ -454,19 +453,9 @@ pub fn evict_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let t = if state.q < config.q_max {
-        config.t_max - state.q * (config.t_max - config.t_min) / config.q_max
-    } else {
-        config.t_min
-    };
+    let eviction_fee = config.a_max;
 
-    let a = if state.q < config.q_max {
-        config.a_min
-    } else {
-        config.a_max
-    };
-
-    if env.block.time.seconds() - job.last_update_time.u64() < t.u64() {
+    if (env.block.time.seconds() - job.created_at_time.u64()) < (job.duration_days.u64() * 86400) {
         return Err(ContractError::EvictionPeriodNotElapsed {});
     }
 
@@ -478,13 +467,16 @@ pub fn evict_job(
     // Controller sends eviction reward to evictor
     msgs.push(build_transfer_native_funds_msg(
         info.sender.to_string(),
-        vec![Coin::new(a.u128(), config.fee_denom.clone())],
+        vec![Coin::new(eviction_fee.u128(), config.fee_denom.clone())],
     ));
 
     // Controller sends execution reward minus eviction reward back to account
     msgs.push(build_transfer_native_funds_msg(
         info.sender.to_string(),
-        vec![Coin::new((job.reward - a).u128(), config.fee_denom.clone())],
+        vec![Coin::new(
+            (job.reward - eviction_fee).u128(),
+            config.fee_denom.clone(),
+        )],
     ));
 
     if !is_legacy_account(legacy_account, job_account_addr.clone()) {

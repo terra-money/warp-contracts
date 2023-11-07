@@ -98,7 +98,7 @@ pub fn migrate_pending_jobs(
                 recurring: old_job.recurring,
                 reward: old_job.reward,
                 assets_to_withdraw: old_job.assets_to_withdraw,
-                duration_days: Uint128::from(30u128),
+                duration_days: Uint64::from(30u64),
                 created_at_time: old_job.last_update_time,
             },
         )?;
@@ -166,7 +166,7 @@ pub fn migrate_finished_jobs(
                 recurring: old_job.recurring,
                 reward: old_job.reward,
                 assets_to_withdraw: old_job.assets_to_withdraw,
-                duration_days: Uint128::from(30u128),
+                duration_days: Uint64::from(30u64),
                 created_at_time: old_job.last_update_time,
             },
         )?;

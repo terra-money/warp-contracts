@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     Attribute, BalanceResponse, BankQuery, Coin, DepsMut, Env, QueryRequest, Reply, Response,
-    StdResult, SubMsgResult, Uint128, Uint64,
+    StdResult, SubMsgResult, Uint64,
 };
 
 use crate::{
@@ -50,7 +50,7 @@ pub fn execute_job(
     let mut new_job_attrs = vec![];
     let new_job_id = state.current_job_id;
 
-    let creation_fee = compute_creation_fee(Uint128::from(state.q), &config);
+    let creation_fee = compute_creation_fee(state.q, &config);
     let maintenance_fee = compute_maintenance_fee(finished_job.duration_days, &config);
     let burn_fee = compute_burn_fee(finished_job.reward, &config);
 
