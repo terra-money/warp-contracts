@@ -95,7 +95,6 @@ pub struct UpdateJobMsg {
     pub name: Option<String>,
     pub description: Option<String>,
     pub labels: Option<Vec<String>>,
-    pub added_reward: Option<Uint128>,
 }
 
 #[cw_serde]

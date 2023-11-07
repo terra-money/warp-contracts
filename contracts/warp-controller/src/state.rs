@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, DepsMut, Env, Uint128, Uint64};
+use cosmwasm_std::{Addr, DepsMut, Env, Uint64};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
 
 use controller::{
@@ -133,10 +133,7 @@ impl JobQueue {
         })
     }
 
-    pub fn update(deps: &mut DepsMut, env: Env, data: UpdateJobMsg) -> Result<Job, ContractError> {
-        let config = CONFIG.load(deps.storage)?;
-        let added_reward: Uint128 = data.added_reward.unwrap_or(Uint128::new(0));
-
+    pub fn update(deps: &mut DepsMut, _env: Env, data: UpdateJobMsg) -> Result<Job, ContractError> {
         PENDING_JOBS().update(deps.storage, data.id.u64(), |h| match h {
             None => Err(ContractError::JobDoesNotExist {}),
             Some(job) => Ok(Job {
@@ -144,11 +141,7 @@ impl JobQueue {
                 prev_id: job.prev_id,
                 owner: job.owner,
                 account: job.account,
-                last_update_time: if added_reward > config.minimum_reward {
-                    Uint64::new(env.block.time.seconds())
-                } else {
-                    job.last_update_time
-                },
+                last_update_time: job.last_update_time,
                 name: data.name.unwrap_or(job.name),
                 description: data.description.unwrap_or(job.description),
                 labels: data.labels.unwrap_or(job.labels),
@@ -158,7 +151,7 @@ impl JobQueue {
                 vars: job.vars,
                 recurring: job.recurring,
                 requeue_on_evict: job.requeue_on_evict,
-                reward: job.reward + added_reward,
+                reward: job.reward,
                 assets_to_withdraw: job.assets_to_withdraw,
                 duration_days: job.duration_days,
             }),

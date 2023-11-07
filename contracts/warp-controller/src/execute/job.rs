@@ -4,8 +4,8 @@ use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Execution, Job, JobStatus, UpdateJobMsg,
 };
 use cosmwasm_std::{
-    to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Coin, CosmosMsg, DepsMut, Env,
-    MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
+    to_binary, Attribute, BalanceResponse, BankQuery, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
+    QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
 };
 
 use crate::{
@@ -313,16 +313,12 @@ pub fn update_job(
     env: Env,
     info: MessageInfo,
     data: UpdateJobMsg,
-    config: Config,
-    fee_denom_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let job = JobQueue::get(&deps, data.id.into())?;
 
     if info.sender != job.owner {
         return Err(ContractError::Unauthorized {});
     }
-
-    let added_reward = data.added_reward.unwrap_or(Uint128::new(0));
 
     if data.name.is_some() && data.name.clone().unwrap().len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
@@ -334,39 +330,7 @@ pub fn update_job(
 
     let job = JobQueue::update(&mut deps, env, data)?;
 
-    let fee = compute_burn_fee(added_reward, &config);
-
-    if !added_reward.is_zero() && fee.is_zero() {
-        return Err(ContractError::RewardTooSmall {});
-    }
-    if fee + added_reward > fee_denom_paid_amount {
-        return Err(ContractError::InsufficientFundsToPayForRewardAndFee {});
-    }
-
-    let mut msgs = vec![];
-
-    if added_reward > Uint128::zero() {
-        // Job owner sends reward to controller when it calls create_job
-        // Reward stays at controller, no need to send it elsewhere
-
-        msgs.push(
-            // Job owner sends fee to controller when it calls update_job
-            // Controller sends update fee to fee collector
-            WasmMsg::Execute {
-                contract_addr: job.account.to_string(),
-                msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
-                    msgs: vec![CosmosMsg::Bank(BankMsg::Send {
-                        to_address: config.fee_collector.to_string(),
-                        amount: vec![Coin::new((fee).u128(), config.fee_denom)],
-                    })],
-                }))?,
-                funds: vec![],
-            },
-        );
-    }
-
     Ok(Response::new()
-        .add_messages(msgs)
         .add_attribute("action", "update_job")
         .add_attribute("job_id", job.id)
         .add_attribute("job_owner", job.owner)
@@ -377,7 +341,6 @@ pub fn update_job(
             serde_json_wasm::to_string(&job.executions)?,
         )
         .add_attribute("job_reward", job.reward)
-        .add_attribute("job_update_fee", fee)
         .add_attribute("job_last_updated_time", job.last_update_time))
 }
 

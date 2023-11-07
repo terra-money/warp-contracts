@@ -107,10 +107,7 @@ pub fn execute(
             let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
             execute::job::delete_job(deps, env, info, *data, config, fee_denom_paid_amount)
         }
-        ExecuteMsg::UpdateJob(data) => {
-            let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
-            execute::job::update_job(deps, env, info, *data, config, fee_denom_paid_amount)
-        }
+        ExecuteMsg::UpdateJob(data) => execute::job::update_job(deps, env, info, *data),
         ExecuteMsg::ExecuteJob(data) => {
             nonpayable(&info).unwrap();
             execute::job::execute_job(deps, env, info, *data, config)
