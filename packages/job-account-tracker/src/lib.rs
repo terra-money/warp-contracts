@@ -32,6 +32,7 @@ pub struct TakeAccountMsg {
 pub struct FreeAccountMsg {
     pub account_owner_addr: String,
     pub account_addr: String,
+    pub last_job_id: Uint64,
 }
 
 #[derive(QueryResponses)]

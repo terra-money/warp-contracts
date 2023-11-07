@@ -30,7 +30,7 @@ pub fn free_account(deps: DepsMut, data: FreeAccountMsg) -> Result<Response, Con
         (account_owner_ref, account_addr_ref),
         |s| match s {
             // value is a dummy data because there is no built in support for set in cosmwasm
-            None => Ok(true),
+            None => Ok(data.last_job_id),
             Some(_) => Err(ContractError::AccountAlreadyFreeError {}),
         },
     )?;

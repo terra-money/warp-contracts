@@ -34,6 +34,7 @@ pub fn build_free_account_msg(
     job_account_tracker_addr: String,
     account_owner_addr: String,
     account_addr: String,
+    last_job_id: Uint64,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: job_account_tracker_addr,
@@ -41,6 +42,7 @@ pub fn build_free_account_msg(
             FreeAccountMsg {
                 account_owner_addr,
                 account_addr,
+                last_job_id,
             },
         ))
         .unwrap(),

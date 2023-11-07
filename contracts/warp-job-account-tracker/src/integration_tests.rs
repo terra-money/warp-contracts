@@ -138,6 +138,7 @@ mod tests {
             &ExecuteMsg::FreeAccount(FreeAccountMsg {
                 account_owner_addr: USER_1.to_string(),
                 account_addr: DUMMY_WARP_ACCOUNT_1_ADDR.to_string(),
+                last_job_id: DUMMY_JOB_1_ID,
             }),
             &[],
         );
@@ -150,6 +151,7 @@ mod tests {
                 &ExecuteMsg::FreeAccount(FreeAccountMsg {
                     account_owner_addr: USER_1.to_string(),
                     account_addr: DUMMY_WARP_ACCOUNT_1_ADDR.to_string(),
+                    last_job_id: DUMMY_JOB_1_ID,
                 }),
                 &[],
             ),
@@ -163,6 +165,7 @@ mod tests {
             &ExecuteMsg::FreeAccount(FreeAccountMsg {
                 account_owner_addr: USER_1.to_string(),
                 account_addr: DUMMY_WARP_ACCOUNT_2_ADDR.to_string(),
+                last_job_id: DUMMY_JOB_2_ID,
             }),
             &[],
         );
@@ -174,6 +177,7 @@ mod tests {
             &ExecuteMsg::FreeAccount(FreeAccountMsg {
                 account_owner_addr: USER_1.to_string(),
                 account_addr: DUMMY_WARP_ACCOUNT_3_ADDR.to_string(),
+                last_job_id: DUMMY_JOB_1_ID,
             }),
             &[],
         );
@@ -189,7 +193,7 @@ mod tests {
             Ok(FirstFreeAccountResponse {
                 account: Some(Account {
                     addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
-                    taken_by_job_id: None
+                    taken_by_job_id: Some(DUMMY_JOB_1_ID)
                 })
             })
         );
@@ -208,15 +212,15 @@ mod tests {
                 accounts: vec![
                     Account {
                         addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_3_ADDR),
-                        taken_by_job_id: None
+                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
                     },
                     Account {
                         addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_2_ADDR),
-                        taken_by_job_id: None
+                        taken_by_job_id: Some(DUMMY_JOB_2_ID)
                     },
                     Account {
                         addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
-                        taken_by_job_id: None
+                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
                     }
                 ],
                 total_count: 3
@@ -280,11 +284,11 @@ mod tests {
                 accounts: vec![
                     Account {
                         addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_3_ADDR),
-                        taken_by_job_id: None
+                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
                     },
                     Account {
                         addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
-                        taken_by_job_id: None
+                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
                     }
                 ],
                 total_count: 2
@@ -317,6 +321,7 @@ mod tests {
             &ExecuteMsg::FreeAccount(FreeAccountMsg {
                 account_owner_addr: USER_1.to_string(),
                 account_addr: DUMMY_WARP_ACCOUNT_2_ADDR.to_string(),
+                last_job_id: DUMMY_JOB_1_ID,
             }),
             &[],
         );
@@ -335,15 +340,15 @@ mod tests {
                 accounts: vec![
                     Account {
                         addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_3_ADDR),
-                        taken_by_job_id: None
+                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
                     },
                     Account {
                         addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_2_ADDR),
-                        taken_by_job_id: None
+                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
                     },
                     Account {
                         addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
-                        taken_by_job_id: None
+                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
                     }
                 ],
                 total_count: 3

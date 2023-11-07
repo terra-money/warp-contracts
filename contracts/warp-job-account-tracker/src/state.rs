@@ -8,4 +8,4 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub const TAKEN_ACCOUNTS: Map<(&Addr, &Addr), Uint64> = Map::new("taken_accounts");
 
 // Key is the (account owner address, account address), value is id of the last job which reserved it
-pub const FREE_ACCOUNTS: Map<(&Addr, &Addr), bool> = Map::new("free_accounts");
+pub const FREE_ACCOUNTS: Map<(&Addr, &Addr), Uint64> = Map::new("free_accounts");

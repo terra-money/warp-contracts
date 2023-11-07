@@ -290,6 +290,7 @@ pub fn delete_job(
             config.job_account_tracker_address.to_string(),
             job.owner.to_string(),
             job_account_addr.to_string(),
+            job.id,
         ));
     }
 
@@ -460,6 +461,7 @@ pub fn execute_job(
             config.job_account_tracker_address.to_string(),
             job.owner.to_string(),
             job_account_addr.to_string(),
+            job.id,
         ));
     }
 
@@ -553,6 +555,7 @@ pub fn evict_job(
                 config.job_account_tracker_address.to_string(),
                 job.owner.to_string(),
                 job_account_addr.to_string(),
+                job.id,
             ));
         }
     }

@@ -29,9 +29,9 @@ pub fn query_first_free_account(
         )
         .next();
     let free_account = match maybe_free_account {
-        Some(Ok((account, _))) => Some(Account {
+        Some(Ok((account, last_job_id))) => Some(Account {
             addr: account.1,
-            taken_by_job_id: None,
+            taken_by_job_id: Some(last_job_id),
         }),
         _ => None,
     };
@@ -105,9 +105,9 @@ pub fn query_free_accounts(deps: Deps, data: QueryFreeAccountsMsg) -> StdResult<
     let accounts = iter
         .take(data.limit.unwrap_or(QUERY_LIMIT) as usize)
         .map(|item| {
-            item.map(|(account, _)| Account {
+            item.map(|(account, last_job_id)| Account {
                 addr: account.1,
-                taken_by_job_id: None,
+                taken_by_job_id: Some(last_job_id),
             })
         })
         .collect::<StdResult<Vec<Account>>>()?;
