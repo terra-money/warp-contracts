@@ -125,10 +125,10 @@ impl JobQueue {
                 terminate_condition: job.terminate_condition,
                 vars: job.vars,
                 recurring: job.recurring,
-                requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
                 assets_to_withdraw: job.assets_to_withdraw,
                 duration_days: job.duration_days,
+                created_at_time: Uint64::from(env.block.time.seconds()),
             }),
         })
     }
@@ -150,10 +150,10 @@ impl JobQueue {
                 terminate_condition: job.terminate_condition,
                 vars: job.vars,
                 recurring: job.recurring,
-                requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
                 assets_to_withdraw: job.assets_to_withdraw,
                 duration_days: job.duration_days,
+                created_at_time: job.created_at_time,
             }),
         })
     }
@@ -184,10 +184,10 @@ impl JobQueue {
             executions: job.executions,
             vars: job.vars,
             recurring: job.recurring,
-            requeue_on_evict: job.requeue_on_evict,
             reward: job.reward,
             assets_to_withdraw: job.assets_to_withdraw,
             duration_days: job.duration_days,
+            created_at_time: job.created_at_time,
         };
 
         FINISHED_JOBS().update(deps.storage, job_id, |j| match j {

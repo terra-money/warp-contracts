@@ -23,7 +23,6 @@ pub struct OldJob {
     pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
-    pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Vec<AssetInfo>,
 }
@@ -97,10 +96,10 @@ pub fn migrate_pending_jobs(
                 executions: old_job.executions,
                 vars: old_job.vars,
                 recurring: old_job.recurring,
-                requeue_on_evict: old_job.requeue_on_evict,
                 reward: old_job.reward,
                 assets_to_withdraw: old_job.assets_to_withdraw,
                 duration_days: Uint128::from(30u128),
+                created_at_time: old_job.last_update_time,
             },
         )?;
     }
@@ -165,10 +164,10 @@ pub fn migrate_finished_jobs(
                 terminate_condition: None,
                 vars: old_job.vars,
                 recurring: old_job.recurring,
-                requeue_on_evict: old_job.requeue_on_evict,
                 reward: old_job.reward,
                 assets_to_withdraw: old_job.assets_to_withdraw,
                 duration_days: Uint128::from(30u128),
+                created_at_time: old_job.last_update_time,
             },
         )?;
     }

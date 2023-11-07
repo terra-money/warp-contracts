@@ -156,11 +156,11 @@ pub fn execute_job(
                         executions: finished_job.executions,
                         terminate_condition: finished_job.terminate_condition.clone(),
                         vars: new_vars,
-                        requeue_on_evict: finished_job.requeue_on_evict,
                         recurring: finished_job.recurring,
                         reward: finished_job.reward,
                         assets_to_withdraw: finished_job.assets_to_withdraw.clone(),
                         duration_days: finished_job.duration_days,
+                        created_at_time: Uint64::from(env.block.time.seconds()),
                     },
                 )?;
 

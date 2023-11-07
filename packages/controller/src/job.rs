@@ -5,20 +5,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 
-// pub enum JobFund {
-//     Cw20(...),
-//     Native(...),
-//     Ibc(...)
-// }
-
-// 1. create_account (can potential embed funds here)
-// 2. cw20_sends, native (native send or within the create_job msg itself), ibc_send (to account)
-// 3. create_job msg
-//      - job.funds -> withdraw_asset_from_account(...), withdraws from account to controller contract
-// ...
-// 4. execute_job msg
-//      - job succceeded -
-
 #[cw_serde]
 pub struct Job {
     pub id: Uint64,
@@ -38,8 +24,8 @@ pub struct Job {
     pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
-    pub requeue_on_evict: bool,
     pub duration_days: Uint128,
+    pub created_at_time: Uint64,
     pub reward: Uint128,
     pub assets_to_withdraw: Vec<AssetInfo>,
 }
@@ -76,7 +62,6 @@ pub struct CreateJobMsg {
     pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
-    pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub duration_days: Uint128,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,

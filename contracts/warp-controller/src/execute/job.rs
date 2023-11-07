@@ -4,8 +4,8 @@ use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Execution, Job, JobStatus, UpdateJobMsg,
 };
 use cosmwasm_std::{
-    to_binary, Attribute, BalanceResponse, BankQuery, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
-    QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
+    to_binary, Attribute, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
+    SubMsg, Uint128, Uint64, WasmMsg,
 };
 
 use crate::{
@@ -113,7 +113,6 @@ pub fn create_job(
             status: JobStatus::Pending,
             terminate_condition: data.terminate_condition,
             recurring: data.recurring,
-            requeue_on_evict: data.requeue_on_evict,
             vars: data.vars,
             executions: data.executions,
             reward: data.reward,
@@ -121,6 +120,7 @@ pub fn create_job(
             labels: data.labels,
             assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
             duration_days: data.duration_days,
+            created_at_time: Uint64::from(env.block.time.seconds()),
         },
     )?;
 
@@ -450,15 +450,6 @@ pub fn evict_job(
     let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, job.owner.clone())?;
     let job_account_addr = job.account.clone();
 
-    let account_amount = deps
-        .querier
-        .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-            address: job_account_addr.to_string(),
-            denom: config.fee_denom.clone(),
-        }))?
-        .amount
-        .amount;
-
     if job.status != JobStatus::Pending {
         return Err(ContractError::Unauthorized {});
     }
@@ -481,46 +472,29 @@ pub fn evict_job(
 
     let mut msgs = vec![];
 
-    let job_status;
+    // Job will be evicted
+    let job_status = JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Evicted)?.status;
 
-    if job.requeue_on_evict && account_amount >= a {
-        // Job will stay active cause it has enough funds to pay for eviction fee and it's set to requeue on eviction
-        msgs.push(
-            // Job owner's warp account sends reward to evictor
-            build_account_execute_generic_msgs(
-                job_account_addr.to_string(),
-                vec![build_transfer_native_funds_msg(
-                    info.sender.to_string(),
-                    vec![Coin::new(a.u128(), config.fee_denom)],
-                )],
-            ),
-        );
-        job_status = JobQueue::sync(&mut deps, env, job.clone())?.status;
-    } else {
-        // Job will be evicted
-        job_status = JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Evicted)?.status;
+    // Controller sends eviction reward to evictor
+    msgs.push(build_transfer_native_funds_msg(
+        info.sender.to_string(),
+        vec![Coin::new(a.u128(), config.fee_denom.clone())],
+    ));
 
-        // Controller sends eviction reward to evictor
-        msgs.push(build_transfer_native_funds_msg(
-            info.sender.to_string(),
-            vec![Coin::new(a.u128(), config.fee_denom.clone())],
+    // Controller sends execution reward minus eviction reward back to account
+    msgs.push(build_transfer_native_funds_msg(
+        info.sender.to_string(),
+        vec![Coin::new((job.reward - a).u128(), config.fee_denom.clone())],
+    ));
+
+    if !is_legacy_account(legacy_account, job_account_addr.clone()) {
+        // Free account
+        msgs.push(build_free_account_msg(
+            config.job_account_tracker_address.to_string(),
+            job.owner.to_string(),
+            job_account_addr.to_string(),
+            job.id,
         ));
-
-        // Controller sends execution reward minus eviction reward back to account
-        msgs.push(build_transfer_native_funds_msg(
-            info.sender.to_string(),
-            vec![Coin::new((job.reward - a).u128(), config.fee_denom.clone())],
-        ));
-
-        if !is_legacy_account(legacy_account, job_account_addr.clone()) {
-            // Free account
-            msgs.push(build_free_account_msg(
-                config.job_account_tracker_address.to_string(),
-                job.owner.to_string(),
-                job_account_addr.to_string(),
-                job.id,
-            ));
-        }
     }
 
     Ok(Response::new()
