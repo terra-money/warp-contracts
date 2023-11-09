@@ -1,5 +1,5 @@
 use crate::account::{
-    AccountResponse, AccountsResponse, CreateAccountMsg, QueryAccountMsg, QueryAccountsMsg,
+    LegacyAccountResponse, LegacyAccountsResponse, QueryLegacyAccountMsg, QueryLegacyAccountsMsg,
 };
 use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
@@ -21,6 +21,10 @@ pub struct Config {
     pub minimum_reward: Uint128,
     pub creation_fee_percentage: Uint64,
     pub cancellation_fee_percentage: Uint64,
+    // By querying job account tracker contract
+    // We know all accounts owned by that user and each account's availability
+    // For more detail, please refer to job account tracker contract
+    pub job_account_tracker_address: Addr,
     pub resolver_address: Addr,
     // maximum time for evictions
     pub t_max: Uint64,
@@ -38,11 +42,11 @@ pub struct Config {
     pub maintenance_fee_min: Uint128,
     pub maintenance_fee_max: Uint128,
     // duration_days fn interval [left, right]
-    pub duration_days_left: Uint128,
-    pub duration_days_right: Uint128,
+    pub duration_days_left: Uint64,
+    pub duration_days_right: Uint64,
     // queue_size fn interval [left, right]
-    pub queue_size_left: Uint128,
-    pub queue_size_right: Uint128,
+    pub queue_size_left: Uint64,
+    pub queue_size_right: Uint64,
     pub burn_fee_rate: Uint128,
 }
 
@@ -64,6 +68,7 @@ pub struct InstantiateMsg {
     pub creation_fee: Uint64,
     pub cancellation_fee: Uint64,
     pub resolver_address: String,
+    pub job_account_tracker_address: String,
     pub t_max: Uint64,
     pub t_min: Uint64,
     pub a_max: Uint128,
@@ -75,11 +80,11 @@ pub struct InstantiateMsg {
     pub maintenance_fee_min: Uint128,
     pub maintenance_fee_max: Uint128,
     // duration_days fn interval [left, right]
-    pub duration_days_left: Uint128,
-    pub duration_days_right: Uint128,
+    pub duration_days_left: Uint64,
+    pub duration_days_right: Uint64,
     // queue_size fn interval [left, right]
-    pub queue_size_left: Uint128,
-    pub queue_size_right: Uint128,
+    pub queue_size_left: Uint64,
+    pub queue_size_right: Uint64,
     pub burn_fee_rate: Uint128,
 }
 
@@ -92,11 +97,12 @@ pub enum ExecuteMsg {
     ExecuteJob(Box<ExecuteJobMsg>),
     EvictJob(Box<EvictJobMsg>),
 
-    CreateAccount(Box<CreateAccountMsg>),
-
     UpdateConfig(Box<UpdateConfigMsg>),
 
-    MigrateAccounts(Box<MigrateAccountsMsg>),
+    MigrateLegacyAccounts(Box<MigrateLegacyAccountsMsg>),
+    MigrateFreeJobAccounts(Box<MigrateJobAccountsMsg>),
+    MigrateTakenJobAccounts(Box<MigrateJobAccountsMsg>),
+
     MigratePendingJobs(Box<MigrateJobsMsg>),
     MigrateFinishedJobs(Box<MigrateJobsMsg>),
 }
@@ -128,8 +134,16 @@ pub struct UpdateConfigMsg {
 }
 
 #[cw_serde]
-pub struct MigrateAccountsMsg {
-    pub warp_account_code_id: Uint64,
+pub struct MigrateLegacyAccountsMsg {
+    pub warp_legacy_account_code_id: Uint64,
+    pub start_after: Option<String>,
+    pub limit: u8,
+}
+
+#[cw_serde]
+pub struct MigrateJobAccountsMsg {
+    pub account_owner_addr: String,
+    pub warp_job_account_code_id: Uint64,
     pub start_after: Option<String>,
     pub limit: u8,
 }
@@ -149,10 +163,12 @@ pub enum QueryMsg {
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
 
-    #[returns(AccountResponse)]
-    QueryAccount(QueryAccountMsg),
-    #[returns(AccountsResponse)]
-    QueryAccounts(QueryAccountsMsg),
+    // For job account, please query it via the account tracker contract
+    // You can look at account tracker contract for more details
+    #[returns(LegacyAccountResponse)]
+    QueryLegacyAccount(QueryLegacyAccountMsg),
+    #[returns(LegacyAccountsResponse)]
+    QueryLegacyAccounts(QueryLegacyAccountsMsg),
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
@@ -178,17 +194,4 @@ pub struct StateResponse {
 }
 
 #[cw_serde]
-pub struct MigrateMsg {
-    // pub creation_fee_min: Uint128,
-    // pub creation_fee_max: Uint128,
-    // pub burn_fee_min: Uint128,
-    // pub maintenance_fee_min: Uint128,
-    // pub maintenance_fee_max: Uint128,
-    // // duration_days fn interval [left, right]
-    // pub duration_days_left: Uint128,
-    // pub duration_days_right: Uint128,
-    // // queue_size fn interval [left, right]
-    // pub queue_size_left: Uint128,
-    // pub queue_size_right: Uint128,
-    // pub burn_fee_rate: Uint128,
-}
+pub struct MigrateMsg {}

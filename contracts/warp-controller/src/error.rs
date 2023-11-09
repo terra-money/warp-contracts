@@ -12,6 +12,12 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
+    #[error("Insufficient funds to pay for reward and fee.")]
+    InsufficientFundsToPayForRewardAndFee {},
+
+    #[error("Insufficient funds to pay for fee.")]
+    InsufficientFundsToPayForFee {},
+
     #[error("Funds array in message does not match funds array in job.")]
     FundsMismatch {},
 
@@ -35,6 +41,9 @@ pub enum ContractError {
 
     #[error("Account already exists")]
     AccountAlreadyExists {},
+
+    #[error("Job account tracker already exists")]
+    JobAccountTrackerAlreadyExists {},
 
     #[error("Account cannot create an account")]
     AccountCannotCreateAccount {},
@@ -81,6 +90,9 @@ pub enum ContractError {
 
     #[error("Eviction period not elapsed.")]
     EvictionPeriodNotElapsed {},
+
+    #[error("Unknown reply ID.")]
+    UnknownReplyId {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {

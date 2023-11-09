@@ -1,14 +1,8 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, CosmosMsg, Uint128};
+use cosmwasm_std::{Addr, Uint128};
 
 #[cw_serde]
-pub struct CreateAccountMsg {
-    pub funds: Option<Vec<Fund>>,
-    pub msgs: Option<Vec<CosmosMsg>>,
-}
-
-#[cw_serde]
-pub enum Fund {
+pub enum CwFund {
     Cw20(Cw20Fund),
     Cw721(Cw721Fund),
 }
@@ -50,30 +44,30 @@ pub enum Cw721ExecuteMsg {
 }
 
 #[cw_serde]
-pub struct QueryAccountMsg {
+pub struct QueryLegacyAccountMsg {
     pub owner: String,
 }
 
 #[cw_serde]
-pub struct QueryAccountsMsg {
+pub struct QueryLegacyAccountsMsg {
     pub start_after: Option<String>,
     pub limit: Option<u32>,
 }
 
 #[cw_serde]
-pub struct Account {
+pub struct LegacyAccount {
     pub owner: Addr,
     pub account: Addr,
 }
 
 #[cw_serde]
-pub struct AccountResponse {
-    pub account: Account,
+pub struct LegacyAccountResponse {
+    pub account: LegacyAccount,
 }
 
 #[cw_serde]
-pub struct AccountsResponse {
-    pub accounts: Vec<Account>,
+pub struct LegacyAccountsResponse {
+    pub accounts: Vec<LegacyAccount>,
 }
 
 #[cw_serde]

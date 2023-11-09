@@ -50,7 +50,7 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
             owner,
             job_status,
             start_after.map(|i| (i._0.u128(), i._1.u64())),
-            page_size as usize,
+            page_size,
         ),
     }
 }
@@ -85,7 +85,7 @@ pub fn query_jobs_by_ids(
     }
     Ok(JobsResponse {
         jobs: jobs.clone(),
-        total_count: jobs.len(),
+        total_count: jobs.len() as u32,
     })
 }
 
@@ -96,7 +96,7 @@ pub fn query_jobs_by_reward(
     owner: Option<Addr>,
     job_status: Option<JobStatus>,
     start_after: Option<(u128, u64)>,
-    limit: usize,
+    limit: u32,
 ) -> StdResult<JobsResponse> {
     let start = start_after.map(Bound::exclusive);
     let map = if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
@@ -118,7 +118,7 @@ pub fn query_jobs_by_reward(
                 job_status.clone(),
             )
         })
-        .take(limit)
+        .take(limit as usize)
         .collect::<StdResult<Vec<_>>>()?;
 
     let mut jobs = vec![];
@@ -127,6 +127,6 @@ pub fn query_jobs_by_reward(
     }
     Ok(JobsResponse {
         jobs,
-        total_count: infos.len(),
+        total_count: infos.len() as u32,
     })
 }

@@ -1,9 +1,11 @@
-use controller::account::Account;
-use cosmwasm_std::{Addr, DepsMut, Env, Uint128, Uint64};
+use cosmwasm_std::{Addr, DepsMut, Env, Uint64};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
 
-use controller::job::{Job, JobStatus, UpdateJobMsg};
-use controller::{Config, State};
+use controller::{
+    account::LegacyAccount,
+    job::{Job, JobStatus, UpdateJobMsg},
+    Config, State,
+};
 
 use crate::ContractError;
 
@@ -24,15 +26,15 @@ pub fn PENDING_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
     let indexes = JobIndexes {
         reward: UniqueIndex::new(
             |job| (job.reward.u128(), job.id.u64()),
-            "pending_jobs__reward_v4",
+            "pending_jobs__reward_v5",
         ),
         publish_time: MultiIndex::new(
             |_pk, job| job.last_update_time.u64(),
-            "pending_jobs_v4",
-            "pending_jobs__publish_timestamp_v4",
+            "pending_jobs_v5",
+            "pending_jobs__publish_timestamp_v5",
         ),
     };
-    IndexedMap::new("pending_jobs_v4", indexes)
+    IndexedMap::new("pending_jobs_v5", indexes)
 }
 
 #[allow(non_snake_case)]
@@ -40,31 +42,35 @@ pub fn FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
     let indexes = JobIndexes {
         reward: UniqueIndex::new(
             |job| (job.reward.u128(), job.id.u64()),
-            "finished_jobs__reward_v4",
+            "finished_jobs__reward_v5",
         ),
         publish_time: MultiIndex::new(
             |_pk, job| job.last_update_time.u64(),
-            "finished_jobs_v4",
-            "finished_jobs__publish_timestamp_v4",
+            "finished_jobs_v5",
+            "finished_jobs__publish_timestamp_v5",
         ),
     };
-    IndexedMap::new("finished_jobs_v4", indexes)
+    IndexedMap::new("finished_jobs_v5", indexes)
 }
 
-pub struct AccountIndexes<'a> {
-    pub account: UniqueIndex<'a, Addr, Account>,
+pub struct LegacyAccountIndexes<'a> {
+    pub account: UniqueIndex<'a, Addr, LegacyAccount>,
 }
 
-impl IndexList<Account> for AccountIndexes<'_> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Account>> + '_> {
-        let v: Vec<&dyn Index<Account>> = vec![&self.account];
+impl IndexList<LegacyAccount> for LegacyAccountIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<LegacyAccount>> + '_> {
+        let v: Vec<&dyn Index<LegacyAccount>> = vec![&self.account];
         Box::new(v.into_iter())
     }
 }
 
+// !!! DEPRECATED !!!
+// LEGACY_ACCOUNTS stores legacy account (all user's jobs share the same account, this is the old way of doing things before introducing job account)
+// As of late 2023, we introduced job account meaning each job will have its own account, no more job sharing the same account
+// We keep this for backward compatibility so user can withdraw from their old accounts
 #[allow(non_snake_case)]
-pub fn ACCOUNTS<'a>() -> IndexedMap<'a, Addr, Account, AccountIndexes<'a>> {
-    let indexes = AccountIndexes {
+pub fn LEGACY_ACCOUNTS<'a>() -> IndexedMap<'a, Addr, LegacyAccount, LegacyAccountIndexes<'a>> {
+    let indexes = LegacyAccountIndexes {
         account: UniqueIndex::new(|account| account.account.clone(), "accounts__account"),
     };
     IndexedMap::new("accounts", indexes)
@@ -119,17 +125,15 @@ impl JobQueue {
                 terminate_condition: job.terminate_condition,
                 vars: job.vars,
                 recurring: job.recurring,
-                requeue_on_evict: job.requeue_on_evict,
                 reward: job.reward,
                 assets_to_withdraw: job.assets_to_withdraw,
+                duration_days: job.duration_days,
+                created_at_time: Uint64::from(env.block.time.seconds()),
             }),
         })
     }
 
-    pub fn update(deps: &mut DepsMut, env: Env, data: UpdateJobMsg) -> Result<Job, ContractError> {
-        let config = CONFIG.load(deps.storage)?;
-        let added_reward: Uint128 = data.added_reward.unwrap_or(Uint128::new(0));
-
+    pub fn update(deps: &mut DepsMut, _env: Env, data: UpdateJobMsg) -> Result<Job, ContractError> {
         PENDING_JOBS().update(deps.storage, data.id.u64(), |h| match h {
             None => Err(ContractError::JobDoesNotExist {}),
             Some(job) => Ok(Job {
@@ -137,11 +141,7 @@ impl JobQueue {
                 prev_id: job.prev_id,
                 owner: job.owner,
                 account: job.account,
-                last_update_time: if added_reward > config.minimum_reward {
-                    Uint64::new(env.block.time.seconds())
-                } else {
-                    job.last_update_time
-                },
+                last_update_time: job.last_update_time,
                 name: data.name.unwrap_or(job.name),
                 description: data.description.unwrap_or(job.description),
                 labels: data.labels.unwrap_or(job.labels),
@@ -150,9 +150,10 @@ impl JobQueue {
                 terminate_condition: job.terminate_condition,
                 vars: job.vars,
                 recurring: job.recurring,
-                requeue_on_evict: job.requeue_on_evict,
-                reward: job.reward + added_reward,
+                reward: job.reward,
                 assets_to_withdraw: job.assets_to_withdraw,
+                duration_days: job.duration_days,
+                created_at_time: job.created_at_time,
             }),
         })
     }
@@ -183,9 +184,10 @@ impl JobQueue {
             executions: job.executions,
             vars: job.vars,
             recurring: job.recurring,
-            requeue_on_evict: job.requeue_on_evict,
             reward: job.reward,
             assets_to_withdraw: job.assets_to_withdraw,
+            duration_days: job.duration_days,
+            created_at_time: job.created_at_time,
         };
 
         FINISHED_JOBS().update(deps.storage, job_id, |j| match j {

@@ -398,7 +398,7 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
         name: "var3".to_string(),
         kind: VariableKind::String,
         value: None,
-        init_fn: FnValue::String(StringValue::Simple(json_str.clone())),
+        init_fn: FnValue::String(StringValue::Simple(json_str)),
         reinitialize: false,
         update_fn: None,
         // when encode is true, value will be base64 encoded after msgs hydration
@@ -486,7 +486,7 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
         name: "var2".to_string(),
         kind: VariableKind::Uint,
         value: None,
-        init_fn: FnValue::Uint(NumValue::Simple(Uint256::from(100 as u64))),
+        init_fn: FnValue::Uint(NumValue::Simple(Uint256::from(100_u64))),
         reinitialize: false,
         update_fn: None,
         encode: false,
@@ -496,7 +496,7 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
         name: "var3".to_string(),
         kind: VariableKind::String,
         value: None,
-        init_fn: FnValue::String(StringValue::Simple(json_str.clone())),
+        init_fn: FnValue::String(StringValue::Simple(json_str)),
         reinitialize: false,
         update_fn: None,
         encode: true,
@@ -548,7 +548,7 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
         Variable::Static(static_var) => {
             assert_eq!(
                 String::from_utf8(static_var.value.unwrap_or_default().into()).unwrap(),
-                dummy_warp_account_addr.clone()
+                dummy_warp_account_addr
             )
         }
         _ => panic!("Expected static variable"),
