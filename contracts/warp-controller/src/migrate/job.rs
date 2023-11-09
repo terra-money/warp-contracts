@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::state::{FINISHED_JOBS, LEGACY_ACCOUNTS, PENDING_JOBS};
+use crate::state::{FINISHED_JOBS, PENDING_JOBS};
 use crate::{state::CONFIG, ContractError};
 
 use controller::account::AssetInfo;
@@ -13,7 +13,9 @@ use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex, UniqueInd
 #[cw_serde]
 pub struct OldJob {
     pub id: Uint64,
+    pub prev_id: Option<Uint64>,
     pub owner: Addr,
+    pub account: Addr,
     pub last_update_time: Uint64,
     pub name: String,
     pub description: String,
@@ -23,6 +25,7 @@ pub struct OldJob {
     pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
+    pub requeue_on_evict: bool,
     pub reward: Uint128,
     pub assets_to_withdraw: Vec<AssetInfo>,
 }
@@ -77,22 +80,21 @@ pub fn migrate_pending_jobs(
 
     for job_key in job_keys {
         let old_job = OLD_PENDING_JOBS().load(deps.storage, job_key)?;
-        let warp_account = LEGACY_ACCOUNTS().load(deps.storage, old_job.owner.clone())?;
 
         PENDING_JOBS().save(
             deps.storage,
             job_key,
             &Job {
                 id: old_job.id,
-                prev_id: None,
+                prev_id: old_job.prev_id,
                 owner: old_job.owner,
-                account: warp_account.account,
+                account: old_job.account,
                 last_update_time: old_job.last_update_time,
                 name: old_job.name,
                 description: old_job.description,
                 labels: old_job.labels,
                 status: old_job.status,
-                terminate_condition: None,
+                terminate_condition: old_job.terminate_condition,
                 executions: old_job.executions,
                 vars: old_job.vars,
                 recurring: old_job.recurring,
@@ -145,23 +147,22 @@ pub fn migrate_finished_jobs(
 
     for job_key in job_keys {
         let old_job = OLD_FINISHED_JOBS().load(deps.storage, job_key)?;
-        let warp_account = LEGACY_ACCOUNTS().load(deps.storage, old_job.owner.clone())?;
 
         FINISHED_JOBS().save(
             deps.storage,
             job_key,
             &Job {
                 id: old_job.id,
-                prev_id: None,
+                prev_id: old_job.prev_id,
                 owner: old_job.owner,
-                account: warp_account.account,
+                account: old_job.account,
                 last_update_time: old_job.last_update_time,
                 name: old_job.name,
                 description: old_job.description,
                 labels: old_job.labels,
                 status: old_job.status,
                 executions: old_job.executions,
-                terminate_condition: None,
+                terminate_condition: old_job.terminate_condition,
                 vars: old_job.vars,
                 recurring: old_job.recurring,
                 reward: old_job.reward,

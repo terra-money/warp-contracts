@@ -1,9 +1,7 @@
-use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdResult, Uint128, Uint64,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    Uint64,
 };
-use cw_storage_plus::Item;
 use cw_utils::{must_pay, nonpayable};
 
 use crate::{
@@ -172,78 +170,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    //CONFIG
-    #[cw_serde]
-    pub struct V1Config {
-        pub owner: Addr,
-        pub fee_denom: String,
-        pub fee_collector: Addr,
-        pub warp_account_code_id: Uint64,
-        pub minimum_reward: Uint128,
-        pub creation_fee_percentage: Uint64,
-        pub cancellation_fee_percentage: Uint64,
-        pub resolver_address: Addr,
-        // maximum time for evictions
-        pub t_max: Uint64,
-        // minimum time for evictions
-        pub t_min: Uint64,
-        // maximum fee for evictions
-        pub a_max: Uint128,
-        // minimum fee for evictions
-        pub a_min: Uint128,
-        // maximum length of queue modifier for evictions
-        pub q_max: Uint64,
-        pub creation_fee_min: Uint128,
-        pub creation_fee_max: Uint128,
-        pub burn_fee_min: Uint128,
-        pub maintenance_fee_min: Uint128,
-        pub maintenance_fee_max: Uint128,
-        // duration_days fn interval [left, right]
-        pub duration_days_left: Uint128,
-        pub duration_days_right: Uint128,
-        // queue_size fn interval [left, right]
-        pub queue_size_left: Uint128,
-        pub queue_size_right: Uint128,
-        pub burn_fee_rate: Uint128,
-    }
-
-    const V1CONFIG: Item<V1Config> = Item::new("config");
-
-    let v1_config = V1CONFIG.load(deps.storage)?;
-
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            owner: v1_config.owner,
-            fee_denom: v1_config.fee_denom,
-            fee_collector: v1_config.fee_collector,
-            warp_account_code_id: msg.warp_account_code_id,
-            minimum_reward: v1_config.minimum_reward,
-            creation_fee_percentage: v1_config.creation_fee_percentage,
-            cancellation_fee_percentage: v1_config.cancellation_fee_percentage,
-            resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
-            job_account_tracker_address: deps
-                .api
-                .addr_validate(&msg.job_account_tracker_address)?,
-            t_max: v1_config.t_max,
-            t_min: v1_config.t_min,
-            a_max: v1_config.a_max,
-            a_min: v1_config.a_min,
-            q_max: v1_config.q_max,
-            creation_fee_min: v1_config.creation_fee_min,
-            creation_fee_max: v1_config.creation_fee_max,
-            burn_fee_min: v1_config.burn_fee_min,
-            maintenance_fee_min: v1_config.maintenance_fee_min,
-            maintenance_fee_max: v1_config.maintenance_fee_max,
-            duration_days_left: Uint64::from(v1_config.duration_days_left.u128() as u64),
-            duration_days_right: Uint64::from(v1_config.duration_days_right.u128() as u64),
-            queue_size_left: Uint64::from(v1_config.queue_size_left.u128() as u64),
-            queue_size_right: Uint64::from(v1_config.queue_size_right.u128() as u64),
-            burn_fee_rate: v1_config.burn_fee_rate,
-        },
-    )?;
-
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::new())
 }
 
