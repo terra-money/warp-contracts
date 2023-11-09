@@ -183,6 +183,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         pub minimum_reward: Uint128,
         pub creation_fee_percentage: Uint64,
         pub cancellation_fee_percentage: Uint64,
+        pub resolver_address: Addr,
         // maximum time for evictions
         pub t_max: Uint64,
         // minimum time for evictions
