@@ -146,5 +146,5 @@ pub struct JobResponse {
 #[cw_serde]
 pub struct JobsResponse {
     pub jobs: Vec<Job>,
-    pub total_count: usize,
+    pub total_count: u32,
 }

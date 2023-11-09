@@ -79,7 +79,7 @@ pub struct Account {
 #[cw_serde]
 pub struct AccountsResponse {
     pub accounts: Vec<Account>,
-    pub total_count: usize,
+    pub total_count: u32,
 }
 
 #[cw_serde]

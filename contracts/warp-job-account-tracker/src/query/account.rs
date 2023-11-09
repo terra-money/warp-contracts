@@ -75,7 +75,7 @@ pub fn query_taken_accounts(
         })
         .collect::<StdResult<Vec<Account>>>()?;
     Ok(AccountsResponse {
-        total_count: accounts.len(),
+        total_count: accounts.len() as u32,
         accounts,
     })
 }
@@ -112,7 +112,7 @@ pub fn query_free_accounts(deps: Deps, data: QueryFreeAccountsMsg) -> StdResult<
         })
         .collect::<StdResult<Vec<Account>>>()?;
     Ok(AccountsResponse {
-        total_count: accounts.len(),
+        total_count: accounts.len() as u32,
         accounts,
     })
 }
