@@ -373,9 +373,14 @@ pub fn execute_job(
     let mut submsgs = vec![];
 
     for Execution { condition, msgs } in job.executions {
-        let resolution: StdResult<bool> = deps
-            .querier
-            .query_wasm_smart(config.resolver_address.clone(), &condition);
+        let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
+            config.resolver_address.clone(),
+            &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
+                condition,
+                vars: vars.clone(),
+                warp_account_addr: Some(job.account.to_string()),
+            }),
+        );
 
         match resolution {
             Ok(true) => {
