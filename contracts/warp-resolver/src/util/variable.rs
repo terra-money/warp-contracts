@@ -4,15 +4,20 @@ use crate::util::condition::{
     resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
 };
 use crate::ContractError;
+use account::WarpMsgType;
 use cosmwasm_schema::serde::de::DeserializeOwned;
 use cosmwasm_schema::serde::Serialize;
 use cosmwasm_std::{
-    Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, Uint128, Uint256, WasmQuery,
+    Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, StdError, Uint128, Uint256, WasmQuery,
 };
+use resolver::condition::Condition;
+use serde_cw_value::Value;
 use std::str::FromStr;
 
 use controller::job::{ExternalInput, JobStatus};
 use resolver::variable::{QueryExpr, UpdateFnValue, Variable, VariableKind};
+
+use super::condition::resolve_cond;
 
 pub fn hydrate_vars(
     deps: Deps,
@@ -134,20 +139,78 @@ pub fn hydrate_vars(
     Ok(hydrated_vars)
 }
 
-pub fn hydrate_msgs(msgs: String, vars: Vec<Variable>) -> Result<Vec<CosmosMsg>, ContractError> {
-    let mut replaced_msgs = msgs;
-    for var in &vars {
-        let (name, replacement) = get_replacement_in_struct(var)?;
-        replaced_msgs =
-            replaced_msgs.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
-        if replacement.contains("$warp.variable") {
-            return Err(ContractError::HydrationError {
-                msg: "Attempt to inject warp variable.".to_string(),
-            });
+pub fn hydrate_msgs(
+    deps: Deps,
+    env: Env,
+    msgs: String,
+    vars: Vec<Variable>,
+) -> Result<Vec<WarpMsgType>, ContractError> {
+    let mut finalized_msgs: Vec<WarpMsgType> = vec![];
+
+    // split msgs
+    for msg in serde_json_wasm::from_str::<Vec<Value>>(&msgs)? {
+        let (condition, msg) = match msg.clone() {
+            Value::Map(map) => {
+                // check if condition is a key
+                let condition = map
+                    .get(&Value::String("condition".to_string()))
+                    .map(|condition_as_value| serde_json_wasm::to_string(condition_as_value))
+                    .transpose()?;
+
+                println!("{condition:?}");
+
+                // if msg is a key, parse back the msg to string, otherwise parse the whole msg for retrocompatibility
+                let msg = map
+                    .get(&Value::String("msg".to_string()))
+                    .map(|msg_as_value| serde_json_wasm::to_string(&msg_as_value))
+                    .unwrap_or(serde_json_wasm::to_string(&msg))?;
+                (condition, msg)
+            }
+
+            _ => {
+                return Err(ContractError::Std(StdError::generic_err(format!(
+                    "msg as Value should be a map type - value: {msg:#?}"
+                ))))
+            }
+        };
+
+        // if condition is Some, try to resolve it
+        if let Some(condition) = condition {
+            let condition: Condition = serde_json_wasm::from_str(&condition)
+                .map_err(|e| StdError::generic_err(e.to_string()))?;
+
+            // id condition is not resolved, skip to next msg
+            if let Err(_) = resolve_cond(deps.clone(), env.clone(), condition, &vars) {
+                continue;
+            }
+        }
+
+        let mut replaced_msg = msg;
+
+        // substitute vars
+        for var in &vars {
+            let (name, replacement) = get_replacement_in_struct(var)?;
+            replaced_msg =
+                replaced_msg.replace(&format!("\"$warp.variable.{}\"", name), &replacement);
+            if replacement.contains("$warp.variable") {
+                return Err(ContractError::HydrationError {
+                    msg: "Attempt to inject warp variable.".to_string(),
+                });
+            }
+        }
+
+        // try deserialize the replaced msg in CosmosMsg (for retrocompatibility) or in WasmMsgType
+
+        match serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg) {
+            Ok(msg) => finalized_msgs.push(WarpMsgType::Generic(msg)),
+            Err(_) => match serde_json_wasm::from_str::<WarpMsgType>(&replaced_msg) {
+                Ok(msg) => finalized_msgs.push(msg),
+                Err(_) => return Err(ContractError::Std(StdError::generic_err(format!("Error during deserialize msg as string into CosmosMsg | WarpMsgType - value: {replaced_msg}"))))
+            },
         }
     }
 
-    Ok(serde_json_wasm::from_str::<Vec<CosmosMsg>>(&replaced_msgs)?)
+    Ok(finalized_msgs)
 }
 
 fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), ContractError> {

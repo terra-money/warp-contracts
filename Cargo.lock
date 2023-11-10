@@ -636,9 +636,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.56"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
+checksum = "134c189feb4956b20f6f547d2cf727d4c0fe06722b20a0eec87ed445a97f92da"
 dependencies = [
  "unicode-ident",
 ]
@@ -691,9 +691,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.26"
+version = "1.0.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4424af4bf778aae2051a77b60283332f386554255d722233d09fbfc7e30da2fc"
+checksum = "5267fca4496028628a95160fc423a33e8b2e6af8a5302579e322e4b520293cae"
 dependencies = [
  "proc-macro2",
 ]
@@ -803,11 +803,20 @@ checksum = "58bc9567378fc7690d6b2addae4e60ac2eeea07becb2c64b9f218b53865cba2a"
 
 [[package]]
 name = "serde"
-version = "1.0.160"
+version = "1.0.192"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb2f3770c8bce3bcda7e149193a069a0f4365bda1fa5cd88e03bca26afc1216c"
+checksum = "bca2a08484b285dcb282d0f67b26cadc0df8b19f8c12502c13d966bf9482f001"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-cw-value"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a75d32da6b8ed758b7d850b6c3c08f1d7df51a4df3cb201296e63e34a78e99d4"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -829,14 +838,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_derive"
-version = "1.0.160"
+name = "serde-json-wasm"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "291a097c63d8497e00160b166a967a4a79c64f3facdd01cbd7502231688d77df"
+checksum = "83c37d03f3b0f6b5f77c11af1e7c772de1c9af83e50bef7bb6069601900ba67b"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.192"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6c7207fbec9faa48073f3e3074cbe553af6ea512d7c21ba46e434e70ea9fbc1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.39",
 ]
 
 [[package]]
@@ -949,9 +967,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.15"
+version = "2.0.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a34fcf3e8b60f57e6a14301a2e916d323af98b0ea63c599441eec8558660c822"
+checksum = "23e78b90f2fcf45d3e842032ce32e3f2d1545ba6636271dcbf24fa306d87be7a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1080,6 +1098,7 @@ dependencies = [
 name = "warp-resolver"
 version = "0.1.0"
 dependencies = [
+ "account",
  "base64",
  "controller",
  "cosmwasm-schema",
@@ -1094,7 +1113,8 @@ dependencies = [
  "json-codec-wasm",
  "resolver",
  "schemars",
- "serde-json-wasm 0.4.1",
+ "serde-cw-value",
+ "serde-json-wasm 1.0.0",
  "thiserror",
 ]
 

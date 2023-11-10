@@ -4,9 +4,9 @@ use crate::util::variable::{
     vars_valid,
 };
 use crate::ContractError;
+use account::WarpMsgType;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
 use resolver::condition::Condition;
@@ -192,8 +192,11 @@ fn query_validate_job_creation(
     _env: Env,
     data: QueryValidateJobCreationMsg,
 ) -> StdResult<String> {
-    let _condition: Condition = serde_json_wasm::from_str(&data.condition)
-        .map_err(|e| StdError::generic_err(format!("Condition input invalid: {}", e)))?;
+    // Try deserialize condition only if provided
+    if let Some(condition) = &data.condition {
+        serde_json_wasm::from_str::<Condition>(condition)
+            .map_err(|e| StdError::generic_err(format!("Condition input invalid: {}", e)))?;
+    }
     let terminate_condition_str = data.terminate_condition.clone().unwrap_or("".to_string());
     if !terminate_condition_str.is_empty() {
         let _terminate_condition: Condition = serde_json_wasm::from_str(&terminate_condition_str)
@@ -216,7 +219,11 @@ fn query_validate_job_creation(
         ));
     }
 
-    if !(string_vars_in_vector(&vars, &data.condition)
+    // Check condition contains vars only if condition is provided
+    if !(data
+        .condition
+        .map(|condition| string_vars_in_vector(&vars, &condition))
+        .unwrap_or(true)
         && string_vars_in_vector(&vars, &terminate_condition_str)
         && string_vars_in_vector(&vars, &data.msgs))
     {
@@ -268,14 +275,14 @@ fn query_apply_var_fn(deps: Deps, env: Env, data: QueryApplyVarFnMsg) -> StdResu
 }
 
 fn query_hydrate_msgs(
-    _deps: Deps,
-    _env: Env,
+    deps: Deps,
+    env: Env,
     data: QueryHydrateMsgsMsg,
-) -> StdResult<Vec<CosmosMsg>> {
+) -> StdResult<Vec<WarpMsgType>> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    hydrate_msgs(data.msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))
+    hydrate_msgs(deps, env, data.msgs, vars).map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 pub fn query_simulate_query(

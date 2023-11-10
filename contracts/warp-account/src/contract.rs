@@ -2,7 +2,7 @@ use crate::state::CONFIG;
 use crate::ContractError;
 use account::{
     Config, ExecuteMsg, IbcTransferMsg, InstantiateMsg, MigrateMsg, QueryMsg, TimeoutBlock,
-    WithdrawAssetsMsg,
+    WarpMsgsMsg, WithdrawAssetsMsg,
 };
 use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::CosmosMsg::Stargate;
@@ -52,7 +52,8 @@ pub fn execute(
             .add_messages(data.msgs)
             .add_attribute("action", "generic")),
         ExecuteMsg::WithdrawAssets(data) => withdraw_assets(deps, env, info, data),
-        ExecuteMsg::IbcTransfer(data) => ibc_transfer(deps, env, info, data),
+        ExecuteMsg::IbcTransfer(data) => ibc_transfer(env, data),
+        ExecuteMsg::WarpMsgs(data) => execute_warp_msgs(env, data),
     }
 }
 
@@ -71,12 +72,7 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
     Ok(Response::new())
 }
 
-pub fn ibc_transfer(
-    _deps: DepsMut,
-    env: Env,
-    _info: MessageInfo,
-    msg: IbcTransferMsg,
-) -> Result<Response, ContractError> {
+pub fn ibc_transfer(env: Env, msg: IbcTransferMsg) -> Result<Response, ContractError> {
     let mut transfer_msg = msg.transfer_msg.clone();
 
     if msg.timeout_block_delta.is_some() && msg.transfer_msg.timeout_block.is_some() {
@@ -102,6 +98,22 @@ pub fn ibc_transfer(
         type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
         value: transfer_msg.encode_to_vec().into(),
     }))
+}
+
+pub fn execute_warp_msgs(env: Env, msg: WarpMsgsMsg) -> Result<Response, ContractError> {
+    let msgs = msg
+        .msgs
+        .into_iter()
+        .map(|msg| -> Result<CosmosMsg, ContractError> {
+            match msg {
+                account::WarpMsgType::Generic(msg) => Ok(msg),
+                account::WarpMsgType::IbcTransfer(msg) => ibc_transfer(env.clone(), msg)
+                    .map(|val| val.messages.first().unwrap().msg.clone()),
+            }
+        })
+        .collect::<Result<Vec<CosmosMsg>, ContractError>>()?;
+
+    Ok(Response::new().add_messages(msgs))
 }
 
 pub fn withdraw_assets(

@@ -1,7 +1,7 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
-use account::GenericMsg;
+use account::{GenericMsg, WarpMsgType, WarpMsgsMsg};
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
@@ -333,13 +333,17 @@ pub fn execute_job(
         }),
     )?;
 
-    let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
-        config.resolver_address.clone(),
-        &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
-            condition: job.condition,
-            vars: vars.clone(),
-        }),
-    );
+    // Match condition and try to resolve in case it has been provided
+    let resolution: StdResult<bool> = match job.condition {
+        Some(condition) => deps.querier.query_wasm_smart(
+            config.resolver_address.clone(),
+            &resolver::QueryMsg::QueryResolveCondition(resolver::QueryResolveConditionMsg {
+                condition,
+                vars: vars.clone(),
+            }),
+        ),
+        None => Ok(true),
+    };
 
     let mut attrs = vec![];
     let mut submsgs = vec![];
@@ -387,14 +391,23 @@ pub fn execute_job(
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::Generic(GenericMsg {
-                    msgs: deps.querier.query_wasm_smart(
-                        config.resolver_address,
-                        &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
-                            msgs: job.msgs,
-                            vars,
-                        }),
-                    )?,
+                msg: to_binary(&account::ExecuteMsg::WarpMsgs(WarpMsgsMsg {
+                    msgs: deps
+                        .querier
+                        .query_wasm_smart::<Vec<WarpMsgType>>(
+                            config.resolver_address,
+                            &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
+                                msgs: job.msgs,
+                                vars,
+                            }),
+                        )
+                        .map(|msgs| {
+                            if msgs.is_empty() {
+                                Err(ContractError::NoMsgToTrigger {})
+                            } else {
+                                Ok(msgs)
+                            }
+                        })??,
                 }))?,
                 funds: vec![],
             }),
