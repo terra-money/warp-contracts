@@ -4,7 +4,7 @@ use crate::util::variable::{
     vars_valid,
 };
 use crate::ContractError;
-use account::WarpMsgType;
+use account::WarpMsg;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
@@ -278,7 +278,7 @@ fn query_hydrate_msgs(
     deps: Deps,
     env: Env,
     data: QueryHydrateMsgsMsg,
-) -> StdResult<Vec<WarpMsgType>> {
+) -> StdResult<Vec<WarpMsg>> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 

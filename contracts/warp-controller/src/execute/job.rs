@@ -1,7 +1,7 @@
 use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS, STATE};
 use crate::ContractError;
 use crate::ContractError::EvictionPeriodNotElapsed;
-use account::{GenericMsg, WarpMsgType, WarpMsgsMsg};
+use account::{GenericMsg, WarpMsg};
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Job, JobStatus, UpdateJobMsg,
 };
@@ -391,10 +391,9 @@ pub fn execute_job(
             id: job.id.u64(),
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: account.account.to_string(),
-                msg: to_binary(&account::ExecuteMsg::WarpMsgs(WarpMsgsMsg {
-                    msgs: deps
-                        .querier
-                        .query_wasm_smart::<Vec<WarpMsgType>>(
+                msg: to_binary(&account::ExecuteMsg::WarpMsgs(
+                    deps.querier
+                        .query_wasm_smart::<Vec<WarpMsg>>(
                             config.resolver_address,
                             &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {
                                 msgs: job.msgs,
@@ -408,7 +407,7 @@ pub fn execute_job(
                                 Ok(msgs)
                             }
                         })??,
-                }))?,
+                ))?,
                 funds: vec![],
             }),
             gas_limit: None,

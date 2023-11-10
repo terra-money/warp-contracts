@@ -22,7 +22,7 @@ pub enum ExecuteMsg {
     Generic(GenericMsg),
     WithdrawAssets(WithdrawAssetsMsg),
     IbcTransfer(IbcTransferMsg),
-    WarpMsgs(WarpMsgsMsg),
+    WarpMsgs(Vec<WarpMsg>),
 }
 
 #[cw_serde]
@@ -31,8 +31,9 @@ pub struct GenericMsg {
 }
 
 #[cw_serde]
-pub struct WarpMsgsMsg {
-    pub msgs: Vec<WarpMsgType>,
+pub enum WarpMsg {
+    Generic(CosmosMsg),
+    IbcTransfer(IbcTransferMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, prost::Message)]
@@ -100,8 +101,3 @@ pub enum QueryMsg {
 #[cw_serde]
 pub struct MigrateMsg {}
 
-#[cw_serde]
-pub enum WarpMsgType {
-    Generic(CosmosMsg),
-    IbcTransfer(IbcTransferMsg),
-}

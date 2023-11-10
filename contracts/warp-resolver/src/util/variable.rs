@@ -4,7 +4,7 @@ use crate::util::condition::{
     resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
 };
 use crate::ContractError;
-use account::WarpMsgType;
+use account::WarpMsg;
 use cosmwasm_schema::serde::de::DeserializeOwned;
 use cosmwasm_schema::serde::Serialize;
 use cosmwasm_std::{
@@ -144,8 +144,8 @@ pub fn hydrate_msgs(
     env: Env,
     msgs: String,
     vars: Vec<Variable>,
-) -> Result<Vec<WarpMsgType>, ContractError> {
-    let mut finalized_msgs: Vec<WarpMsgType> = vec![];
+) -> Result<Vec<WarpMsg>, ContractError> {
+    let mut finalized_msgs: Vec<WarpMsg> = vec![];
 
     // split msgs
     for msg in serde_json_wasm::from_str::<Vec<Value>>(&msgs)? {
@@ -202,8 +202,8 @@ pub fn hydrate_msgs(
         // try deserialize the replaced msg in CosmosMsg (for retrocompatibility) or in WasmMsgType
 
         match serde_json_wasm::from_str::<CosmosMsg>(&replaced_msg) {
-            Ok(msg) => finalized_msgs.push(WarpMsgType::Generic(msg)),
-            Err(_) => match serde_json_wasm::from_str::<WarpMsgType>(&replaced_msg) {
+            Ok(msg) => finalized_msgs.push(WarpMsg::Generic(msg)),
+            Err(_) => match serde_json_wasm::from_str::<WarpMsg>(&replaced_msg) {
                 Ok(msg) => finalized_msgs.push(msg),
                 Err(_) => return Err(ContractError::Std(StdError::generic_err(format!("Error during deserialize msg as string into CosmosMsg | WarpMsgType - value: {replaced_msg}"))))
             },

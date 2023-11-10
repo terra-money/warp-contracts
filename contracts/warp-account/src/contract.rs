@@ -2,7 +2,7 @@ use crate::state::CONFIG;
 use crate::ContractError;
 use account::{
     Config, ExecuteMsg, IbcTransferMsg, InstantiateMsg, MigrateMsg, QueryMsg, TimeoutBlock,
-    WarpMsgsMsg, WithdrawAssetsMsg,
+    WarpMsg, WithdrawAssetsMsg,
 };
 use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::CosmosMsg::Stargate;
@@ -100,14 +100,13 @@ pub fn ibc_transfer(env: Env, msg: IbcTransferMsg) -> Result<Response, ContractE
     }))
 }
 
-pub fn execute_warp_msgs(env: Env, msg: WarpMsgsMsg) -> Result<Response, ContractError> {
-    let msgs = msg
-        .msgs
+pub fn execute_warp_msgs(env: Env, msgs: Vec<WarpMsg>) -> Result<Response, ContractError> {
+    let msgs = msgs
         .into_iter()
         .map(|msg| -> Result<CosmosMsg, ContractError> {
             match msg {
-                account::WarpMsgType::Generic(msg) => Ok(msg),
-                account::WarpMsgType::IbcTransfer(msg) => ibc_transfer(env.clone(), msg)
+                account::WarpMsg::Generic(msg) => Ok(msg),
+                account::WarpMsg::IbcTransfer(msg) => ibc_transfer(env.clone(), msg)
                     .map(|val| val.messages.first().unwrap().msg.clone()),
             }
         })

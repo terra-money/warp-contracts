@@ -1,4 +1,4 @@
-use account::WarpMsgType;
+use account::WarpMsg;
 use schemars::_serde_json::json;
 
 use crate::util::variable::{hydrate_msgs, hydrate_vars};
@@ -406,7 +406,7 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
 
     assert_eq!(
         hydrated_msgs[0],
-        WarpMsgType::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
+        WarpMsg::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
             // Because var1.encode = false, contract_addr should use the plain text value
             contract_addr: "static_value_1".to_string(),
             msg: Binary::from(raw_str.as_bytes()),
@@ -416,7 +416,7 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
 
     assert_eq!(
         hydrated_msgs[1],
-        WarpMsgType::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
+        WarpMsg::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
             // Because var3.encode = true, contract_addr should use the encoded value
             contract_addr: encoded_val,
             // msg is not Binary::from(encoded_val.as_bytes()) appears to be a cosmos msg thing, not a warp thing
