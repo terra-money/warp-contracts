@@ -85,11 +85,8 @@ pub fn execute(
         ExecuteMsg::UpdateJob(data) => execute::job::update_job(deps, env, info, data),
         ExecuteMsg::ExecuteJob(data) => execute::job::execute_job(deps, env, info, data),
         ExecuteMsg::EvictJob(data) => execute::job::evict_job(deps, env, info, data),
-
         ExecuteMsg::CreateAccount(data) => execute::account::create_account(deps, env, info, data),
-
         ExecuteMsg::UpdateConfig(data) => execute::controller::update_config(deps, env, info, data),
-
         ExecuteMsg::MigrateAccounts(data) => {
             execute::controller::migrate_accounts(deps, env, info, data)
         }

@@ -68,7 +68,7 @@ pub struct ExecuteApplyVarFnMsg {
 
 #[cw_serde]
 pub struct ExecuteValidateJobCreationMsg {
-    pub condition: String,
+    pub condition: Option<String>,
     pub terminate_condition: Option<String>,
     pub vars: String,
     pub msgs: String,
@@ -76,7 +76,7 @@ pub struct ExecuteValidateJobCreationMsg {
 
 #[cw_serde]
 pub struct QueryValidateJobCreationMsg {
-    pub condition: String,
+    pub condition: Option<String>,
     pub terminate_condition: Option<String>,
     pub vars: String,
     pub msgs: String,
