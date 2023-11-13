@@ -1130,6 +1130,7 @@ dependencies = [
  "cw2 0.16.0",
  "cw20",
  "cw721",
+ "job-account",
  "json-codec-wasm",
  "resolver",
  "schemars",

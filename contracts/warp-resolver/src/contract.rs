@@ -5,11 +5,11 @@ use crate::util::variable::{
 };
 use crate::ContractError;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
 use cw_utils::nonpayable;
+use job_account::WarpMsg;
 use resolver::condition::Condition;
 use resolver::variable::{QueryExpr, Variable};
 use resolver::{
@@ -246,6 +246,7 @@ fn query_validate_job_creation(
 fn query_hydrate_vars(deps: Deps, env: Env, data: QueryHydrateVarsMsg) -> StdResult<String> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
+
     serde_json_wasm::to_string(
         &hydrate_vars(
             deps,
@@ -285,7 +286,7 @@ fn query_hydrate_msgs(
     _deps: Deps,
     _env: Env,
     data: QueryHydrateMsgsMsg,
-) -> StdResult<Vec<CosmosMsg>> {
+) -> StdResult<Vec<WarpMsg>> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 

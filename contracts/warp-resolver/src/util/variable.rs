@@ -9,6 +9,7 @@ use cosmwasm_schema::serde::Serialize;
 use cosmwasm_std::{
     Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, Uint128, Uint256, WasmQuery,
 };
+use job_account::WarpMsg;
 use std::str::FromStr;
 
 use controller::job::{ExternalInput, JobStatus};
@@ -298,7 +299,7 @@ pub fn hydrate_vars(
     Ok(hydrated_vars)
 }
 
-pub fn hydrate_msgs(msgs: String, vars: Vec<Variable>) -> Result<Vec<CosmosMsg>, ContractError> {
+pub fn hydrate_msgs(msgs: String, vars: Vec<Variable>) -> Result<Vec<WarpMsg>, ContractError> {
     let mut replaced_msgs = msgs;
     for var in &vars {
         let (name, replacement) = get_replacement_in_struct(var)?;
@@ -311,7 +312,20 @@ pub fn hydrate_msgs(msgs: String, vars: Vec<Variable>) -> Result<Vec<CosmosMsg>,
         }
     }
 
-    Ok(serde_json_wasm::from_str::<Vec<CosmosMsg>>(&replaced_msgs)?)
+    match serde_json_wasm::from_str::<Vec<WarpMsg>>(&replaced_msgs) {
+        Ok(msgs) => Ok(msgs),
+
+        // fallback to legacy flow
+        Err(_) => {
+            let msgs = serde_json_wasm::from_str::<Vec<CosmosMsg>>(&replaced_msgs)
+                .unwrap()
+                .into_iter()
+                .map(WarpMsg::Generic)
+                .collect();
+
+            Ok(msgs)
+        }
+    }
 }
 
 fn get_replacement_in_struct(var: &Variable) -> Result<(String, String), ContractError> {

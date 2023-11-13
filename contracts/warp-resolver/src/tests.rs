@@ -1,4 +1,5 @@
 use controller::job::Execution;
+use job_account::WarpMsg;
 use resolver::condition::{NumValue, StringEnvValue, StringValue};
 use schemars::_serde_json::json;
 
@@ -433,23 +434,23 @@ fn test_hydrate_static_nested_vars_and_hydrate_msgs() {
 
     assert_eq!(
         hydrated_msgs[0],
-        CosmosMsg::Wasm(WasmMsg::Execute {
+        WarpMsg::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
             // Because var1.encode = false, contract_addr should use the plain text value
             contract_addr: "static_value_1".to_string(),
             msg: Binary::from(raw_str.as_bytes()),
             funds: vec![]
-        })
+        }))
     );
 
     assert_eq!(
         hydrated_msgs[1],
-        CosmosMsg::Wasm(WasmMsg::Execute {
+        WarpMsg::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
             // Because var3.encode = true, contract_addr should use the encoded value
             contract_addr: encoded_val,
             // msg is not Binary::from(encoded_val.as_bytes()) appears to be a cosmos msg thing, not a warp thing
             msg: Binary::from(raw_str.as_bytes()),
             funds: vec![]
-        })
+        }))
     )
 }
 
@@ -571,19 +572,19 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
 
     assert_eq!(
         hydrated_msgs[0],
-        CosmosMsg::Wasm(WasmMsg::Execute {
+        WarpMsg::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: "static_value_1".to_string(),
             msg: Binary::from(raw_str.as_bytes()),
             funds: vec![]
-        })
+        }))
     );
 
     assert_eq!(
         hydrated_msgs[1],
-        CosmosMsg::Wasm(WasmMsg::Execute {
+        WarpMsg::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: dummy_warp_account_addr,
             msg: Binary::from(raw_str.as_bytes()),
             funds: vec![]
-        })
+        }))
     )
 }
