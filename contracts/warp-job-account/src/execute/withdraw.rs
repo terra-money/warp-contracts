@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, CosmosMsg, Deps, DepsMut, Env, Response, StdResult, Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, CosmosMsg, Deps, Env, Response, StdResult, Uint128, WasmMsg,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
@@ -9,7 +9,7 @@ use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use job_account::{Config, WithdrawAssetsMsg};
 
 pub fn withdraw_assets(
-    deps: DepsMut,
+    deps: Deps,
     env: Env,
     data: WithdrawAssetsMsg,
     config: Config,
@@ -20,7 +20,7 @@ pub fn withdraw_assets(
         match asset_info {
             AssetInfo::Native(denom) => {
                 let withdraw_native_msg =
-                    withdraw_asset_native(deps.as_ref(), env.clone(), &config.owner, denom)?;
+                    withdraw_asset_native(deps, env.clone(), &config.owner, denom)?;
 
                 match withdraw_native_msg {
                     None => {}
@@ -29,7 +29,7 @@ pub fn withdraw_assets(
             }
             AssetInfo::Cw20(addr) => {
                 let withdraw_cw20_msg =
-                    withdraw_asset_cw20(deps.as_ref(), env.clone(), &config.owner, addr)?;
+                    withdraw_asset_cw20(deps, env.clone(), &config.owner, addr)?;
 
                 match withdraw_cw20_msg {
                     None => {}
@@ -37,8 +37,7 @@ pub fn withdraw_assets(
                 }
             }
             AssetInfo::Cw721(addr, token_id) => {
-                let withdraw_cw721_msg =
-                    withdraw_asset_cw721(deps.as_ref(), &config.owner, addr, token_id)?;
+                let withdraw_cw721_msg = withdraw_asset_cw721(deps, &config.owner, addr, token_id)?;
                 match withdraw_cw721_msg {
                     None => {}
                     Some(msg) => withdraw_msgs.push(msg),

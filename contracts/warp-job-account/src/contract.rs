@@ -54,9 +54,10 @@ pub fn execute(
             .add_attribute("action", "generic")),
         ExecuteMsg::WithdrawAssets(data) => {
             nonpayable(&info).unwrap();
-            execute::withdraw::withdraw_assets(deps, env, data, config)
+            execute::withdraw::withdraw_assets(deps.as_ref(), env, data, config)
         }
         ExecuteMsg::IbcTransfer(data) => execute::ibc::ibc_transfer(env, data),
+        ExecuteMsg::WarpMsgs(data) => execute::msgs::execute_warp_msgs(deps, env, data, config),
     }
 }
 

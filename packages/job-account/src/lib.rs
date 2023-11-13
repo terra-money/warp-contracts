@@ -28,6 +28,9 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
+    WarpMsgs(WarpMsgs),
+
+    // legacy flow
     Generic(GenericMsg),
     WithdrawAssets(WithdrawAssetsMsg),
     IbcTransfer(IbcTransferMsg),
@@ -36,6 +39,18 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub struct GenericMsg {
     pub msgs: Vec<CosmosMsg>,
+}
+
+#[cw_serde]
+pub struct WarpMsgs {
+    pub msgs: Vec<WarpMsg>,
+}
+
+#[cw_serde]
+pub enum WarpMsg {
+    Generic(CosmosMsg),
+    IbcTransfer(IbcTransferMsg),
+    WithdrawAssets(WithdrawAssetsMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, prost::Message)]
