@@ -1,6 +1,7 @@
 use crate::ContractError;
-use cosmwasm_std::{Env, Response};
-use job_account::{Config, WarpMsg, WarpMsgs};
+use controller::account::{WarpMsg, WarpMsgs};
+use cosmwasm_std::{Deps, Env, Response};
+use job_account::Config;
 
 use cosmwasm_std::{CosmosMsg, DepsMut};
 
@@ -13,8 +14,20 @@ pub fn execute_warp_msgs(
     data: WarpMsgs,
     config: Config,
 ) -> Result<Response, ContractError> {
-    let msgs = data
-        .msgs
+    let msgs = warp_msgs_to_cosmos_msgs(deps.as_ref(), env, data.msgs, config).unwrap();
+
+    Ok(Response::new()
+        .add_messages(msgs)
+        .add_attribute("action", "warp_msgs"))
+}
+
+pub fn warp_msgs_to_cosmos_msgs(
+    deps: Deps,
+    env: Env,
+    msgs: Vec<WarpMsg>,
+    config: Config,
+) -> Result<Vec<CosmosMsg>, ContractError> {
+    let result = msgs
         .into_iter()
         .flat_map(|msg| -> Vec<CosmosMsg> {
             match msg {
@@ -23,7 +36,7 @@ pub fn execute_warp_msgs(
                     .map(extract_messages)
                     .unwrap(),
                 WarpMsg::WithdrawAssets(msg) => {
-                    withdraw_assets(deps.as_ref(), env.clone(), msg, config.clone())
+                    withdraw_assets(deps, env.clone(), msg, config.clone())
                         .map(extract_messages)
                         .unwrap()
                 }
@@ -31,9 +44,7 @@ pub fn execute_warp_msgs(
         })
         .collect::<Vec<CosmosMsg>>();
 
-    Ok(Response::new()
-        .add_messages(msgs)
-        .add_attribute("action", "warp_msgs"))
+    Ok(result)
 }
 
 fn extract_messages(resp: Response) -> Vec<CosmosMsg> {

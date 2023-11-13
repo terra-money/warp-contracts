@@ -1,3 +1,4 @@
+use crate::execute::msgs::warp_msgs_to_cosmos_msgs;
 use crate::state::CONFIG;
 use crate::{execute, query, ContractError};
 use cosmwasm_std::{
@@ -13,18 +14,18 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let instantiated_account_addr = env.contract.address;
+    let instantiated_account_addr = env.contract.address.clone();
+    let config = Config {
+        owner: deps.api.addr_validate(&msg.owner)?,
+        creator_addr: info.sender,
+    };
 
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            owner: deps.api.addr_validate(&msg.owner)?,
-            creator_addr: info.sender,
-        },
-    )?;
+    CONFIG.save(deps.storage, &config)?;
+
+    let msgs = warp_msgs_to_cosmos_msgs(deps.as_ref(), env, msg.msgs, config).unwrap();
 
     Ok(Response::new()
-        .add_messages(msg.msgs.clone())
+        .add_messages(msgs.clone())
         .add_attribute("action", "instantiate")
         .add_attribute("job_id", msg.job_id)
         .add_attribute("contract_addr", instantiated_account_addr)
@@ -34,7 +35,7 @@ pub fn instantiate(
             serde_json_wasm::to_string(&msg.native_funds)?,
         )
         .add_attribute("cw_funds", serde_json_wasm::to_string(&msg.cw_funds)?)
-        .add_attribute("account_msgs", serde_json_wasm::to_string(&msg.msgs)?))
+        .add_attribute("account_msgs", serde_json_wasm::to_string(&msgs)?))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

@@ -4,12 +4,12 @@ use crate::util::condition::{
     resolve_query_expr_string, resolve_query_expr_uint, resolve_ref_bool,
 };
 use crate::ContractError;
+use controller::account::WarpMsg;
 use cosmwasm_schema::serde::de::DeserializeOwned;
 use cosmwasm_schema::serde::Serialize;
 use cosmwasm_std::{
     Binary, CosmosMsg, Decimal256, Deps, Env, QueryRequest, Uint128, Uint256, WasmQuery,
 };
-use job_account::WarpMsg;
 use std::str::FromStr;
 
 use controller::job::{ExternalInput, JobStatus};
@@ -763,7 +763,7 @@ pub fn msgs_valid(msgs: &str, vars: &Vec<Variable>) -> Result<bool, ContractErro
         );
     }
 
-    let _msgs = serde_json_wasm::from_str::<Vec<CosmosMsg>>(&replaced_msgs)?;
+    let _msgs = serde_json_wasm::from_str::<Vec<WarpMsg>>(&replaced_msgs)?;
 
     Ok(true)
 }

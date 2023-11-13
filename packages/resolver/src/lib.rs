@@ -1,9 +1,12 @@
 pub mod condition;
 pub mod variable;
 
-use controller::job::{Execution, ExternalInput, JobStatus};
+use controller::{
+    account::WarpMsg,
+    job::{Execution, ExternalInput, JobStatus},
+};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{CosmosMsg, QueryRequest};
+use cosmwasm_std::QueryRequest;
 #[cw_serde]
 pub struct InstantiateMsg {}
 
@@ -30,7 +33,7 @@ pub enum QueryMsg {
     QueryResolveCondition(QueryResolveConditionMsg),
     #[returns(String)]
     QueryApplyVarFn(QueryApplyVarFnMsg),
-    #[returns(Vec<CosmosMsg>)]
+    #[returns(Vec<WarpMsg>)]
     QueryHydrateMsgs(QueryHydrateMsgsMsg),
 }
 

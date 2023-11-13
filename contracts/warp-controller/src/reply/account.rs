@@ -1,11 +1,14 @@
 use cosmwasm_std::{Coin, CosmosMsg, DepsMut, Env, Reply, Response, StdError};
 
-use controller::{account::CwFund, Config};
+use controller::{
+    account::{CwFund, WarpMsg},
+    Config,
+};
 
 use crate::{
     state::JobQueue,
     util::msg::{
-        build_account_execute_generic_msgs, build_taken_account_msg, build_transfer_cw20_msg,
+        build_account_execute_warp_msgs, build_taken_account_msg, build_transfer_cw20_msg,
         build_transfer_cw721_msg, build_transfer_native_funds_msg,
     },
     ContractError,
@@ -77,7 +80,7 @@ pub fn create_job_account_and_job(
             .value,
     )?;
 
-    let account_msgs: Option<Vec<CosmosMsg>> = serde_json_wasm::from_str(
+    let account_msgs: Option<Vec<WarpMsg>> = serde_json_wasm::from_str(
         &event
             .attributes
             .iter()
@@ -126,7 +129,7 @@ pub fn create_job_account_and_job(
 
     if let Some(account_msgs) = account_msgs {
         // Account execute msgs
-        msgs.push(build_account_execute_generic_msgs(
+        msgs.push(build_account_execute_warp_msgs(
             job_account_addr.to_string(),
             account_msgs,
         ));

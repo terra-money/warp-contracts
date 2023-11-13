@@ -42,7 +42,6 @@ cw721 = "0.16.0"
 cw-utils = "0.16"
 resolver = { path = "../../packages/resolver", default-features = false, version = "*" }
 controller = { path = "../../packages/controller", default-features = false, version = "*" }
-job-account = { path = "../../packages/job-account", default-features = false, version = "*" }
 schemars = "0.8"
 thiserror = "1"
 serde-json-wasm = "0.4.1"

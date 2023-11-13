@@ -4,12 +4,12 @@ use crate::util::variable::{
     vars_valid,
 };
 use crate::ContractError;
+use controller::account::WarpMsg;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
 use cw_utils::nonpayable;
-use job_account::WarpMsg;
 use resolver::condition::Condition;
 use resolver::variable::{QueryExpr, Variable};
 use resolver::{

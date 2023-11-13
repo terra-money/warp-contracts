@@ -1,5 +1,7 @@
 use crate::state::{JobQueue, STATE};
+use crate::util::msg::build_account_execute_warp_msgs;
 use crate::ContractError;
+use controller::account::WarpMsgs;
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Execution, Job, JobStatus, UpdateJobMsg,
 };
@@ -14,15 +16,14 @@ use crate::{
         fee::deduct_reward_and_fee_from_native_funds,
         legacy_account::is_legacy_account,
         msg::{
-            build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-            build_free_account_msg, build_instantiate_warp_account_msg, build_taken_account_msg,
-            build_transfer_cw20_msg, build_transfer_cw721_msg, build_transfer_native_funds_msg,
+            build_account_withdraw_assets_msg, build_free_account_msg,
+            build_instantiate_warp_account_msg, build_taken_account_msg, build_transfer_cw20_msg,
+            build_transfer_cw721_msg, build_transfer_native_funds_msg,
         },
     },
 };
 
 use controller::{account::CwFund, Config};
-use job_account::GenericMsg;
 use job_account_tracker::FirstFreeAccountResponse;
 use resolver::QueryHydrateMsgsMsg;
 
@@ -192,7 +193,7 @@ pub fn create_job(
 
             if let Some(account_msgs) = data.account_msgs {
                 // Account execute msgs
-                msgs.push(build_account_execute_generic_msgs(
+                msgs.push(build_account_execute_warp_msgs(
                     available_account_addr.to_string(),
                     account_msgs,
                 ));
@@ -388,7 +389,7 @@ pub fn execute_job(
                     id: data.id.u64(),
                     msg: CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: job.account.to_string(),
-                        msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
+                        msg: to_binary(&job_account::ExecuteMsg::WarpMsgs(WarpMsgs {
                             msgs: deps.querier.query_wasm_smart(
                                 config.resolver_address,
                                 &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {

@@ -1,7 +1,10 @@
 use cosmwasm_std::{to_binary, BankMsg, Coin, CosmosMsg, Uint128, Uint64, WasmMsg};
 
-use controller::account::{AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
-use job_account::{GenericMsg, WithdrawAssetsMsg};
+use controller::account::{
+    AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg, WarpMsg, WarpMsgs,
+    WithdrawAssetsMsg,
+};
+use job_account::GenericMsg;
 use job_account_tracker::{FreeAccountMsg, TakeAccountMsg};
 
 #[allow(clippy::too_many_arguments)]
@@ -12,7 +15,7 @@ pub fn build_instantiate_warp_account_msg(
     account_owner: String,
     native_funds: Vec<Coin>,
     cw_funds: Option<Vec<CwFund>>,
-    msgs: Option<Vec<CosmosMsg>>,
+    msgs: Option<Vec<WarpMsg>>,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Instantiate {
         admin: Some(admin_addr),
@@ -122,6 +125,20 @@ pub fn build_account_execute_generic_msgs(
         contract_addr: account_addr,
         msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
             msgs: cosmos_msgs_for_account_to_execute,
+        }))
+        .unwrap(),
+        funds: vec![],
+    })
+}
+
+pub fn build_account_execute_warp_msgs(
+    account_addr: String,
+    warp_msgs_for_account_to_execute: Vec<WarpMsg>,
+) -> CosmosMsg {
+    CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: account_addr,
+        msg: to_binary(&job_account::ExecuteMsg::WarpMsgs(WarpMsgs {
+            msgs: warp_msgs_for_account_to_execute,
         }))
         .unwrap(),
         funds: vec![],

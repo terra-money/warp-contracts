@@ -5,8 +5,8 @@ use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
 
 use crate::ContractError;
-use controller::account::{AssetInfo, Cw721ExecuteMsg};
-use job_account::{Config, WithdrawAssetsMsg};
+use controller::account::{AssetInfo, Cw721ExecuteMsg, WithdrawAssetsMsg};
+use job_account::Config;
 
 pub fn withdraw_assets(
     deps: Deps,

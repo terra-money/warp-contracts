@@ -1,7 +1,7 @@
 use crate::ContractError;
+use controller::account::{IbcTransferMsg, TimeoutBlock};
 use cosmwasm_std::CosmosMsg::Stargate;
 use cosmwasm_std::{Env, Response};
-use job_account::{IbcTransferMsg, TimeoutBlock};
 use prost::Message;
 
 pub fn ibc_transfer(env: Env, data: IbcTransferMsg) -> Result<Response, ContractError> {
