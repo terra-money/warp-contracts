@@ -1,5 +1,7 @@
 mod deploy;
+mod migrate;
 
 fn main() {
-    println!("Hello, world!");
+    let _ = deploy::deploy();
+    // let _ = migrate::migrate();
 }

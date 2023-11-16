@@ -1,15 +1,18 @@
 #[cfg(feature = "interface")]
-mod warp_controller;
+pub mod warp_controller;
 #[cfg(feature = "interface")]
-mod warp_job_account;
+pub mod warp_job_account;
 #[cfg(feature = "interface")]
-mod warp_job_account_tracker;
+pub mod warp_job_account_tracker;
 #[cfg(feature = "interface")]
-mod warp_legacy_account;
+pub mod warp_legacy_account;
 #[cfg(feature = "interface")]
-mod warp_resolver;
+pub mod warp_resolver;
 #[cfg(feature = "interface")]
-mod warp_templates;
+pub mod warp_templates;
+#[cfg(feature = "interface")]
+
+pub mod warp_funding_account;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
