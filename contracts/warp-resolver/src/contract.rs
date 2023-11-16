@@ -6,7 +6,7 @@ use crate::util::variable::{
 use crate::ContractError;
 use controller::account::WarpMsg;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
 use cw_utils::nonpayable;
@@ -178,16 +178,16 @@ pub fn execute_hydrate_msgs(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::SimulateQuery(data) => to_binary(&query_simulate_query(deps, env, data)?),
+        QueryMsg::SimulateQuery(data) => to_json_binary(&query_simulate_query(deps, env, data)?),
         QueryMsg::QueryValidateJobCreation(data) => {
-            to_binary(&query_validate_job_creation(deps, env, data)?)
+            to_json_binary(&query_validate_job_creation(deps, env, data)?)
         }
-        QueryMsg::QueryHydrateVars(data) => to_binary(&query_hydrate_vars(deps, env, data)?),
+        QueryMsg::QueryHydrateVars(data) => to_json_binary(&query_hydrate_vars(deps, env, data)?),
         QueryMsg::QueryResolveCondition(data) => {
-            to_binary(&query_resolve_condition(deps, env, data)?)
+            to_json_binary(&query_resolve_condition(deps, env, data)?)
         }
-        QueryMsg::QueryApplyVarFn(data) => to_binary(&query_apply_var_fn(deps, env, data)?),
-        QueryMsg::QueryHydrateMsgs(data) => to_binary(&query_hydrate_msgs(deps, env, data)?),
+        QueryMsg::QueryApplyVarFn(data) => to_json_binary(&query_apply_var_fn(deps, env, data)?),
+        QueryMsg::QueryHydrateMsgs(data) => to_json_binary(&query_hydrate_msgs(deps, env, data)?),
     }
 }
 

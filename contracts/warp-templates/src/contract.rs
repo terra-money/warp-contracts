@@ -1,7 +1,7 @@
 use crate::state::{CONFIG, QUERY_PAGE_SIZE, STATE, TEMPLATES};
 use crate::ContractError;
 use cosmwasm_std::{
-    entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+    entry_point, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Order, Response, StdError, StdResult, Uint64,
 };
 use cw_storage_plus::Bound;
@@ -71,9 +71,9 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::QueryTemplate(data) => to_binary(&query_template(deps, env, data)?),
-        QueryMsg::QueryTemplates(data) => to_binary(&query_templates(deps, env, data)?),
-        QueryMsg::QueryConfig(data) => to_binary(&query_config(deps, env, data)?),
+        QueryMsg::QueryTemplate(data) => to_json_binary(&query_template(deps, env, data)?),
+        QueryMsg::QueryTemplates(data) => to_json_binary(&query_templates(deps, env, data)?),
+        QueryMsg::QueryConfig(data) => to_json_binary(&query_config(deps, env, data)?),
     }
 }
 

@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, BankMsg, Coin, CosmosMsg, Uint128, Uint64, WasmMsg};
+use cosmwasm_std::{to_json_binary, BankMsg, Coin, CosmosMsg, Uint128, Uint64, WasmMsg};
 
 use controller::account::{
     AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg, WarpMsg, WarpMsgs,
@@ -20,7 +20,7 @@ pub fn build_instantiate_warp_account_msg(
     CosmosMsg::Wasm(WasmMsg::Instantiate {
         admin: Some(admin_addr),
         code_id,
-        msg: to_binary(&job_account::InstantiateMsg {
+        msg: to_json_binary(&job_account::InstantiateMsg {
             owner: account_owner.clone(),
             job_id,
             native_funds: native_funds.clone(),
@@ -41,7 +41,7 @@ pub fn build_free_account_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: job_account_tracker_addr,
-        msg: to_binary(&job_account_tracker::ExecuteMsg::FreeAccount(
+        msg: to_json_binary(&job_account_tracker::ExecuteMsg::FreeAccount(
             FreeAccountMsg {
                 account_owner_addr,
                 account_addr,
@@ -61,7 +61,7 @@ pub fn build_taken_account_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: job_account_tracker_addr,
-        msg: to_binary(&job_account_tracker::ExecuteMsg::TakeAccount(
+        msg: to_json_binary(&job_account_tracker::ExecuteMsg::TakeAccount(
             TakeAccountMsg {
                 account_owner_addr,
                 account_addr,
@@ -81,7 +81,7 @@ pub fn build_transfer_cw20_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw20_token_contract_addr,
-        msg: to_binary(&FundTransferMsgs::TransferFrom(TransferFromMsg {
+        msg: to_json_binary(&FundTransferMsgs::TransferFrom(TransferFromMsg {
             owner: owner_addr,
             recipient: recipient_addr,
             amount,
@@ -98,7 +98,7 @@ pub fn build_transfer_cw721_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw721_token_contract_addr,
-        msg: to_binary(&FundTransferMsgs::TransferNft(TransferNftMsg {
+        msg: to_json_binary(&FundTransferMsgs::TransferNft(TransferNftMsg {
             recipient: recipient_addr,
             token_id,
         }))
@@ -123,7 +123,7 @@ pub fn build_account_execute_generic_msgs(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_addr,
-        msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
+        msg: to_json_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
             msgs: cosmos_msgs_for_account_to_execute,
         }))
         .unwrap(),
@@ -137,7 +137,7 @@ pub fn build_account_execute_warp_msgs(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_addr,
-        msg: to_binary(&job_account::ExecuteMsg::WarpMsgs(WarpMsgs {
+        msg: to_json_binary(&job_account::ExecuteMsg::WarpMsgs(WarpMsgs {
             msgs: warp_msgs_for_account_to_execute,
         }))
         .unwrap(),
@@ -151,7 +151,7 @@ pub fn build_account_withdraw_assets_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_addr,
-        msg: to_binary(&job_account::ExecuteMsg::WithdrawAssets(
+        msg: to_json_binary(&job_account::ExecuteMsg::WithdrawAssets(
             WithdrawAssetsMsg {
                 asset_infos: assets_to_withdraw,
             },

@@ -2,7 +2,7 @@ use crate::util::path::resolve_path;
 use crate::util::variable::get_var;
 use crate::ContractError;
 use cosmwasm_std::{
-    to_vec, ContractResult, Decimal256, Deps, Env, StdError, SystemResult, Uint256,
+    to_json_vec, ContractResult, Decimal256, Deps, Env, StdError, SystemResult, Uint256,
 };
 use cw_storage_plus::KeyDeserialize;
 use json_codec_wasm::ast::Ref;
@@ -577,7 +577,7 @@ pub fn resolve_str_op(_deps: Deps, _env: Env, left: String, right: String, op: S
 }
 
 pub fn resolve_query_expr(deps: Deps, _env: Env, expr: QueryExpr) -> Result<String, ContractError> {
-    let raw = to_vec(&expr.query).map_err(|serialize_err| {
+    let raw = to_json_vec(&expr.query).map_err(|serialize_err| {
         StdError::generic_err(format!("Serializing QueryRequest: {}", serialize_err))
     })?;
 

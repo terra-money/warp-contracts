@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, Deps, Env, MessageInfo, Response, WasmMsg};
+use cosmwasm_std::{to_json_binary, Deps, Env, MessageInfo, Response, WasmMsg};
 
 use crate::ContractError;
 use controller::{Config, MigrateJobAccountsMsg};
@@ -31,7 +31,7 @@ pub fn migrate_free_job_accounts(
         migration_msgs.push(WasmMsg::Migrate {
             contract_addr: job_account.addr.to_string(),
             new_code_id: msg.warp_job_account_code_id.u64(),
-            msg: to_binary(&MigrateMsg {})?,
+            msg: to_json_binary(&MigrateMsg {})?,
         });
     }
 
@@ -63,7 +63,7 @@ pub fn migrate_taken_job_accounts(
         migration_msgs.push(WasmMsg::Migrate {
             contract_addr: job_account.addr.to_string(),
             new_code_id: msg.warp_job_account_code_id.u64(),
-            msg: to_binary(&MigrateMsg {})?,
+            msg: to_json_binary(&MigrateMsg {})?,
         });
     }
 

@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
     Uint64,
 };
 use cw_utils::{must_pay, nonpayable};
@@ -151,21 +151,21 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::QueryJob(data) => to_binary(&query::job::query_job(deps, env, data)?),
-        QueryMsg::QueryJobs(data) => to_binary(&query::job::query_jobs(deps, env, data)?),
+        QueryMsg::QueryJob(data) => to_json_binary(&query::job::query_job(deps, env, data)?),
+        QueryMsg::QueryJobs(data) => to_json_binary(&query::job::query_jobs(deps, env, data)?),
 
         // For job account, please query it via the account tracker contract
         QueryMsg::QueryLegacyAccount(data) => {
-            to_binary(&query::account::query_legacy_account(deps, env, data)?)
+            to_json_binary(&query::account::query_legacy_account(deps, env, data)?)
         }
         QueryMsg::QueryLegacyAccounts(data) => {
-            to_binary(&query::account::query_legacy_accounts(deps, env, data)?)
+            to_json_binary(&query::account::query_legacy_accounts(deps, env, data)?)
         }
 
         QueryMsg::QueryConfig(data) => {
-            to_binary(&query::controller::query_config(deps, env, data)?)
+            to_json_binary(&query::controller::query_config(deps, env, data)?)
         }
-        QueryMsg::QueryState(data) => to_binary(&query::controller::query_state(deps, env, data)?),
+        QueryMsg::QueryState(data) => to_json_binary(&query::controller::query_state(deps, env, data)?),
     }
 }
 

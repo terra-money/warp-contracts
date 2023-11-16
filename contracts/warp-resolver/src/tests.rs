@@ -7,7 +7,7 @@ use crate::util::variable::{hydrate_msgs, hydrate_vars};
 
 use cosmwasm_std::{testing::mock_env, WasmQuery};
 use cosmwasm_std::{
-    to_binary, BankQuery, Binary, ContractResult, CosmosMsg, OwnedDeps, Uint256, WasmMsg,
+    to_json_binary, BankQuery, Binary, ContractResult, CosmosMsg, OwnedDeps, Uint256, WasmMsg,
 };
 
 use crate::contract::query;
@@ -116,13 +116,13 @@ impl WasmMockQuerier {
                 })
                 .to_string();
 
-                SystemResult::Ok(ContractResult::Ok(to_binary(&response).unwrap()))
+                SystemResult::Ok(ContractResult::Ok(to_json_binary(&response).unwrap()))
             }
             QueryRequest::Bank(BankQuery::Balance {
                 address: contract_addr,
                 denom: _,
             }) => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&contract_addr.to_string()).unwrap(),
+                to_json_binary(&contract_addr.to_string()).unwrap(),
             )),
             _ => self.base.handle_query(request),
         }

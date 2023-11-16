@@ -6,7 +6,7 @@ use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Execution, Job, JobStatus, UpdateJobMsg,
 };
 use cosmwasm_std::{
-    to_binary, Attribute, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
+    to_json_binary, Attribute, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
     SubMsg, Uint128, Uint64, WasmMsg,
 };
 
@@ -389,7 +389,7 @@ pub fn execute_job(
                     id: data.id.u64(),
                     msg: CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: job.account.to_string(),
-                        msg: to_binary(&job_account::ExecuteMsg::WarpMsgs(WarpMsgs {
+                        msg: to_json_binary(&job_account::ExecuteMsg::WarpMsgs(WarpMsgs {
                             msgs: deps.querier.query_wasm_smart(
                                 config.resolver_address,
                                 &resolver::QueryMsg::QueryHydrateMsgs(QueryHydrateMsgsMsg {

@@ -1,7 +1,7 @@
 use crate::state::CONFIG;
 use crate::{execute, query, ContractError};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 use cw_utils::nonpayable;
 use job_account_tracker::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -58,15 +58,15 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::QueryConfig(_) => to_binary(&query::account::query_config(deps)?),
+        QueryMsg::QueryConfig(_) => to_json_binary(&query::account::query_config(deps)?),
         QueryMsg::QueryTakenAccounts(data) => {
-            to_binary(&query::account::query_taken_accounts(deps, data)?)
+            to_json_binary(&query::account::query_taken_accounts(deps, data)?)
         }
         QueryMsg::QueryFreeAccounts(data) => {
-            to_binary(&query::account::query_free_accounts(deps, data)?)
+            to_json_binary(&query::account::query_free_accounts(deps, data)?)
         }
         QueryMsg::QueryFirstFreeAccount(data) => {
-            to_binary(&query::account::query_first_free_account(deps, data)?)
+            to_json_binary(&query::account::query_first_free_account(deps, data)?)
         }
     }
 }
