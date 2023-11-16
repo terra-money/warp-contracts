@@ -7,6 +7,7 @@ edition = "2021"
 [features]
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
+interface = ["dep:cw-orch"] # Enables cw-orch when the feature is enabled
 
 [dependencies]
 cosmwasm-std = "1.1"
@@ -19,6 +20,7 @@ prost = "0.11.9"
 cw20 = "0.16"
 cw721 = "0.16.0"
 serde-json-wasm = "0.4.1"
+cw-orch = {version = "0.18.1", optional = true } # Latest version at time of writing
 
 [dev-dependencies]
 cw-multi-test = "0.16"
