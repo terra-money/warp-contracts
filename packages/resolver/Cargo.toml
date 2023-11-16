@@ -7,13 +7,13 @@ edition = "2021"
 [features]
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
-interface = ["dep:cw-orch"] # Enables cw-orch when the feature is enabled
+interface = ["dep:cw-orch"]
 
 [dependencies]
 cosmwasm-std = "1.1"
 cosmwasm-schema = "1.1"
 controller = { path = "../controller" }
-cw-orch = {version = "0.18.1", optional = true } # Latest version at time of writing
+cw-orch = {version = "0.18.1", optional = true }
 
 [dev-dependencies]
 cw-multi-test = "0.16"
