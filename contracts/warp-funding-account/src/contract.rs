@@ -2,7 +2,7 @@ use crate::state::CONFIG;
 use crate::ContractError;
 use controller::account::execute_warp_msgs;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 use funding_account::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
@@ -49,7 +49,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config => {
             let config = CONFIG.load(deps.storage)?;
-            to_binary(&config)
+            to_json_binary(&config)
         }
     }
 }

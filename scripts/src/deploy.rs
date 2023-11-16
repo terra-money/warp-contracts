@@ -1,9 +1,7 @@
-use std::io::Error;
 use cosmwasm_std::Uint64;
 use cw_orch::anyhow;
 use cw_orch::prelude::*;
 use tokio::runtime::Runtime;
-use controller::InstantiateMsg;
 use interface::warp_controller::WarpController;
 use interface::warp_funding_account::WarpFundingAccount;
 use interface::warp_job_account::WarpJobAccount;
@@ -37,7 +35,7 @@ pub fn deploy() -> anyhow::Result<()>{
         warp_addr: "".to_string(),
     }, Some(&Addr::unchecked(chain.wallet().address()?.to_string())), None)?;
 
-    let legacy_account = WarpLegacyAccount::new("warp_legacy_account", chain.clone())
+    let legacy_account = WarpLegacyAccount::new("warp_legacy_account", chain.clone());
     legacy_account.upload()?;
 
     let resolver = WarpResolver::new("warp_resolver", chain.clone());
@@ -53,7 +51,7 @@ pub fn deploy() -> anyhow::Result<()>{
         templates: vec![],
     }, Some(&Addr::unchecked(chain.wallet().address()?.to_string())), None)?;
 
-    let controller = WarpController::new("warp_controller", chain);
+    let controller = WarpController::new("warp_controller", chain.clone());
 
     controller.upload()?;
     controller.instantiate(&controller::InstantiateMsg {

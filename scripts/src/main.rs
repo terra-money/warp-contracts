@@ -3,5 +3,5 @@ mod migrate;
 
 fn main() {
     let _ = deploy::deploy();
-    // let _ = migrate::migrate();
+    let _ = migrate::migrate();
 }
