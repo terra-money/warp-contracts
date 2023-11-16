@@ -2,7 +2,6 @@ use std::env::current_dir;
 use std::fs::create_dir_all;
 
 use controller::{
-    account::{FundingAccountResponse, FundingAccountsResponse},
     job::{JobResponse, JobsResponse},
 };
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
@@ -19,6 +18,4 @@ fn main() {
     export_schema(&schema_for!(Config), &out_dir);
     export_schema(&schema_for!(JobResponse), &out_dir);
     export_schema(&schema_for!(JobsResponse), &out_dir);
-    export_schema(&schema_for!(FundingAccountResponse), &out_dir);
-    export_schema(&schema_for!(FundingAccountsResponse), &out_dir);
 }

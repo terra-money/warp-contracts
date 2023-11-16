@@ -13,7 +13,7 @@ use cosmwasm_std::{
 use crate::contract::query;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{mock_info, MockApi, MockQuerier, MockStorage};
-use cosmwasm_std::{from_slice, Empty, Querier, QueryRequest, SystemError, SystemResult};
+use cosmwasm_std::{from_json, Empty, Querier, QueryRequest, SystemError, SystemResult};
 
 use resolver::variable::{
     FnValue, QueryExpr, QueryVariable, StaticVariable, Variable, VariableKind,
@@ -82,7 +82,7 @@ pub struct WasmMockQuerier {
 
 impl Querier for WasmMockQuerier {
     fn raw_query(&self, bin_request: &[u8]) -> SystemResult<ContractResult<Binary>> {
-        let request: QueryRequest<Empty> = match from_slice(bin_request) {
+        let request: QueryRequest<Empty> = match from_json(bin_request) {
             Ok(v) => v,
             Err(e) => {
                 return SystemResult::Err(SystemError::InvalidRequest {
