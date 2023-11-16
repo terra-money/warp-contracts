@@ -1,5 +1,5 @@
 use controller::account::{AssetInfo, CwFund};
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, CosmosMsg};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -18,6 +18,7 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
+#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
 pub enum ExecuteMsg {
     Generic(GenericMsg),
     WithdrawAssets(WithdrawAssetsMsg),
@@ -86,8 +87,11 @@ pub struct WithdrawAssetsMsg {
 #[cw_serde]
 pub struct ExecuteWasmMsg {}
 
+#[derive(QueryResponses)]
 #[cw_serde]
+#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
 pub enum QueryMsg {
+    #[returns(Config)]
     Config,
 }
 

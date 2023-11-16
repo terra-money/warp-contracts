@@ -1,0 +1,23 @@
+[package]
+name = "interface"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cw-orch = "0.18.1"
+
+warp-controller = { path = "../../contracts/warp-controller", default-features = false, version = "*" }
+warp-job-account = { path = "../../contracts/warp-job-account", default-features = false, version = "*" }
+warp-job-account-tracker = { path = "../../contracts/warp-job-account-tracker", default-features = false, version = "*" }
+warp-legacy-account = { path = "../../contracts/warp-legacy-account", default-features = false, version = "*" }
+warp-resolver = { path = "../../contracts/warp-resolver", default-features = false, version = "*" }
+warp-templates = { path = "../../contracts/warp-templates", default-features = false, version = "*" }
+
+controller = { path = "../controller", default-features = false, version = "*" }
+job-account = { path = "../job-account", default-features = false, version = "*" }
+job-account-tracker = { path = "../job-account-tracker", default-features = false, version = "*" }
+legacy-account = { path = "../legacy-account", default-features = false, version = "*" }
+resolver = { path = "../resolver", default-features = false, version = "*" }
+templates = { path = "../templates", default-features = false, version = "*" }

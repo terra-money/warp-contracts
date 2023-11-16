@@ -16,6 +16,7 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
+#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
 pub enum ExecuteMsg {
     TakeAccount(TakeAccountMsg),
     FreeAccount(FreeAccountMsg),
@@ -37,6 +38,7 @@ pub struct FreeAccountMsg {
 
 #[derive(QueryResponses)]
 #[cw_serde]
+#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
 pub enum QueryMsg {
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
