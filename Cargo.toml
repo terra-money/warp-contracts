@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "contracts/*",
-    "packages/*"
+    "packages/*",
+    "scripts"
 ]
 exclude = [
 ]
