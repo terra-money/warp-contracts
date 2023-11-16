@@ -1,8 +1,7 @@
 use cw_orch::{interface, prelude::*};
 
-use warp_templates::contract;
 pub use templates::{ExecuteMsg, InstantiateMsg, QueryMsg};
-
+use warp_templates::contract;
 
 #[interface(InstantiateMsg, ExecuteMsg, QueryMsg, Empty)]
 pub struct WarpTemplates;
@@ -22,7 +21,7 @@ impl<Chain: CwEnv> Uploadable for WarpTemplates<Chain> {
                 contract::instantiate,
                 contract::query,
             )
-                .with_migrate(contract::migrate),
+            .with_migrate(contract::migrate),
         )
     }
 }

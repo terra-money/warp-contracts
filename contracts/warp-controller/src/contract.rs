@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
-    Uint64,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    StdResult, Uint64,
 };
 use cw_utils::{must_pay, nonpayable};
 
@@ -165,7 +165,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryConfig(data) => {
             to_json_binary(&query::controller::query_config(deps, env, data)?)
         }
-        QueryMsg::QueryState(data) => to_json_binary(&query::controller::query_state(deps, env, data)?),
+        QueryMsg::QueryState(data) => {
+            to_json_binary(&query::controller::query_state(deps, env, data)?)
+        }
     }
 }
 

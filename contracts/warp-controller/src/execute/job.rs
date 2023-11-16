@@ -6,8 +6,8 @@ use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Execution, Job, JobStatus, UpdateJobMsg,
 };
 use cosmwasm_std::{
-    to_json_binary, Attribute, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
-    SubMsg, Uint128, Uint64, WasmMsg,
+    to_json_binary, Attribute, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response,
+    StdResult, SubMsg, Uint128, Uint64, WasmMsg,
 };
 
 use crate::{

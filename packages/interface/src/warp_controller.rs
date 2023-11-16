@@ -1,7 +1,7 @@
 use cw_orch::{interface, prelude::*};
 
-use warp_controller::contract;
 pub use controller::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use warp_controller::contract;
 
 #[interface(InstantiateMsg, ExecuteMsg, QueryMsg, Empty)]
 pub struct WarpController;
@@ -21,7 +21,7 @@ impl<Chain: CwEnv> Uploadable for WarpController<Chain> {
                 contract::instantiate,
                 contract::query,
             )
-                .with_migrate(contract::migrate),
+            .with_migrate(contract::migrate),
         )
     }
 }

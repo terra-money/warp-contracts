@@ -1,8 +1,7 @@
 use cw_orch::{interface, prelude::*};
 
-use warp_job_account::contract;
 pub use job_account::{ExecuteMsg, InstantiateMsg, QueryMsg};
-
+use warp_job_account::contract;
 
 #[interface(InstantiateMsg, ExecuteMsg, QueryMsg, Empty)]
 pub struct WarpJobAccount;
@@ -22,7 +21,7 @@ impl<Chain: CwEnv> Uploadable for WarpJobAccount<Chain> {
                 contract::instantiate,
                 contract::query,
             )
-                .with_migrate(contract::migrate),
+            .with_migrate(contract::migrate),
         )
     }
 }

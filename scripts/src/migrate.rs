@@ -1,5 +1,5 @@
 use cw_orch::anyhow;
 
-pub fn migrate() -> anyhow::Result<()>{
+pub fn migrate() -> anyhow::Result<()> {
     Ok(())
 }

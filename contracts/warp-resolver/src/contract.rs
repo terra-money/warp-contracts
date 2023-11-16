@@ -6,7 +6,8 @@ use crate::util::variable::{
 use crate::ContractError;
 use controller::account::WarpMsg;
 use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult,
 };
 
 use cw_utils::nonpayable;
