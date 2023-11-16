@@ -90,6 +90,7 @@ pub struct InstantiateMsg {
 
 //execute
 #[cw_serde]
+#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
 pub enum ExecuteMsg {
     CreateJob(Box<CreateJobMsg>),
     DeleteJob(Box<DeleteJobMsg>),
@@ -157,6 +158,7 @@ pub struct MigrateJobsMsg {
 //query
 #[derive(QueryResponses)]
 #[cw_serde]
+#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
 pub enum QueryMsg {
     #[returns(JobResponse)]
     QueryJob(QueryJobMsg),

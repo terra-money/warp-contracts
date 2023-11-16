@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate};
 use crate::ContractError;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DistributionMsg, GovMsg, IbcMsg, IbcTimeout,
+    to_json_binary, BankMsg, Coin, CosmosMsg, DistributionMsg, GovMsg, IbcMsg, IbcTimeout,
     IbcTimeoutBlock, Response, StakingMsg, Uint128, Uint64, VoteOption, WasmMsg,
 };
 use job_account::{ExecuteMsg, GenericMsg, InstantiateMsg};
@@ -30,7 +30,7 @@ fn test_execute_controller() {
         msgs: vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
-                msg: to_binary("test").unwrap(),
+                msg: to_json_binary("test").unwrap(),
                 funds: vec![Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
@@ -85,7 +85,7 @@ fn test_execute_controller() {
             .add_messages(vec![
                 CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: "contract".to_string(),
-                    msg: to_binary("test").unwrap(),
+                    msg: to_json_binary("test").unwrap(),
                     funds: vec![Coin {
                         denom: "coin".to_string(),
                         amount: Uint128::new(100)
@@ -155,7 +155,7 @@ fn test_execute_owner() {
         msgs: vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
-                msg: to_binary("test").unwrap(),
+                msg: to_json_binary("test").unwrap(),
                 funds: vec![Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
@@ -212,7 +212,7 @@ fn test_execute_owner() {
             .add_messages(vec![
                 CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: "contract".to_string(),
-                    msg: to_binary("test").unwrap(),
+                    msg: to_json_binary("test").unwrap(),
                     funds: vec![Coin {
                         denom: "coin".to_string(),
                         amount: Uint128::new(100)
@@ -282,7 +282,7 @@ fn test_execute_unauth() {
         msgs: vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
-                msg: to_binary("test").unwrap(),
+                msg: to_json_binary("test").unwrap(),
                 funds: vec![Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),

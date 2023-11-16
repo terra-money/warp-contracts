@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, DepsMut, MessageInfo, Order, Response, WasmMsg};
+use cosmwasm_std::{to_json_binary, DepsMut, MessageInfo, Order, Response, WasmMsg};
 use cw_storage_plus::Bound;
 
 use crate::{state::LEGACY_ACCOUNTS, ContractError};
@@ -32,7 +32,7 @@ pub fn migrate_legacy_accounts(
         migration_msgs.push(WasmMsg::Migrate {
             contract_addr: account_address.to_string(),
             new_code_id: msg.warp_legacy_account_code_id.u64(),
-            msg: to_binary(&legacy_account::MigrateMsg {})?,
+            msg: to_json_binary(&legacy_account::MigrateMsg {})?,
         })
     }
 

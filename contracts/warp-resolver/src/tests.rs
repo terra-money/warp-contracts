@@ -7,13 +7,13 @@ use crate::util::variable::{hydrate_msgs, hydrate_vars};
 
 use cosmwasm_std::{testing::mock_env, WasmQuery};
 use cosmwasm_std::{
-    to_binary, BankQuery, Binary, ContractResult, CosmosMsg, OwnedDeps, Uint256, WasmMsg,
+    to_json_binary, BankQuery, Binary, ContractResult, CosmosMsg, OwnedDeps, Uint256, WasmMsg,
 };
 
 use crate::contract::query;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{mock_info, MockApi, MockQuerier, MockStorage};
-use cosmwasm_std::{from_slice, Empty, Querier, QueryRequest, SystemError, SystemResult};
+use cosmwasm_std::{from_json, Empty, Querier, QueryRequest, SystemError, SystemResult};
 
 use resolver::variable::{
     FnValue, QueryExpr, QueryVariable, StaticVariable, Variable, VariableKind,
@@ -82,7 +82,7 @@ pub struct WasmMockQuerier {
 
 impl Querier for WasmMockQuerier {
     fn raw_query(&self, bin_request: &[u8]) -> SystemResult<ContractResult<Binary>> {
-        let request: QueryRequest<Empty> = match from_slice(bin_request) {
+        let request: QueryRequest<Empty> = match from_json(bin_request) {
             Ok(v) => v,
             Err(e) => {
                 return SystemResult::Err(SystemError::InvalidRequest {
@@ -116,13 +116,13 @@ impl WasmMockQuerier {
                 })
                 .to_string();
 
-                SystemResult::Ok(ContractResult::Ok(to_binary(&response).unwrap()))
+                SystemResult::Ok(ContractResult::Ok(to_json_binary(&response).unwrap()))
             }
             QueryRequest::Bank(BankQuery::Balance {
                 address: contract_addr,
                 denom: _,
             }) => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&contract_addr.to_string()).unwrap(),
+                to_json_binary(&contract_addr.to_string()).unwrap(),
             )),
             _ => self.base.handle_query(request),
         }

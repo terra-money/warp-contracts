@@ -1,0 +1,31 @@
+[package]
+name = "scripts"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[dependencies]
+dotenv = { version = "0.15.0" } # Enables loading of .env files
+pretty_env_logger = { version = "0.5.0" } # Enables logging to stdout and prettifies it
+cw-orch = {version = "0.18.1", features = ["daemon"] }
+tokio = { version = "1.4", features = ["full"] }
+
+cosmwasm-std = "1.1"
+
+interface = { path = "../packages/interface", default-features = false, version = "*", features = ["interface"]}
+
+warp-controller = { path = "../contracts/warp-controller", default-features = false, version = "*", features = ["interface"]}
+warp-job-account = { path = "../contracts/warp-job-account", default-features = false, version = "*", features = ["interface"] }
+warp-job-account-tracker = { path = "../contracts/warp-job-account-tracker", default-features = false, version = "*", features = ["interface"] }
+warp-legacy-account = { path = "../contracts/warp-legacy-account", default-features = false, version = "*", features = ["interface"] }
+warp-resolver = { path = "../contracts/warp-resolver", default-features = false, version = "*", features = ["interface"] }
+warp-templates = { path = "../contracts/warp-templates", default-features = false, version = "*", features = ["interface"] }
+
+controller = { path = "../packages/controller", default-features = false, version = "*", features = ["interface"] }
+job-account = { path = "../packages/job-account", default-features = false, version = "*", features = ["interface"] }
+job-account-tracker = { path = "../packages/job-account-tracker", default-features = false, version = "*", features = ["interface"] }
+legacy-account = { path = "../packages/legacy-account", default-features = false, version = "*", features = ["interface"] }
+resolver = { path = "../packages/resolver", default-features = false, version = "*", features = ["interface"] }
+templates = { path = "../packages/templates", default-features = false, version = "*", features = ["interface"] }

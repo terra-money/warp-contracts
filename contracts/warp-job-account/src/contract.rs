@@ -4,7 +4,7 @@ use controller::account::{
     execute_warp_msgs, ibc_transfer, warp_msgs_to_cosmos_msgs, withdraw_assets,
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 use cw_utils::nonpayable;
 use job_account::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -69,7 +69,7 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::QueryConfig(_) => to_binary(&query::account::query_config(deps)?),
+        QueryMsg::QueryConfig(_) => to_json_binary(&query::account::query_config(deps)?),
     }
 }
 

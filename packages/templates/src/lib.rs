@@ -30,6 +30,7 @@ pub struct InstantiateMsg {
 }
 
 #[cw_serde]
+#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
 pub enum ExecuteMsg {
     SubmitTemplate(SubmitTemplateMsg),
     EditTemplate(EditTemplateMsg),
@@ -40,6 +41,7 @@ pub enum ExecuteMsg {
 
 #[derive(QueryResponses)]
 #[cw_serde]
+#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
 pub enum QueryMsg {
     #[returns(TemplateResponse)]
     QueryTemplate(QueryTemplateMsg),

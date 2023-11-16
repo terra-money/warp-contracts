@@ -20,6 +20,7 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
+interface = ["dep:cw-orch"]
 
 [package.metadata.scripts]
 optimize = """docker run --rm -v "${process.cwd()}":/code \
@@ -47,6 +48,7 @@ thiserror = "1"
 serde-json-wasm = "0.4.1"
 json-codec-wasm = "0.1.0"
 prost = "0.11.9"
+cw-orch = {version = "0.18.1", optional = true }
 
 [dev-dependencies]
 cw-multi-test = "0.16.0"

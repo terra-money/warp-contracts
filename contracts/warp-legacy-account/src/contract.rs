@@ -3,7 +3,7 @@ use crate::ContractError;
 use controller::account::{AssetInfo, Cw721ExecuteMsg};
 use cosmwasm_std::CosmosMsg::Stargate;
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+    entry_point, to_json_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Response, StdResult, Uint128, WasmMsg,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
@@ -61,7 +61,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config => {
             let config = CONFIG.load(deps.storage)?;
-            to_binary(&config)
+            to_json_binary(&config)
         }
     }
 }
@@ -190,7 +190,7 @@ fn withdraw_asset_cw20(
     let res = if amount.balance > Uint128::zero() {
         Some(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: token.to_string(),
-            msg: to_binary(&Cw20ExecuteMsg::Transfer {
+            msg: to_json_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: owner.to_string(),
                 amount: amount.balance,
             })?,
@@ -220,7 +220,7 @@ fn withdraw_asset_cw721(
     let res = if owner_query.owner == *owner {
         Some(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: token.to_string(),
-            msg: to_binary(&Cw721ExecuteMsg::TransferNft {
+            msg: to_json_binary(&Cw721ExecuteMsg::TransferNft {
                 recipient: owner.to_string(),
                 token_id: token_id.to_string(),
             })?,
