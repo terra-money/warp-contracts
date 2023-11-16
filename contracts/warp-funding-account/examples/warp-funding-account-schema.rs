@@ -1,9 +1,7 @@
 use std::env::current_dir;
 use std::fs::create_dir_all;
 
-use controller::{
-    job::{JobResponse, JobsResponse},
-};
+use controller::job::{JobResponse, JobsResponse};
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use funding_account::{Config, ExecuteMsg, InstantiateMsg};
 
