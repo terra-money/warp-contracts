@@ -16,6 +16,9 @@ serde = { version = "1", default-features = false, features = ["derive"] }
 strum = "0.24"
 strum_macros = "0.24"
 prost = "0.11.9"
+cw20 = "0.16"
+cw721 = "0.16.0"
+serde-json-wasm = "0.4.1"
 
 [dev-dependencies]
 cw-multi-test = "0.16"

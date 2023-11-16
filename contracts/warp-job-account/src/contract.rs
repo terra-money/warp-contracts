@@ -1,6 +1,8 @@
-use crate::execute::msgs::warp_msgs_to_cosmos_msgs;
 use crate::state::CONFIG;
-use crate::{execute, query, ContractError};
+use crate::{query, ContractError};
+use controller::account::{
+    execute_warp_msgs, ibc_transfer, warp_msgs_to_cosmos_msgs, withdraw_assets,
+};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
@@ -22,7 +24,7 @@ pub fn instantiate(
 
     CONFIG.save(deps.storage, &config)?;
 
-    let msgs = warp_msgs_to_cosmos_msgs(deps.as_ref(), env, msg.msgs, config).unwrap();
+    let msgs = warp_msgs_to_cosmos_msgs(deps.as_ref(), env, msg.msgs, &config.owner).unwrap();
 
     Ok(Response::new()
         .add_messages(msgs.clone())
@@ -55,10 +57,12 @@ pub fn execute(
             .add_attribute("action", "generic")),
         ExecuteMsg::WithdrawAssets(data) => {
             nonpayable(&info).unwrap();
-            execute::withdraw::withdraw_assets(deps.as_ref(), env, data, config)
+            withdraw_assets(deps.as_ref(), env, data, &config.owner).map_err(ContractError::Std)
         }
-        ExecuteMsg::IbcTransfer(data) => execute::ibc::ibc_transfer(env, data),
-        ExecuteMsg::WarpMsgs(data) => execute::msgs::execute_warp_msgs(deps, env, data, config),
+        ExecuteMsg::IbcTransfer(data) => ibc_transfer(env, data).map_err(ContractError::Std),
+        ExecuteMsg::WarpMsgs(data) => {
+            execute_warp_msgs(deps, env, data, &config.owner).map_err(ContractError::Std)
+        }
     }
 }
 
