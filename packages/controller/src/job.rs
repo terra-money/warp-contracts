@@ -15,6 +15,7 @@ pub struct Job {
     // As job creator can have infinite job accounts, each job account can only be used by up to 1 active job
     // So each job's fund is isolated
     pub account: Addr,
+    pub funding_account: Option<Addr>,
     pub last_update_time: Uint64,
     pub name: String,
     pub description: String,
@@ -67,6 +68,7 @@ pub struct CreateJobMsg {
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
     pub account_msgs: Option<Vec<WarpMsg>>,
     pub cw_funds: Option<Vec<CwFund>>,
+    pub funding_account: Option<Addr>,
 }
 
 #[cw_serde]

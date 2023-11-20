@@ -102,6 +102,8 @@ pub fn migrate_pending_jobs(
                 assets_to_withdraw: old_job.assets_to_withdraw,
                 duration_days: Uint64::from(30u64),
                 created_at_time: old_job.last_update_time,
+                // TODO: update to old_job.funding_account
+                funding_account: None,
             },
         )?;
     }
@@ -169,6 +171,8 @@ pub fn migrate_finished_jobs(
                 assets_to_withdraw: old_job.assets_to_withdraw,
                 duration_days: Uint64::from(30u64),
                 created_at_time: old_job.last_update_time,
+                // TODO: update to old_job.funding_account
+                funding_account: None,
             },
         )?;
     }

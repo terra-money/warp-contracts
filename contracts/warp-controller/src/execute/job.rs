@@ -122,6 +122,7 @@ pub fn create_job(
             assets_to_withdraw: data.assets_to_withdraw.unwrap_or(vec![]),
             duration_days: data.duration_days,
             created_at_time: Uint64::from(env.block.time.seconds()),
+            funding_account: data.funding_account,
         },
     )?;
 

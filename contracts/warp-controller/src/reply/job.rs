@@ -161,6 +161,7 @@ pub fn execute_job(
                         assets_to_withdraw: finished_job.assets_to_withdraw.clone(),
                         duration_days: finished_job.duration_days,
                         created_at_time: Uint64::from(env.block.time.seconds()),
+                        funding_account: finished_job.funding_account,
                     },
                 )?;
 
