@@ -28,6 +28,7 @@ pub struct Job {
     pub duration_days: Uint64,
     pub created_at_time: Uint64,
     pub reward: Uint128,
+    pub operational_amount: Uint128,
     pub assets_to_withdraw: Vec<AssetInfo>,
 }
 
@@ -64,6 +65,7 @@ pub struct CreateJobMsg {
     pub vars: String,
     pub recurring: bool,
     pub reward: Uint128,
+    pub operational_amount: Uint128,
     pub duration_days: Uint64,
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
     pub account_msgs: Option<Vec<WarpMsg>>,

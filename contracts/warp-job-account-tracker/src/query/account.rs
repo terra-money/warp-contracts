@@ -4,8 +4,8 @@ use cw_storage_plus::{Bound, PrefixBound};
 use crate::state::{CONFIG, FREE_ACCOUNTS, TAKEN_ACCOUNTS};
 
 use job_account_tracker::{
-    Account, AccountsResponse, ConfigResponse, FirstFreeAccountResponse, QueryFirstFreeAccountMsg,
-    QueryFreeAccountsMsg, QueryTakenAccountsMsg,
+    Account, AccountResponse, AccountsResponse, ConfigResponse, QueryFirstFreeAccountMsg,
+    QueryFreeAccountMsg, QueryFreeAccountsMsg, QueryTakenAccountsMsg,
 };
 
 const QUERY_LIMIT: u32 = 50;
@@ -18,7 +18,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 pub fn query_first_free_account(
     deps: Deps,
     data: QueryFirstFreeAccountMsg,
-) -> StdResult<FirstFreeAccountResponse> {
+) -> StdResult<AccountResponse> {
     let account_owner_ref = &deps.api.addr_validate(data.account_owner_addr.as_str())?;
     let maybe_free_account = FREE_ACCOUNTS
         .prefix_range(
@@ -35,7 +35,7 @@ pub fn query_first_free_account(
         }),
         _ => None,
     };
-    Ok(FirstFreeAccountResponse {
+    Ok(AccountResponse {
         account: free_account,
     })
 }
@@ -114,5 +114,29 @@ pub fn query_free_accounts(deps: Deps, data: QueryFreeAccountsMsg) -> StdResult<
     Ok(AccountsResponse {
         total_count: accounts.len() as u32,
         accounts,
+    })
+}
+
+pub fn query_free_account(deps: Deps, data: QueryFreeAccountMsg) -> StdResult<AccountResponse> {
+    let account_addr_ref = &deps.api.addr_validate(data.account_addr.as_str())?;
+    let maybe_free_account = FREE_ACCOUNTS
+        .prefix_range(
+            deps.storage,
+            Some(PrefixBound::inclusive(account_addr_ref)),
+            Some(PrefixBound::inclusive(account_addr_ref)),
+            Order::Ascending,
+        )
+        .next();
+
+    let free_account = match maybe_free_account {
+        Some(Ok((account, last_job_id))) => Some(Account {
+            addr: account.1,
+            taken_by_job_id: Some(last_job_id),
+        }),
+        _ => None,
+    };
+
+    Ok(AccountResponse {
+        account: free_account,
     })
 }

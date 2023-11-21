@@ -44,8 +44,10 @@ pub enum QueryMsg {
     QueryTakenAccounts(QueryTakenAccountsMsg),
     #[returns(AccountsResponse)]
     QueryFreeAccounts(QueryFreeAccountsMsg),
-    #[returns(FirstFreeAccountResponse)]
+    #[returns(AccountResponse)]
     QueryFirstFreeAccount(QueryFirstFreeAccountMsg),
+    #[returns(AccountResponse)]
+    QueryFreeAccount(QueryFreeAccountMsg),
 }
 
 #[cw_serde]
@@ -88,7 +90,12 @@ pub struct QueryFirstFreeAccountMsg {
 }
 
 #[cw_serde]
-pub struct FirstFreeAccountResponse {
+pub struct QueryFreeAccountMsg {
+    pub account_addr: String,
+}
+
+#[cw_serde]
+pub struct AccountResponse {
     pub account: Option<Account>,
 }
 

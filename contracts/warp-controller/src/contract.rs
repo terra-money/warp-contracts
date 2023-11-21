@@ -184,9 +184,11 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
+    // 0-1 reserved
     match msg.id {
         // use 0 as hack to call create_job_account_and_job
         0 => reply::account::create_job_account_and_job(deps, env, msg, config),
+        1 => reply::account::create_funding_account_and_job(deps, env, msg, config),
         _id => reply::job::execute_job(deps, env, msg, config),
     }
 }

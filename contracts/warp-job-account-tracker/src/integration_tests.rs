@@ -4,7 +4,7 @@ mod tests {
     use cosmwasm_std::{Addr, Coin, Empty, Uint128, Uint64};
     use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
     use job_account_tracker::{
-        Account, AccountsResponse, Config, ConfigResponse, ExecuteMsg, FirstFreeAccountResponse,
+        Account, AccountResponse, AccountsResponse, Config, ConfigResponse, ExecuteMsg,
         FreeAccountMsg, InstantiateMsg, QueryConfigMsg, QueryFirstFreeAccountMsg,
         QueryFreeAccountsMsg, QueryMsg, QueryTakenAccountsMsg, TakeAccountMsg,
     };
@@ -100,7 +100,7 @@ mod tests {
                     account_owner_addr: USER_1.to_string(),
                 })
             ),
-            Ok(FirstFreeAccountResponse { account: None })
+            Ok(AccountResponse { account: None })
         );
         assert_eq!(
             app.wrap().query_wasm_smart(
@@ -190,7 +190,7 @@ mod tests {
                     account_owner_addr: USER_1.to_string(),
                 })
             ),
-            Ok(FirstFreeAccountResponse {
+            Ok(AccountResponse {
                 account: Some(Account {
                     addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
                     taken_by_job_id: Some(DUMMY_JOB_1_ID)

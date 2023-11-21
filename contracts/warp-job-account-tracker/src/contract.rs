@@ -68,6 +68,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryFirstFreeAccount(data) => {
             to_binary(&query::account::query_first_free_account(deps, data)?)
         }
+        QueryMsg::QueryFreeAccount(data) => {
+            to_binary(&query::account::query_free_account(deps, data)?)
+        }
     }
 }
 

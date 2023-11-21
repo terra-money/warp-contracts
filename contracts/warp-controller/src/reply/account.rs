@@ -22,7 +22,7 @@ pub fn create_job_account_and_job(
 ) -> Result<Response, ContractError> {
     let reply = msg.result.into_result().map_err(StdError::generic_err)?;
 
-    let event = reply
+    let job_account_event = reply
         .events
         .iter()
         .find(|event| {
@@ -33,7 +33,7 @@ pub fn create_job_account_and_job(
         })
         .ok_or_else(|| StdError::generic_err("cannot find `instantiate` event"))?;
 
-    let job_id_str = event
+    let job_id_str = job_account_event
         .attributes
         .iter()
         .cloned()
@@ -42,7 +42,7 @@ pub fn create_job_account_and_job(
         .value;
     let job_id = job_id_str.as_str().parse::<u64>()?;
 
-    let owner = event
+    let owner = job_account_event
         .attributes
         .iter()
         .cloned()
@@ -51,7 +51,7 @@ pub fn create_job_account_and_job(
         .value;
 
     let job_account_addr = deps.api.addr_validate(
-        &event
+        &job_account_event
             .attributes
             .iter()
             .cloned()
@@ -61,7 +61,7 @@ pub fn create_job_account_and_job(
     )?;
 
     let native_funds: Vec<Coin> = serde_json_wasm::from_str(
-        &event
+        &job_account_event
             .attributes
             .iter()
             .cloned()
@@ -71,7 +71,7 @@ pub fn create_job_account_and_job(
     )?;
 
     let cw_funds: Option<Vec<CwFund>> = serde_json_wasm::from_str(
-        &event
+        &job_account_event
             .attributes
             .iter()
             .cloned()
@@ -81,7 +81,7 @@ pub fn create_job_account_and_job(
     )?;
 
     let account_msgs: Option<Vec<WarpMsg>> = serde_json_wasm::from_str(
-        &event
+        &job_account_event
             .attributes
             .iter()
             .cloned()
@@ -154,4 +154,91 @@ pub fn create_job_account_and_job(
             "cw_funds",
             serde_json_wasm::to_string(&cw_funds.unwrap_or(vec![]))?,
         ))
+}
+
+pub fn create_funding_account_and_job(
+    mut deps: DepsMut,
+    env: Env,
+    msg: Reply,
+    config: Config,
+) -> Result<Response, ContractError> {
+    let reply = msg.result.into_result().map_err(StdError::generic_err)?;
+
+    let funding_account_event = reply
+        .events
+        .iter()
+        .find(|event| {
+            event
+                .attributes
+                .iter()
+                .any(|attr| attr.key == "action" && attr.value == "instantiate")
+        })
+        .ok_or_else(|| StdError::generic_err("cannot find `instantiate` event"))?;
+
+    let job_id_str = funding_account_event
+        .attributes
+        .iter()
+        .cloned()
+        .find(|attr| attr.key == "job_id")
+        .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
+        .value;
+    let job_id = job_id_str.as_str().parse::<u64>()?;
+
+    let owner = funding_account_event
+        .attributes
+        .iter()
+        .cloned()
+        .find(|attr| attr.key == "owner")
+        .ok_or_else(|| StdError::generic_err("cannot find `owner` attribute"))?
+        .value;
+
+    let funding_account_addr = deps.api.addr_validate(
+        &funding_account_event
+            .attributes
+            .iter()
+            .cloned()
+            .find(|attr| attr.key == "contract_addr")
+            .ok_or_else(|| StdError::generic_err("cannot find `contract_addr` attribute"))?
+            .value,
+    )?;
+
+    let native_funds: Vec<Coin> = serde_json_wasm::from_str(
+        &funding_account_event
+            .attributes
+            .iter()
+            .cloned()
+            .find(|attr| attr.key == "native_funds")
+            .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
+            .value,
+    )?;
+
+    let mut job = JobQueue::get(&deps, job_id)?;
+    job.funding_account = Some(funding_account_addr.clone());
+    JobQueue::sync(&mut deps, env, job.clone())?;
+
+    let mut msgs: Vec<CosmosMsg> = vec![];
+
+    if !native_funds.is_empty() {
+        // Fund account in native coins
+        msgs.push(build_transfer_native_funds_msg(
+            funding_account_addr.to_string(),
+            native_funds.clone(),
+        ))
+    }
+
+    // Take job account
+    msgs.push(build_taken_account_msg(
+        config.job_account_tracker_address.to_string(),
+        job.owner.to_string(),
+        funding_account_addr.to_string(),
+        job.id,
+    ));
+
+    Ok(Response::new()
+        .add_messages(msgs)
+        .add_attribute("action", "create_job_account_and_job_reply")
+        // .add_attribute("job_id", value)
+        .add_attribute("owner", owner)
+        .add_attribute("funding_account_address", funding_account_addr)
+        .add_attribute("native_funds", serde_json_wasm::to_string(&native_funds)?))
 }

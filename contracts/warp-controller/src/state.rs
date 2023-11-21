@@ -126,6 +126,7 @@ impl JobQueue {
                 vars: job.vars,
                 recurring: job.recurring,
                 reward: job.reward,
+                operational_amount: job.operational_amount,
                 assets_to_withdraw: job.assets_to_withdraw,
                 duration_days: job.duration_days,
                 created_at_time: Uint64::from(env.block.time.seconds()),
@@ -156,6 +157,7 @@ impl JobQueue {
                 duration_days: job.duration_days,
                 created_at_time: job.created_at_time,
                 funding_account: job.funding_account,
+                operational_amount: job.operational_amount,
             }),
         })
     }
@@ -191,6 +193,7 @@ impl JobQueue {
             duration_days: job.duration_days,
             created_at_time: job.created_at_time,
             funding_account: job.funding_account,
+            operational_amount: job.operational_amount,
         };
 
         FINISHED_JOBS().update(deps.storage, job_id, |j| match j {

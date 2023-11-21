@@ -17,6 +17,7 @@ use crate::{
     ContractError,
 };
 use controller::{
+    account::AssetInfo,
     job::{Job, JobStatus},
     Config,
 };
@@ -61,19 +62,25 @@ pub fn execute_job(
     let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, finished_job.owner.clone())?;
     let job_account_addr = finished_job.account.clone();
 
-    let job_account_amount = deps
-        .querier
-        .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
-            address: job_account_addr.to_string(),
-            denom: config.fee_denom.clone(),
-        }))?
-        .amount
-        .amount;
-
     let mut recurring_job_created = false;
 
+    // backwards compability with legacy accounts, funding account is job's account
+    let funding_account_addr = finished_job
+        .funding_account
+        .clone()
+        .unwrap_or(job_account_addr.clone());
+
     if finished_job.recurring {
-        if job_account_amount < reward_plus_fee {
+        let operational_amount = deps
+            .querier
+            .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
+                address: funding_account_addr.to_string(),
+                denom: config.fee_denom.clone(),
+            }))?
+            .amount
+            .amount;
+
+        if operational_amount < reward_plus_fee {
             new_job_attrs.push(Attribute::new("action", "recur_job"));
             new_job_attrs.push(Attribute::new("creation_status", "failed_insufficient_fee"));
         } else if !(finished_job.status == JobStatus::Executed
@@ -141,6 +148,10 @@ pub fn execute_job(
 
             if !should_terminate_job {
                 recurring_job_created = true;
+
+                let operational_amount_minus_reward_and_fee =
+                    operational_amount.checked_sub(finished_job.reward + total_fees)?;
+
                 let new_job = JobQueue::add(
                     &mut deps,
                     Job {
@@ -158,22 +169,23 @@ pub fn execute_job(
                         vars: new_vars,
                         recurring: finished_job.recurring,
                         reward: finished_job.reward,
+                        operational_amount: operational_amount_minus_reward_and_fee,
                         assets_to_withdraw: finished_job.assets_to_withdraw.clone(),
                         duration_days: finished_job.duration_days,
                         created_at_time: Uint64::from(env.block.time.seconds()),
-                        funding_account: finished_job.funding_account,
+                        funding_account: finished_job.funding_account.clone(),
                     },
                 )?;
 
                 msgs.push(build_account_execute_generic_msgs(
-                    job_account_addr.to_string(),
+                    funding_account_addr.to_string(),
                     vec![
-                        // Job owner's warp account sends fee to fee collector
+                        // Job owner's funding account sends fee to fee collector
                         build_transfer_native_funds_msg(
                             config.fee_collector.to_string(),
                             vec![Coin::new(total_fees.u128(), config.fee_denom.clone())],
                         ),
-                        // Job owner's warp account sends reward to controller
+                        // Job owner's funding account sends reward to controller
                         build_transfer_native_funds_msg(
                             env.contract.address.to_string(),
                             vec![Coin::new(new_job.reward.u128(), config.fee_denom.clone())],
@@ -219,6 +231,14 @@ pub fn execute_job(
                 job_account_addr.to_string(),
                 new_job_id,
             ));
+
+            // take funding account with new job
+            msgs.push(build_taken_account_msg(
+                config.job_account_tracker_address.to_string(),
+                finished_job.owner.to_string(),
+                funding_account_addr.to_string(),
+                new_job_id,
+            ));
         }
     } else {
         // No new job created, account has been free in execute_job, no need to free here again
@@ -227,6 +247,14 @@ pub fn execute_job(
             job_account_addr.to_string(),
             finished_job.assets_to_withdraw,
         ));
+
+        // withdraw all funds if funding acc exists
+        if let Some(acc) = finished_job.funding_account {
+            msgs.push(build_account_withdraw_assets_msg(
+                acc.to_string(),
+                vec![AssetInfo::Native(config.fee_denom)],
+            ));
+        }
     }
 
     Ok(Response::new()
