@@ -265,8 +265,7 @@ pub fn create_job(
         }
     }
 
-    // not sure if to check for small amounts here?
-    if !operational_amount_minus_reward_and_fee.is_zero() {
+    if data.recurring {
         match funding_account {
             None => {
                 // Create funding account then create job in reply
