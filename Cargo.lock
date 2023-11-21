@@ -488,28 +488,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8cbd1169bd7b4a0a20d92b9af7a7e0422888bd38a6f5ec29c1fd8c1558a272e"
 
 [[package]]
-name = "funding-account"
-version = "0.1.0"
-dependencies = [
- "controller",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-asset",
- "cw-multi-test",
- "cw-storage-plus 0.16.0",
- "cw2 0.16.0",
- "cw20",
- "json-codec-wasm",
- "prost 0.11.9",
- "schemars",
- "serde",
- "strum",
- "strum_macros",
- "thiserror",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.14.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1040,29 +1018,6 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
-
-[[package]]
-name = "warp-account"
-version = "0.1.0"
-dependencies = [
- "base64",
- "controller",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-asset",
- "cw-multi-test",
- "cw-storage-plus 0.16.0",
- "cw2 0.16.0",
- "cw20",
- "cw721",
- "funding-account",
- "json-codec-wasm",
- "prost 0.11.9",
- "schemars",
- "serde-json-wasm 0.4.1",
- "thiserror",
-]
 
 [[package]]
 name = "warp-controller"
