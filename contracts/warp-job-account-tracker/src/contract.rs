@@ -85,9 +85,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryFundingAccount(data) => {
             to_binary(&query::account::query_funding_account(deps, data)?)
         }
-        QueryMsg::QueryFirstFreeFundingAccount(data) => {
-            to_binary(&query::account::query_first_free_funding_account(deps, data)?)
-        }
+        QueryMsg::QueryFirstFreeFundingAccount(data) => to_binary(
+            &query::account::query_first_free_funding_account(deps, data)?,
+        ),
     }
 }
 

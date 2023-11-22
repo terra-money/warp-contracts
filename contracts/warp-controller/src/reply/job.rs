@@ -11,7 +11,8 @@ use crate::{
         legacy_account::is_legacy_account,
         msg::{
             build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-            build_taken_account_msg, build_transfer_native_funds_msg, build_take_funding_account_msg,
+            build_take_funding_account_msg, build_taken_account_msg,
+            build_transfer_native_funds_msg,
         },
     },
     ContractError,

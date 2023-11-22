@@ -51,7 +51,6 @@ pub struct FreeFundingAccountMsg {
     pub job_id: Uint64,
 }
 
-
 #[derive(QueryResponses)]
 #[cw_serde]
 pub enum QueryMsg {
