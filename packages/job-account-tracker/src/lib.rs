@@ -19,6 +19,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     TakeAccount(TakeAccountMsg),
     FreeAccount(FreeAccountMsg),
+    TakeFundingAccount(TakeFundingAccountMsg),
+    FreeFundingAccount(FreeFundingAccountMsg),
 }
 
 #[cw_serde]
@@ -35,6 +37,21 @@ pub struct FreeAccountMsg {
     pub last_job_id: Uint64,
 }
 
+#[cw_serde]
+pub struct TakeFundingAccountMsg {
+    pub account_owner_addr: String,
+    pub account_addr: String,
+    pub job_id: Uint64,
+}
+
+#[cw_serde]
+pub struct FreeFundingAccountMsg {
+    pub account_owner_addr: String,
+    pub account_addr: String,
+    pub job_id: Uint64,
+}
+
+
 #[derive(QueryResponses)]
 #[cw_serde]
 pub enum QueryMsg {
@@ -48,6 +65,12 @@ pub enum QueryMsg {
     QueryFirstFreeAccount(QueryFirstFreeAccountMsg),
     #[returns(AccountResponse)]
     QueryFreeAccount(QueryFreeAccountMsg),
+    #[returns(FundingAccountResponse)]
+    QueryFirstFreeFundingAccount(QueryFirstFreeFundingAccountMsg),
+    #[returns(FundingAccountsResponse)]
+    QueryFundingAccounts(QueryFundingAccountsMsg),
+    #[returns(FundingAccountResponse)]
+    QueryFundingAccount(QueryFundingAccountMsg),
 }
 
 #[cw_serde]
@@ -79,6 +102,12 @@ pub struct Account {
 }
 
 #[cw_serde]
+pub struct FundingAccount {
+    pub account_addr: Addr,
+    pub taken_by_job_ids: Vec<Uint64>, // List of job IDs using this account
+}
+
+#[cw_serde]
 pub struct AccountsResponse {
     pub accounts: Vec<Account>,
     pub total_count: u32,
@@ -95,8 +124,34 @@ pub struct QueryFreeAccountMsg {
 }
 
 #[cw_serde]
+pub struct QueryFirstFreeFundingAccountMsg {
+    pub account_owner_addr: String,
+}
+
+#[cw_serde]
+pub struct QueryFundingAccountMsg {
+    pub account_owner_addr: String,
+    pub account_addr: String,
+}
+
+#[cw_serde]
+pub struct QueryFundingAccountsMsg {
+    pub account_owner_addr: String,
+}
+
+#[cw_serde]
+pub struct FundingAccountsResponse {
+    pub funding_accounts: Vec<FundingAccount>,
+}
+
+#[cw_serde]
 pub struct AccountResponse {
     pub account: Option<Account>,
+}
+
+#[cw_serde]
+pub struct FundingAccountResponse {
+    pub funding_account: Option<FundingAccount>,
 }
 
 #[cw_serde]

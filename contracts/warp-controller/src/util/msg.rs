@@ -5,7 +5,9 @@ use controller::account::{
     WithdrawAssetsMsg,
 };
 use job_account::GenericMsg;
-use job_account_tracker::{FreeAccountMsg, TakeAccountMsg};
+use job_account_tracker::{
+    FreeAccountMsg, FreeFundingAccountMsg, TakeAccountMsg, TakeFundingAccountMsg,
+};
 
 #[allow(clippy::too_many_arguments)]
 pub fn build_instantiate_warp_account_msg(
@@ -63,6 +65,46 @@ pub fn build_taken_account_msg(
         contract_addr: job_account_tracker_addr,
         msg: to_binary(&job_account_tracker::ExecuteMsg::TakeAccount(
             TakeAccountMsg {
+                account_owner_addr,
+                account_addr,
+                job_id,
+            },
+        ))
+        .unwrap(),
+        funds: vec![],
+    })
+}
+
+pub fn build_free_funding_account_msg(
+    job_account_tracker_addr: String,
+    account_owner_addr: String,
+    account_addr: String,
+    job_id: Uint64,
+) -> CosmosMsg {
+    CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: job_account_tracker_addr,
+        msg: to_binary(&job_account_tracker::ExecuteMsg::FreeFundingAccount(
+            FreeFundingAccountMsg {
+                account_owner_addr,
+                account_addr,
+                job_id,
+            },
+        ))
+        .unwrap(),
+        funds: vec![],
+    })
+}
+
+pub fn build_take_funding_account_msg(
+    job_account_tracker_addr: String,
+    account_owner_addr: String,
+    account_addr: String,
+    job_id: Uint64,
+) -> CosmosMsg {
+    CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: job_account_tracker_addr,
+        msg: to_binary(&job_account_tracker::ExecuteMsg::TakeFundingAccount(
+            TakeFundingAccountMsg {
                 account_owner_addr,
                 account_addr,
                 job_id,

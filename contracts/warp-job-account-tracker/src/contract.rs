@@ -52,6 +52,14 @@ pub fn execute(
             nonpayable(&info).unwrap();
             execute::account::free_account(deps, data)
         }
+        ExecuteMsg::TakeFundingAccount(data) => {
+            nonpayable(&info).unwrap();
+            execute::account::take_funding_account(deps, data)
+        }
+        ExecuteMsg::FreeFundingAccount(data) => {
+            nonpayable(&info).unwrap();
+            execute::account::free_funding_account(deps, data)
+        }
     }
 }
 
@@ -70,6 +78,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::QueryFreeAccount(data) => {
             to_binary(&query::account::query_free_account(deps, data)?)
+        }
+        QueryMsg::QueryFundingAccounts(data) => {
+            to_binary(&query::account::query_funding_accounts(deps, data)?)
+        }
+        QueryMsg::QueryFundingAccount(data) => {
+            to_binary(&query::account::query_funding_account(deps, data)?)
+        }
+        QueryMsg::QueryFirstFreeFundingAccount(data) => {
+            to_binary(&query::account::query_first_free_funding_account(deps, data)?)
         }
     }
 }

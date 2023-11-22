@@ -1,11 +1,13 @@
 use cosmwasm_std::{Deps, Order, StdResult};
 use cw_storage_plus::{Bound, PrefixBound};
 
-use crate::state::{CONFIG, FREE_ACCOUNTS, TAKEN_ACCOUNTS};
+use crate::state::{CONFIG, FREE_ACCOUNTS, FUNDING_ACCOUNTS, TAKEN_ACCOUNTS};
 
 use job_account_tracker::{
-    Account, AccountResponse, AccountsResponse, ConfigResponse, QueryFirstFreeAccountMsg,
-    QueryFreeAccountMsg, QueryFreeAccountsMsg, QueryTakenAccountsMsg,
+    Account, AccountResponse, AccountsResponse, ConfigResponse, FundingAccountResponse,
+    FundingAccountsResponse, QueryFirstFreeAccountMsg, QueryFirstFreeFundingAccountMsg,
+    QueryFreeAccountMsg, QueryFreeAccountsMsg, QueryFundingAccountMsg, QueryFundingAccountsMsg,
+    QueryTakenAccountsMsg,
 };
 
 const QUERY_LIMIT: u32 = 50;
@@ -139,4 +141,50 @@ pub fn query_free_account(deps: Deps, data: QueryFreeAccountMsg) -> StdResult<Ac
     Ok(AccountResponse {
         account: free_account,
     })
+}
+
+// funding accounts
+
+pub fn query_funding_account(
+    deps: Deps,
+    data: QueryFundingAccountMsg,
+) -> StdResult<FundingAccountResponse> {
+    let account_addr_ref = deps.api.addr_validate(data.account_addr.as_str())?;
+    let account_owner_addr_ref = deps.api.addr_validate(data.account_owner_addr.as_str())?;
+
+    let funding_accounts = FUNDING_ACCOUNTS.load(deps.storage, &account_owner_addr_ref)?;
+
+    Ok(FundingAccountResponse {
+        funding_account: funding_accounts
+            .iter()
+            .find(|fa| fa.account_addr == account_addr_ref.clone())
+            .cloned(),
+    })
+}
+
+pub fn query_funding_accounts(
+    deps: Deps,
+    data: QueryFundingAccountsMsg,
+) -> StdResult<FundingAccountsResponse> {
+    let account_owner_addr_ref = deps.api.addr_validate(data.account_owner_addr.as_str())?;
+
+    let funding_accounts = FUNDING_ACCOUNTS.load(deps.storage, &account_owner_addr_ref)?;
+
+    Ok(FundingAccountsResponse { funding_accounts })
+}
+
+pub fn query_first_free_funding_account(
+    deps: Deps,
+    data: QueryFirstFreeFundingAccountMsg,
+) -> StdResult<FundingAccountResponse> {
+    let account_owner_addr_ref = deps.api.addr_validate(data.account_owner_addr.as_str())?;
+
+    let funding_accounts = FUNDING_ACCOUNTS.load(deps.storage, &account_owner_addr_ref)?;
+
+    let funding_account = funding_accounts
+        .iter()
+        .find(|fa| fa.taken_by_job_ids.is_empty())
+        .cloned();
+
+    Ok(FundingAccountResponse { funding_account })
 }

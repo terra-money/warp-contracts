@@ -1,5 +1,7 @@
 use crate::state::{JobQueue, STATE};
-use crate::util::msg::build_account_execute_warp_msgs;
+use crate::util::msg::{
+    build_account_execute_warp_msgs, build_free_funding_account_msg, build_take_funding_account_msg,
+};
 use crate::ContractError;
 use controller::account::{AssetInfo, WarpMsgs};
 use controller::job::{
@@ -24,7 +26,7 @@ use crate::{
 };
 
 use controller::{account::CwFund, Config};
-use job_account_tracker::{Account, AccountResponse, AccountsResponse};
+use job_account_tracker::{AccountResponse, FundingAccountResponse};
 use resolver::QueryHydrateMsgsMsg;
 
 use super::fee::{compute_burn_fee, compute_creation_fee, compute_maintenance_fee};
@@ -134,38 +136,40 @@ pub fn create_job(
         },
     )?;
 
-    let free_accounts: AccountsResponse = deps.querier.query_wasm_smart(
+    let job_account_resp: AccountResponse = deps.querier.query_wasm_smart(
         job_account_tracker_address_ref,
-        &job_account_tracker::QueryMsg::QueryFreeAccounts(
-            job_account_tracker::QueryFreeAccountsMsg {
+        &job_account_tracker::QueryMsg::QueryFirstFreeAccount(
+            job_account_tracker::QueryFirstFreeAccountMsg {
                 account_owner_addr: job_owner.to_string(),
-                start_after: None,
-                limit: Some(2),
             },
         ),
     )?;
 
-    let job_account = free_accounts.accounts.get(0);
-
-    let funding_account: Option<Account>;
+    let funding_account_resp: FundingAccountResponse;
 
     if let Some(funding_account_addr) = data.funding_account {
         // fetch funding account and check if it exists, throw otherwise
-        let funding_account_response: AccountResponse = deps.querier.query_wasm_smart(
+        funding_account_resp = deps.querier.query_wasm_smart(
             job_account_tracker_address_ref,
-            &job_account_tracker::QueryMsg::QueryFreeAccount(
-                job_account_tracker::QueryFreeAccountMsg {
+            &job_account_tracker::QueryMsg::QueryFundingAccount(
+                job_account_tracker::QueryFundingAccountMsg {
                     account_addr: funding_account_addr.to_string(),
+                    account_owner_addr: info.sender.to_string(),
                 },
             ),
         )?;
-
-        funding_account = Some(funding_account_response.account.unwrap());
     } else {
-        funding_account = free_accounts.accounts.get(1).cloned();
+        funding_account_resp = deps.querier.query_wasm_smart(
+            job_account_tracker_address_ref,
+            &job_account_tracker::QueryMsg::QueryFirstFreeFundingAccount(
+                job_account_tracker::QueryFirstFreeFundingAccountMsg {
+                    account_owner_addr: job_owner.to_string(),
+                },
+            ),
+        )?;
     }
 
-    match job_account {
+    match job_account_resp.account {
         None => {
             // Create account then create job in reply
             submsgs.push(SubMsg {
@@ -266,7 +270,7 @@ pub fn create_job(
     }
 
     if data.recurring {
-        match funding_account {
+        match funding_account_resp.funding_account {
             None => {
                 // Create funding account then create job in reply
                 submsgs.push(SubMsg {
@@ -290,8 +294,8 @@ pub fn create_job(
                 attrs.push(Attribute::new("action", "create_funding_account_and_job"));
             }
             Some(available_account) => {
-                let available_account_addr = &available_account.addr;
-                // Update job.account from placeholder value to job account
+                let available_account_addr = &available_account.account_addr;
+                // Update funding_account from placeholder value to funding account
                 job.funding_account = Some(available_account_addr.clone());
                 JobQueue::sync(&mut deps, env, job.clone())?;
 
@@ -305,7 +309,7 @@ pub fn create_job(
                 ));
 
                 // Take account
-                msgs.push(build_taken_account_msg(
+                msgs.push(build_take_funding_account_msg(
                     config.job_account_tracker_address.to_string(),
                     job_owner.to_string(),
                     available_account_addr.to_string(),
@@ -401,7 +405,7 @@ pub fn delete_job(
         ));
 
         if let Some(funding_account) = job.funding_account {
-            msgs.push(build_free_account_msg(
+            msgs.push(build_free_funding_account_msg(
                 config.job_account_tracker_address.to_string(),
                 job.owner.to_string(),
                 funding_account.to_string(),
@@ -555,7 +559,7 @@ pub fn execute_job(
         ));
 
         if let Some(funding_account) = job.funding_account {
-            msgs.push(build_free_account_msg(
+            msgs.push(build_free_funding_account_msg(
                 config.job_account_tracker_address.to_string(),
                 job.owner.to_string(),
                 funding_account.to_string(),

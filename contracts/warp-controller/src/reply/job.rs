@@ -11,7 +11,7 @@ use crate::{
         legacy_account::is_legacy_account,
         msg::{
             build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-            build_taken_account_msg, build_transfer_native_funds_msg,
+            build_taken_account_msg, build_transfer_native_funds_msg, build_take_funding_account_msg,
         },
     },
     ContractError,
@@ -233,7 +233,7 @@ pub fn execute_job(
             ));
 
             // take funding account with new job
-            msgs.push(build_taken_account_msg(
+            msgs.push(build_take_funding_account_msg(
                 config.job_account_tracker_address.to_string(),
                 finished_job.owner.to_string(),
                 funding_account_addr.to_string(),
