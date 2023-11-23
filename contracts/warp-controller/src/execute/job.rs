@@ -15,7 +15,7 @@ use cosmwasm_std::{
 use crate::{
     state::LEGACY_ACCOUNTS,
     util::{
-        fee::deduct_reward_and_fee_from_native_funds,
+        fee::deduct_from_native_funds,
         legacy_account::is_legacy_account,
         msg::{
             build_account_withdraw_assets_msg, build_free_account_msg,
@@ -73,16 +73,15 @@ pub fn create_job(
 
     let total_fees = creation_fee + maintenance_fee + burn_fee;
 
-    let reward_plus_fee = data.reward + total_fees;
-    if reward_plus_fee > fee_denom_paid_amount {
+    if data.operational_amount > fee_denom_paid_amount {
         return Err(ContractError::InsufficientFundsToPayForRewardAndFee {});
     }
 
     // Reward and fee will always be in native denom
-    let native_funds_minus_reward_and_fee = deduct_reward_and_fee_from_native_funds(
+    let native_funds_minus_operational_amount = deduct_from_native_funds(
         info.funds.clone(),
         config.fee_denom.clone(),
-        reward_plus_fee,
+        data.operational_amount,
     );
 
     let mut submsgs = vec![];
@@ -179,7 +178,7 @@ pub fn create_job(
                     env.contract.address.to_string(),
                     config.warp_account_code_id.u64(),
                     info.sender.to_string(),
-                    native_funds_minus_reward_and_fee,
+                    native_funds_minus_operational_amount,
                     data.cw_funds,
                     data.account_msgs,
                 ),
@@ -195,11 +194,11 @@ pub fn create_job(
             job.account = available_account_addr.clone();
             JobQueue::sync(&mut deps, env.clone(), job.clone())?;
 
-            if !native_funds_minus_reward_and_fee.is_empty() {
+            if !native_funds_minus_operational_amount.is_empty() {
                 // Fund account in native coins
                 msgs.push(build_transfer_native_funds_msg(
                     available_account_addr.to_string(),
-                    native_funds_minus_reward_and_fee,
+                    native_funds_minus_operational_amount,
                 ))
             }
 
