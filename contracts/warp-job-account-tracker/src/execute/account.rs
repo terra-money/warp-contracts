@@ -51,6 +51,13 @@ pub fn take_funding_account(
     let account_owner_addr_ref = deps.api.addr_validate(&data.account_owner_addr)?;
     let account_addr_ref = &deps.api.addr_validate(data.account_addr.as_str())?;
 
+    // prevent taking job accounts as funding accounts
+    if TAKEN_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, account_addr_ref))
+        || FREE_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, account_addr_ref))
+    {
+        return Err(ContractError::AccountAlreadyTakenError {});
+    }
+
     TAKEN_FUNDING_ACCOUNT_BY_JOB.update(deps.storage, data.job_id.u64(), |s| match s {
         // value is a dummy data because there is no built in support for set in cosmwasm
         None => Ok(account_addr_ref.clone()),
@@ -143,6 +150,13 @@ pub fn add_funding_account(
 ) -> Result<Response, ContractError> {
     let account_owner_addr_ref = deps.api.addr_validate(&data.account_owner_addr)?;
     let account_addr_ref = deps.api.addr_validate(&data.account_addr)?;
+
+    // prevent adding job accounts as funding accounts
+    if TAKEN_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, &account_addr_ref))
+        || FREE_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, &account_addr_ref))
+    {
+        return Err(ContractError::AccountAlreadyTakenError {});
+    }
 
     FUNDING_ACCOUNTS_BY_USER.update(
         deps.storage,
