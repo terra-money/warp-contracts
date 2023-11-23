@@ -10,7 +10,7 @@ use crate::{
     util::msg::{
         build_account_execute_warp_msgs, build_add_funding_account_msg,
         build_take_funding_account_msg, build_taken_account_msg, build_transfer_cw20_msg,
-        build_transfer_cw721_msg, build_transfer_native_funds_msg,
+        build_transfer_cw721_msg,
     },
     ContractError,
 };
@@ -67,7 +67,7 @@ pub fn create_job_account_and_job(
             .iter()
             .cloned()
             .find(|attr| attr.key == "native_funds")
-            .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
+            .ok_or_else(|| StdError::generic_err("cannot find `native_funds` attribute"))?
             .value,
     )?;
 
@@ -96,14 +96,6 @@ pub fn create_job_account_and_job(
     JobQueue::sync(&mut deps, env, job.clone())?;
 
     let mut msgs: Vec<CosmosMsg> = vec![];
-
-    if !native_funds.is_empty() {
-        // Fund account in native coins
-        msgs.push(build_transfer_native_funds_msg(
-            job_account_addr.to_string(),
-            native_funds.clone(),
-        ))
-    }
 
     if let Some(cw_funds) = cw_funds.clone() {
         // Fund account in CW20 / CW721 tokens
@@ -209,7 +201,7 @@ pub fn create_funding_account_and_job(
             .iter()
             .cloned()
             .find(|attr| attr.key == "native_funds")
-            .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
+            .ok_or_else(|| StdError::generic_err("cannot find `native_funds` attribute"))?
             .value,
     )?;
 
@@ -217,23 +209,12 @@ pub fn create_funding_account_and_job(
     job.funding_account = Some(funding_account_addr.clone());
     JobQueue::sync(&mut deps, env, job.clone())?;
 
-    let mut msgs: Vec<CosmosMsg> = vec![];
-
-    if !native_funds.is_empty() {
-        // Fund account in native coins
-        msgs.push(build_transfer_native_funds_msg(
-            funding_account_addr.to_string(),
-            native_funds.clone(),
-        ))
-    }
-
-    // Take funding account
-    msgs.push(build_take_funding_account_msg(
+    let msgs: Vec<CosmosMsg> = vec![build_take_funding_account_msg(
         config.job_account_tracker_address.to_string(),
         job.owner.to_string(),
         funding_account_addr.to_string(),
         job.id,
-    ));
+    )];
 
     Ok(Response::new()
         .add_messages(msgs)
@@ -287,29 +268,20 @@ pub fn create_funding_account(
             .iter()
             .cloned()
             .find(|attr| attr.key == "native_funds")
-            .ok_or_else(|| StdError::generic_err("cannot find `funds` attribute"))?
+            .ok_or_else(|| StdError::generic_err("cannot find `native_funds` attribute"))?
             .value,
     )?;
 
-    let mut msgs: Vec<CosmosMsg> = vec![];
-
-    if !native_funds.is_empty() {
-        // Fund account in native coins
-        msgs.push(build_transfer_native_funds_msg(
-            funding_account_addr.to_string(),
-            native_funds,
-        ))
-    }
-
-    msgs.push(build_add_funding_account_msg(
+    let msgs: Vec<CosmosMsg> = vec![build_add_funding_account_msg(
         config.job_account_tracker_address.to_string(),
         owner.to_string(),
         funding_account_addr.to_string(),
-    ));
+    )];
 
     Ok(Response::new()
         .add_messages(msgs)
         .add_attribute("action", "create_job_account_reply")
         .add_attribute("owner", owner)
-        .add_attribute("funding_account_address", funding_account_addr))
+        .add_attribute("funding_account_address", funding_account_addr)
+        .add_attribute("native_funds", serde_json_wasm::to_string(&native_funds)?))
 }
