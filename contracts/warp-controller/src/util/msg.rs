@@ -6,7 +6,8 @@ use controller::account::{
 };
 use job_account::GenericMsg;
 use job_account_tracker::{
-    FreeAccountMsg, FreeFundingAccountMsg, TakeAccountMsg, TakeFundingAccountMsg,
+    AddFundingAccountMsg, FreeAccountMsg, FreeFundingAccountMsg, TakeAccountMsg,
+    TakeFundingAccountMsg,
 };
 
 #[allow(clippy::too_many_arguments)]
@@ -108,6 +109,24 @@ pub fn build_take_funding_account_msg(
                 account_owner_addr,
                 account_addr,
                 job_id,
+            },
+        ))
+        .unwrap(),
+        funds: vec![],
+    })
+}
+
+pub fn build_add_funding_account_msg(
+    job_account_tracker_addr: String,
+    account_owner_addr: String,
+    account_addr: String,
+) -> CosmosMsg {
+    CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: job_account_tracker_addr,
+        msg: to_binary(&job_account_tracker::ExecuteMsg::AddFundingAccount(
+            AddFundingAccountMsg {
+                account_owner_addr,
+                account_addr,
             },
         ))
         .unwrap(),

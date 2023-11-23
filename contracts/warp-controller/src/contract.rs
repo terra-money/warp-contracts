@@ -99,51 +99,49 @@ pub fn execute(
                 .unwrap()
                 .amount;
 
-            execute::job::create_job(deps, env, info, *data, config, fee_denom_paid_amount)
+            execute::job::create_job(deps, env, info, data, config, fee_denom_paid_amount)
         }
         ExecuteMsg::DeleteJob(data) => {
             let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
-            execute::job::delete_job(deps, env, info, *data, config, fee_denom_paid_amount)
+            execute::job::delete_job(deps, env, info, data, config, fee_denom_paid_amount)
         }
-        ExecuteMsg::UpdateJob(data) => execute::job::update_job(deps, env, info, *data),
+        ExecuteMsg::UpdateJob(data) => execute::job::update_job(deps, env, info, data),
         ExecuteMsg::ExecuteJob(data) => {
             nonpayable(&info).unwrap();
-            execute::job::execute_job(deps, env, info, *data, config)
+            execute::job::execute_job(deps, env, info, data, config)
         }
         ExecuteMsg::EvictJob(data) => {
             nonpayable(&info).unwrap();
-            execute::job::evict_job(deps, env, info, *data, config)
+            execute::job::evict_job(deps, env, info, data, config)
         }
         ExecuteMsg::UpdateConfig(data) => {
             nonpayable(&info).unwrap();
-            execute::controller::update_config(deps, env, info, *data, config)
+            execute::controller::update_config(deps, env, info, data, config)
         }
         ExecuteMsg::MigrateLegacyAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::legacy_account::migrate_legacy_accounts(deps, info, *data, config)
+            migrate::legacy_account::migrate_legacy_accounts(deps, info, data, config)
         }
         ExecuteMsg::MigrateFreeJobAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::job_account::migrate_free_job_accounts(deps.as_ref(), env, info, *data, config)
+            migrate::job_account::migrate_free_job_accounts(deps.as_ref(), env, info, data, config)
         }
         ExecuteMsg::MigrateTakenJobAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::job_account::migrate_taken_job_accounts(
-                deps.as_ref(),
-                env,
-                info,
-                *data,
-                config,
-            )
+            migrate::job_account::migrate_taken_job_accounts(deps.as_ref(), env, info, data, config)
         }
 
         ExecuteMsg::MigratePendingJobs(data) => {
             nonpayable(&info).unwrap();
-            migrate::job::migrate_pending_jobs(deps, env, info, *data)
+            migrate::job::migrate_pending_jobs(deps, env, info, data)
         }
         ExecuteMsg::MigrateFinishedJobs(data) => {
             nonpayable(&info).unwrap();
-            migrate::job::migrate_finished_jobs(deps, env, info, *data)
+            migrate::job::migrate_finished_jobs(deps, env, info, data)
+        }
+
+        ExecuteMsg::CreateFundingAccount(data) => {
+            execute::account::create_funding_account(deps, env, info, data)
         }
     }
 }
@@ -184,11 +182,12 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // 0-1 reserved
+    // 0-2 reserved
     match msg.id {
         // use 0 as hack to call create_job_account_and_job
         0 => reply::account::create_job_account_and_job(deps, env, msg, config),
         1 => reply::account::create_funding_account_and_job(deps, env, msg, config),
+        2 => reply::account::create_funding_account(deps, env, msg, config),
         _id => reply::job::execute_job(deps, env, msg, config),
     }
 }

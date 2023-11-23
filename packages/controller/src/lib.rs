@@ -90,21 +90,24 @@ pub struct InstantiateMsg {
 
 //execute
 #[cw_serde]
+#[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
-    CreateJob(Box<CreateJobMsg>),
-    DeleteJob(Box<DeleteJobMsg>),
-    UpdateJob(Box<UpdateJobMsg>),
-    ExecuteJob(Box<ExecuteJobMsg>),
-    EvictJob(Box<EvictJobMsg>),
+    CreateJob(CreateJobMsg),
+    DeleteJob(DeleteJobMsg),
+    UpdateJob(UpdateJobMsg),
+    ExecuteJob(ExecuteJobMsg),
+    EvictJob(EvictJobMsg),
 
-    UpdateConfig(Box<UpdateConfigMsg>),
+    UpdateConfig(UpdateConfigMsg),
 
-    MigrateLegacyAccounts(Box<MigrateLegacyAccountsMsg>),
-    MigrateFreeJobAccounts(Box<MigrateJobAccountsMsg>),
-    MigrateTakenJobAccounts(Box<MigrateJobAccountsMsg>),
+    MigrateLegacyAccounts(MigrateLegacyAccountsMsg),
+    MigrateFreeJobAccounts(MigrateJobAccountsMsg),
+    MigrateTakenJobAccounts(MigrateJobAccountsMsg),
 
-    MigratePendingJobs(Box<MigrateJobsMsg>),
-    MigrateFinishedJobs(Box<MigrateJobsMsg>),
+    MigratePendingJobs(MigrateJobsMsg),
+    MigrateFinishedJobs(MigrateJobsMsg),
+
+    CreateFundingAccount(CreateFundingAccountMsg),
 }
 
 #[cw_serde]
@@ -153,6 +156,9 @@ pub struct MigrateJobsMsg {
     pub start_after: Option<Uint64>,
     pub limit: u8,
 }
+
+#[cw_serde]
+pub struct CreateFundingAccountMsg {}
 
 //query
 #[derive(QueryResponses)]

@@ -1,8 +1,11 @@
-use crate::state::{FREE_ACCOUNTS, FUNDING_ACCOUNTS, TAKEN_ACCOUNTS, TAKEN_FUNDING_ACCOUNT_BY_JOB};
+use crate::state::{
+    FREE_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_ACCOUNTS, TAKEN_FUNDING_ACCOUNT_BY_JOB,
+};
 use crate::ContractError;
 use cosmwasm_std::{DepsMut, Response};
 use job_account_tracker::{
-    FreeAccountMsg, FreeFundingAccountMsg, FundingAccount, TakeAccountMsg, TakeFundingAccountMsg,
+    AddFundingAccountMsg, FreeAccountMsg, FreeFundingAccountMsg, FundingAccount, TakeAccountMsg,
+    TakeFundingAccountMsg,
 };
 
 pub fn taken_account(deps: DepsMut, data: TakeAccountMsg) -> Result<Response, ContractError> {
@@ -54,7 +57,7 @@ pub fn take_funding_account(
         Some(_) => Err(ContractError::AccountAlreadyTakenError {}),
     })?;
 
-    FUNDING_ACCOUNTS.update(
+    FUNDING_ACCOUNTS_BY_USER.update(
         deps.storage,
         &account_owner_addr_ref,
         |accounts_opt| -> Result<Vec<FundingAccount>, ContractError> {
@@ -102,7 +105,7 @@ pub fn free_funding_account(
 
     TAKEN_FUNDING_ACCOUNT_BY_JOB.remove(deps.storage, data.job_id.u64());
 
-    FUNDING_ACCOUNTS.update(
+    FUNDING_ACCOUNTS_BY_USER.update(
         deps.storage,
         &account_owner_addr_ref,
         |accounts_opt| -> Result<Vec<FundingAccount>, ContractError> {
@@ -132,4 +135,45 @@ pub fn free_funding_account(
         .add_attribute("action", "free_funding_account")
         .add_attribute("account_addr", data.account_addr)
         .add_attribute("job_id", data.job_id.to_string()))
+}
+
+pub fn add_funding_account(
+    deps: DepsMut,
+    data: AddFundingAccountMsg,
+) -> Result<Response, ContractError> {
+    let account_owner_addr_ref = deps.api.addr_validate(&data.account_owner_addr)?;
+    let account_addr_ref = deps.api.addr_validate(&data.account_addr)?;
+
+    FUNDING_ACCOUNTS_BY_USER.update(
+        deps.storage,
+        &account_owner_addr_ref,
+        |accounts_opt| -> Result<Vec<FundingAccount>, ContractError> {
+            match accounts_opt {
+                Some(mut accounts) => {
+                    if accounts
+                        .iter_mut()
+                        .any(|acc| acc.account_addr == account_addr_ref.clone())
+                    {
+                        // account already exists, do nothing
+                        Ok(accounts)
+                    } else {
+                        accounts.push(FundingAccount {
+                            account_addr: account_addr_ref.clone(),
+                            taken_by_job_ids: vec![],
+                        });
+
+                        Ok(accounts)
+                    }
+                }
+                None => Ok(vec![FundingAccount {
+                    account_addr: account_addr_ref.clone(),
+                    taken_by_job_ids: vec![],
+                }]),
+            }
+        },
+    )?;
+
+    Ok(Response::new()
+        .add_attribute("action", "add_funding_account")
+        .add_attribute("account_addr", data.account_addr))
 }

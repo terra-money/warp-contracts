@@ -1,7 +1,7 @@
 use cosmwasm_std::{Deps, Order, StdResult};
 use cw_storage_plus::{Bound, PrefixBound};
 
-use crate::state::{CONFIG, FREE_ACCOUNTS, FUNDING_ACCOUNTS, TAKEN_ACCOUNTS};
+use crate::state::{CONFIG, FREE_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_ACCOUNTS};
 
 use job_account_tracker::{
     Account, AccountResponse, AccountsResponse, ConfigResponse, FundingAccountResponse,
@@ -152,7 +152,7 @@ pub fn query_funding_account(
     let account_addr_ref = deps.api.addr_validate(data.account_addr.as_str())?;
     let account_owner_addr_ref = deps.api.addr_validate(data.account_owner_addr.as_str())?;
 
-    let funding_accounts = FUNDING_ACCOUNTS.load(deps.storage, &account_owner_addr_ref)?;
+    let funding_accounts = FUNDING_ACCOUNTS_BY_USER.load(deps.storage, &account_owner_addr_ref)?;
 
     Ok(FundingAccountResponse {
         funding_account: funding_accounts
@@ -168,7 +168,7 @@ pub fn query_funding_accounts(
 ) -> StdResult<FundingAccountsResponse> {
     let account_owner_addr_ref = deps.api.addr_validate(data.account_owner_addr.as_str())?;
 
-    let funding_accounts = FUNDING_ACCOUNTS.load(deps.storage, &account_owner_addr_ref)?;
+    let funding_accounts = FUNDING_ACCOUNTS_BY_USER.load(deps.storage, &account_owner_addr_ref)?;
 
     Ok(FundingAccountsResponse { funding_accounts })
 }
@@ -179,7 +179,7 @@ pub fn query_first_free_funding_account(
 ) -> StdResult<FundingAccountResponse> {
     let account_owner_addr_ref = deps.api.addr_validate(data.account_owner_addr.as_str())?;
 
-    let funding_accounts = FUNDING_ACCOUNTS.load(deps.storage, &account_owner_addr_ref)?;
+    let funding_accounts = FUNDING_ACCOUNTS_BY_USER.load(deps.storage, &account_owner_addr_ref)?;
 
     let funding_account = funding_accounts
         .iter()

@@ -43,6 +43,7 @@ pub fn execute(
     if info.sender != config.admin && info.sender != config.warp_addr {
         return Err(ContractError::Unauthorized {});
     }
+
     match msg {
         ExecuteMsg::TakeAccount(data) => {
             nonpayable(&info).unwrap();
@@ -59,6 +60,10 @@ pub fn execute(
         ExecuteMsg::FreeFundingAccount(data) => {
             nonpayable(&info).unwrap();
             execute::account::free_funding_account(deps, data)
+        }
+        ExecuteMsg::AddFundingAccount(data) => {
+            nonpayable(&info).unwrap();
+            execute::account::add_funding_account(deps, data)
         }
     }
 }

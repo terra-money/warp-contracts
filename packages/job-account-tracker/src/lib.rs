@@ -21,6 +21,7 @@ pub enum ExecuteMsg {
     FreeAccount(FreeAccountMsg),
     TakeFundingAccount(TakeFundingAccountMsg),
     FreeFundingAccount(FreeFundingAccountMsg),
+    AddFundingAccount(AddFundingAccountMsg),
 }
 
 #[cw_serde]
@@ -49,6 +50,12 @@ pub struct FreeFundingAccountMsg {
     pub account_owner_addr: String,
     pub account_addr: String,
     pub job_id: Uint64,
+}
+
+#[cw_serde]
+pub struct AddFundingAccountMsg {
+    pub account_owner_addr: String,
+    pub account_addr: String,
 }
 
 #[derive(QueryResponses)]
