@@ -1,12 +1,9 @@
 use crate::state::CONFIG;
 use crate::{query, ContractError};
-use controller::account::{
-    execute_warp_msgs, ibc_transfer, warp_msgs_to_cosmos_msgs, withdraw_assets,
-};
+use controller::account::{execute_warp_msgs, warp_msgs_to_cosmos_msgs};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
-use cw_utils::nonpayable;
 use job_account::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -52,14 +49,6 @@ pub fn execute(
         return Err(ContractError::Unauthorized {});
     }
     match msg {
-        ExecuteMsg::Generic(data) => Ok(Response::new()
-            .add_messages(data.msgs)
-            .add_attribute("action", "generic")),
-        ExecuteMsg::WithdrawAssets(data) => {
-            nonpayable(&info).unwrap();
-            withdraw_assets(deps.as_ref(), env, data, &config.owner).map_err(ContractError::Std)
-        }
-        ExecuteMsg::IbcTransfer(data) => ibc_transfer(env, data).map_err(ContractError::Std),
         ExecuteMsg::WarpMsgs(data) => {
             execute_warp_msgs(deps, env, data, &config.owner).map_err(ContractError::Std)
         }

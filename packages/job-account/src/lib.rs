@@ -1,6 +1,6 @@
-use controller::account::{CwFund, IbcTransferMsg, WarpMsg, WarpMsgs, WithdrawAssetsMsg};
+use controller::account::{CwFund, WarpMsg, WarpMsgs};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Coin as NativeCoin, CosmosMsg, Uint64};
+use cosmwasm_std::{Addr, Coin as NativeCoin, Uint64};
 
 #[cw_serde]
 pub struct Config {
@@ -27,20 +27,7 @@ pub struct InstantiateMsg {
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     WarpMsgs(WarpMsgs),
-
-    // legacy flow
-    Generic(GenericMsg),
-    WithdrawAssets(WithdrawAssetsMsg),
-    IbcTransfer(IbcTransferMsg),
 }
-
-#[cw_serde]
-pub struct GenericMsg {
-    pub msgs: Vec<CosmosMsg>,
-}
-
-#[cw_serde]
-pub struct ExecuteWasmMsg {}
 
 #[derive(QueryResponses)]
 #[cw_serde]

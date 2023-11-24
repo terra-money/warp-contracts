@@ -4,7 +4,6 @@ use controller::account::{
     AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg, WarpMsg, WarpMsgs,
     WithdrawAssetsMsg,
 };
-use job_account::GenericMsg;
 use job_account_tracker::{
     AddFundingAccountMsg, FreeAccountMsg, FreeFundingAccountMsg, TakeAccountMsg,
     TakeFundingAccountMsg,
@@ -182,14 +181,13 @@ pub fn build_account_execute_generic_msgs(
     account_addr: String,
     cosmos_msgs_for_account_to_execute: Vec<CosmosMsg>,
 ) -> CosmosMsg {
-    CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: account_addr,
-        msg: to_binary(&job_account::ExecuteMsg::Generic(GenericMsg {
-            msgs: cosmos_msgs_for_account_to_execute,
-        }))
-        .unwrap(),
-        funds: vec![],
-    })
+    build_account_execute_warp_msgs(
+        account_addr,
+        cosmos_msgs_for_account_to_execute
+            .into_iter()
+            .map(WarpMsg::Generic)
+            .collect(),
+    )
 }
 
 pub fn build_account_execute_warp_msgs(
@@ -210,14 +208,10 @@ pub fn build_account_withdraw_assets_msg(
     account_addr: String,
     assets_to_withdraw: Vec<AssetInfo>,
 ) -> CosmosMsg {
-    CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: account_addr,
-        msg: to_binary(&job_account::ExecuteMsg::WithdrawAssets(
-            WithdrawAssetsMsg {
-                asset_infos: assets_to_withdraw,
-            },
-        ))
-        .unwrap(),
-        funds: vec![],
-    })
+    build_account_execute_warp_msgs(
+        account_addr,
+        vec![WarpMsg::WithdrawAssets(WithdrawAssetsMsg {
+            asset_infos: assets_to_withdraw,
+        })],
+    )
 }
