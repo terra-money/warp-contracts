@@ -1,12 +1,12 @@
 use cosmwasm_std::{
     Attribute, BalanceResponse, BankQuery, Coin, DepsMut, Env, QueryRequest, Reply, Response,
-    StdResult, SubMsgResult, Uint64,
+    StdError, StdResult, SubMsgResult, Uint64,
 };
 
 use crate::{
     error::map_contract_error,
     execute::fee::{compute_burn_fee, compute_creation_fee, compute_maintenance_fee},
-    state::{JobQueue, LEGACY_ACCOUNTS, STATE},
+    state::{JobQueue, CONFIG, LEGACY_ACCOUNTS, STATE},
     util::{
         legacy_account::is_legacy_account,
         msg::{
@@ -264,4 +264,41 @@ pub fn execute_job(
         .add_attribute("job_id", finished_job.id)
         .add_attributes(res_attrs)
         .add_attributes(new_job_attrs))
+}
+
+pub fn instantiate_sub_contracts(
+    deps: DepsMut,
+    _env: Env,
+    msg: Reply,
+    mut config: Config,
+) -> Result<Response, ContractError> {
+    let reply: cosmwasm_std::SubMsgResponse =
+        msg.result.into_result().map_err(StdError::generic_err)?;
+
+    let job_account_tracker_instantiate_event = reply
+        .events
+        .iter()
+        .find(|event| {
+            event
+                .attributes
+                .iter()
+                .any(|attr| attr.key == "action" && attr.value == "instantiate")
+        })
+        .ok_or_else(|| StdError::generic_err("cannot find `instantiate` event"))?;
+
+    let job_account_tracker_addr = deps.api.addr_validate(
+        &job_account_tracker_instantiate_event
+            .attributes
+            .iter()
+            .cloned()
+            .find(|attr| attr.key == "job_account_tracker")
+            .ok_or_else(|| StdError::generic_err("cannot find `job_account_tracker` attribute"))?
+            .value,
+    )?;
+
+    config.job_account_tracker_address = job_account_tracker_addr;
+
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new().add_attribute("action", "instantiate_sub_contracts_reply"))
 }

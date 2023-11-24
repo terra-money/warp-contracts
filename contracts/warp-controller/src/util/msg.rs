@@ -10,6 +10,25 @@ use job_account_tracker::{
 };
 
 #[allow(clippy::too_many_arguments)]
+pub fn build_instantiate_job_account_tracker_msg(
+    admin_addr: String,
+    controller_addr: String,
+    code_id: u64,
+) -> CosmosMsg {
+    CosmosMsg::Wasm(WasmMsg::Instantiate {
+        admin: Some(admin_addr.clone()),
+        code_id,
+        msg: to_binary(&job_account_tracker::InstantiateMsg {
+            admin: admin_addr,
+            warp_addr: controller_addr,
+        })
+        .unwrap(),
+        funds: vec![],
+        label: "warp job account tracker".to_string(),
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
 pub fn build_instantiate_warp_account_msg(
     job_id: Uint64,
     admin_addr: String,

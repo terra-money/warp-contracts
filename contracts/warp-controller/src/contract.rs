@@ -1,12 +1,13 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
-    Uint64,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
+    StdResult, SubMsg, Uint64,
 };
 use cw_utils::{must_pay, nonpayable};
 
 use crate::{
     execute, migrate, query, reply,
     state::{CONFIG, STATE},
+    util::msg::build_instantiate_job_account_tracker_msg,
     ContractError,
 };
 
@@ -15,12 +16,13 @@ use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let state = State {
-        current_job_id: Uint64::one(),
+        // start from 10, 0-9 reserved for reply logic
+        current_job_id: Uint64::from(10u64),
         q: Uint64::zero(),
     };
 
@@ -37,7 +39,8 @@ pub fn instantiate(
         creation_fee_percentage: msg.creation_fee,
         cancellation_fee_percentage: msg.cancellation_fee,
         resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
-        job_account_tracker_address: deps.api.addr_validate(&msg.job_account_tracker_address)?,
+        // placeholder, will be updated in reply
+        job_account_tracker_address: deps.api.addr_validate(&msg.resolver_address)?,
         t_max: msg.t_max,
         t_min: msg.t_min,
         a_max: msg.a_max,
@@ -78,7 +81,18 @@ pub fn instantiate(
     STATE.save(deps.storage, &state)?;
     CONFIG.save(deps.storage, &config)?;
 
-    Ok(Response::new())
+    let submsgs = vec![SubMsg {
+        id: 3,
+        msg: build_instantiate_job_account_tracker_msg(
+            config.owner.to_string(),
+            env.contract.address.to_string(),
+            msg.job_account_tracker_code_id.u64(),
+        ),
+        gas_limit: None,
+        reply_on: ReplyOn::Always,
+    }];
+
+    Ok(Response::new().add_submessages(submsgs))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -182,12 +196,12 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // 0-2 reserved
+    // 0-10 reserved
     match msg.id {
-        // use 0 as hack to call create_job_account_and_job
         0 => reply::account::create_job_account_and_job(deps, env, msg, config),
         1 => reply::account::create_funding_account_and_job(deps, env, msg, config),
         2 => reply::account::create_funding_account(deps, env, msg, config),
+        3 => reply::job::instantiate_sub_contracts(deps, env, msg, config),
         _id => reply::job::execute_job(deps, env, msg, config),
     }
 }
