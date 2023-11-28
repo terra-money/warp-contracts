@@ -4,7 +4,7 @@ use std::fs::create_dir_all;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use job_account_tracker::{
     Account, AccountResponse, AccountsResponse, Config, ConfigResponse, ExecuteMsg, InstantiateMsg,
-    QueryMsg,
+    QueryMsg, FundingAccountResponse, FundingAccountsResponse,
 };
 
 fn main() {
@@ -19,6 +19,8 @@ fn main() {
     export_schema(&schema_for!(Config), &out_dir);
     export_schema(&schema_for!(AccountsResponse), &out_dir);
     export_schema(&schema_for!(AccountResponse), &out_dir);
+    export_schema(&schema_for!(FundingAccountResponse), &out_dir);
+    export_schema(&schema_for!(FundingAccountsResponse), &out_dir);
     export_schema(&schema_for!(ConfigResponse), &out_dir);
     export_schema(&schema_for!(Account), &out_dir);
 }
