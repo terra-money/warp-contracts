@@ -22,6 +22,7 @@ pub struct OldJob {
     pub labels: Vec<String>,
     pub status: JobStatus,
     pub terminate_condition: Option<String>,
+    pub duration_days: Uint64,
     pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
@@ -61,15 +62,15 @@ pub fn migrate_pending_jobs(
         let indexes = OldJobIndexes {
             reward: UniqueIndex::new(
                 |job| (job.reward.u128(), job.id.u64()),
-                "pending_jobs__reward_v4",
+                "pending_jobs__reward_v5",
             ),
             publish_time: MultiIndex::new(
                 |_pk, job| job.last_update_time.u64(),
-                "pending_jobs_v4",
-                "pending_jobs__publish_timestamp_v4",
+                "pending_jobs_v5",
+                "pending_jobs__publish_timestamp_v5",
             ),
         };
-        IndexedMap::new("pending_jobs_v4", indexes)
+        IndexedMap::new("pending_jobs_v5", indexes)
     }
 
     let job_keys: Result<Vec<_>, _> = OLD_PENDING_JOBS()
@@ -100,7 +101,7 @@ pub fn migrate_pending_jobs(
                 recurring: old_job.recurring,
                 reward: old_job.reward,
                 assets_to_withdraw: old_job.assets_to_withdraw,
-                duration_days: Uint64::from(30u64),
+                duration_days: old_job.duration_days,
                 created_at_time: old_job.last_update_time,
                 // TODO: update to old_job.funding_account
                 funding_account: None,
@@ -131,15 +132,15 @@ pub fn migrate_finished_jobs(
         let indexes = OldJobIndexes {
             reward: UniqueIndex::new(
                 |job| (job.reward.u128(), job.id.u64()),
-                "finished_jobs__reward_v4",
+                "finished_jobs__reward_v5",
             ),
             publish_time: MultiIndex::new(
                 |_pk, job| job.last_update_time.u64(),
-                "finished_jobs_v4",
-                "finished_jobs__publish_timestamp_v4",
+                "finished_jobs_v5",
+                "finished_jobs__publish_timestamp_v5",
             ),
         };
-        IndexedMap::new("finished_jobs_v4", indexes)
+        IndexedMap::new("finished_jobs_v5", indexes)
     }
 
     let job_keys: Result<Vec<_>, _> = OLD_FINISHED_JOBS()
@@ -170,7 +171,7 @@ pub fn migrate_finished_jobs(
                 recurring: old_job.recurring,
                 reward: old_job.reward,
                 assets_to_withdraw: old_job.assets_to_withdraw,
-                duration_days: Uint64::from(30u64),
+                duration_days: old_job.duration_days,
                 created_at_time: old_job.last_update_time,
                 // TODO: update to old_job.funding_account
                 funding_account: None,
