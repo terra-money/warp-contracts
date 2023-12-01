@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::CosmosMsg::Stargate;
-use cosmwasm_std::{to_binary, BankMsg, DepsMut, WasmMsg};
+use cosmwasm_std::{to_binary, BankMsg, DepsMut, Uint64, WasmMsg};
 use cosmwasm_std::{Addr, CosmosMsg, Deps, Env, Response, StdError, StdResult, Uint128};
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
@@ -61,6 +61,7 @@ pub enum AssetInfo {
 #[cw_serde]
 pub struct WarpMsgs {
     pub msgs: Vec<WarpMsg>,
+    pub job_id: Option<Uint64>,
 }
 
 #[cw_serde]
@@ -132,9 +133,15 @@ pub fn execute_warp_msgs(
 ) -> Result<Response, StdError> {
     let msgs = warp_msgs_to_cosmos_msgs(deps.as_ref(), env, data.msgs, owner).unwrap();
 
-    Ok(Response::new()
+    let mut resp = Response::new()
         .add_messages(msgs)
-        .add_attribute("action", "warp_msgs"))
+        .add_attribute("action", "warp_msgs");
+
+    if let Some(job_id) = data.job_id {
+        resp = resp.add_attribute("job_id", job_id);
+    }
+
+    Ok(resp)
 }
 
 pub fn warp_msgs_to_cosmos_msgs(

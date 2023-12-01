@@ -1,7 +1,10 @@
 use controller::CreateFundingAccountMsg;
 use cosmwasm_std::{DepsMut, Env, MessageInfo, ReplyOn, Response, SubMsg, Uint64};
 
-use crate::{state::CONFIG, util::msg::build_instantiate_warp_account_msg, ContractError};
+use crate::{
+    contract::REPLY_ID_CREATE_FUNDING_ACCOUNT, state::CONFIG,
+    util::msg::build_instantiate_warp_account_msg, ContractError,
+};
 
 pub fn create_funding_account(
     deps: DepsMut,
@@ -12,7 +15,7 @@ pub fn create_funding_account(
     let config = CONFIG.load(deps.storage)?;
 
     let submsgs = vec![SubMsg {
-        id: 2,
+        id: REPLY_ID_CREATE_FUNDING_ACCOUNT,
         msg: build_instantiate_warp_account_msg(
             Uint64::from(0u64), // placeholder
             env.contract.address.to_string(),

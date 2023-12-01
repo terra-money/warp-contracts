@@ -77,6 +77,7 @@ fn test_execute_controller() {
                 value: Default::default(),
             }),
         ],
+        job_id: None,
     });
 
     let execute_res = execute(deps.as_mut(), env, info, execute_msg).unwrap();
@@ -204,6 +205,7 @@ fn test_execute_owner() {
                 value: Default::default(),
             }),
         ],
+        job_id: None,
     });
 
     let info2 = mock_info("vlad", &[]);
@@ -333,6 +335,7 @@ fn test_execute_unauth() {
                 value: Default::default(),
             }),
         ],
+        job_id: None,
     });
 
     let info2 = mock_info("vlad2", &[]);

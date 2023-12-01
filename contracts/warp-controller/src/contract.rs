@@ -21,8 +21,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let state = State {
-        // start from 10, 0-9 reserved for reply logic
-        current_job_id: Uint64::from(10u64),
+        current_job_id: Uint64::one(),
         q: Uint64::zero(),
     };
 
@@ -82,7 +81,7 @@ pub fn instantiate(
     CONFIG.save(deps.storage, &config)?;
 
     let submsgs = vec![SubMsg {
-        id: 3,
+        id: REPLY_ID_INSTANTIATE_SUB_CONTRACTS,
         msg: build_instantiate_job_account_tracker_msg(
             config.owner.to_string(),
             env.contract.address.to_string(),
@@ -179,16 +178,30 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     Ok(Response::new())
 }
 
+pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 0;
+pub const REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB: u64 = 1;
+pub const REPLY_ID_CREATE_FUNDING_ACCOUNT: u64 = 2;
+pub const REPLY_ID_INSTANTIATE_SUB_CONTRACTS: u64 = 3;
+pub const REPLY_ID_EXECUTE_JOB: u64 = 4;
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // 0-10 reserved
     match msg.id {
-        0 => reply::account::create_job_account_and_job(deps, env, msg, config),
-        1 => reply::account::create_funding_account_and_job(deps, env, msg, config),
-        2 => reply::account::create_funding_account(deps, env, msg, config),
-        3 => reply::job::instantiate_sub_contracts(deps, env, msg, config),
-        _id => reply::job::execute_job(deps, env, msg, config),
+        REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => {
+            reply::account::create_job_account_and_job(deps, env, msg, config)
+        }
+        REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB => {
+            reply::account::create_funding_account_and_job(deps, env, msg, config)
+        }
+        REPLY_ID_CREATE_FUNDING_ACCOUNT => {
+            reply::account::create_funding_account(deps, env, msg, config)
+        }
+        REPLY_ID_INSTANTIATE_SUB_CONTRACTS => {
+            reply::job::instantiate_sub_contracts(deps, env, msg, config)
+        }
+        REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg, config),
+        _ => panic!(),
     }
 }

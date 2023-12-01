@@ -217,6 +217,7 @@ pub fn build_account_execute_warp_msgs(
         contract_addr: account_addr,
         msg: to_binary(&job_account::ExecuteMsg::WarpMsgs(WarpMsgs {
             msgs: warp_msgs_for_account_to_execute,
+            job_id: None,
         }))
         .unwrap(),
         funds: vec![],

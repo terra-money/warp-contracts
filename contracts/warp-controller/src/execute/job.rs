@@ -1,3 +1,7 @@
+use crate::contract::{
+    REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB, REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
+    REPLY_ID_EXECUTE_JOB,
+};
 use crate::state::{JobQueue, STATE};
 use crate::util::msg::{
     build_account_execute_warp_msgs, build_free_funding_account_msg, build_take_funding_account_msg,
@@ -168,7 +172,7 @@ pub fn create_job(
         None => {
             // Create account then create job in reply
             submsgs.push(SubMsg {
-                id: 0,
+                id: REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
                 msg: build_instantiate_warp_account_msg(
                     job.id,
                     env.contract.address.to_string(),
@@ -269,7 +273,7 @@ pub fn create_job(
             None => {
                 // Create funding account then create job in reply
                 submsgs.push(SubMsg {
-                    id: 1,
+                    id: REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB,
                     msg: build_instantiate_warp_account_msg(
                         job.id,
                         env.contract.address.to_string(),
@@ -502,7 +506,7 @@ pub fn execute_job(
         match resolution {
             Ok(true) => {
                 submsgs.push(SubMsg {
-                    id: data.id.u64(),
+                    id: REPLY_ID_EXECUTE_JOB,
                     msg: CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: job.account.to_string(),
                         msg: to_binary(&job_account::ExecuteMsg::WarpMsgs(WarpMsgs {
@@ -513,6 +517,7 @@ pub fn execute_job(
                                     vars,
                                 }),
                             )?,
+                            job_id: Some(data.id),
                         }))?,
                         funds: vec![],
                     }),
