@@ -1,8 +1,7 @@
-use cosmwasm_std::{Addr, DepsMut, Env, Uint64};
+use cosmwasm_std::{DepsMut, Env, Uint64};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
 
 use controller::{
-    account::LegacyAccount,
     job::{Job, JobStatus, UpdateJobMsg},
     Config, State,
 };
@@ -51,29 +50,6 @@ pub fn FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
         ),
     };
     IndexedMap::new("finished_jobs_v6", indexes)
-}
-
-pub struct LegacyAccountIndexes<'a> {
-    pub account: UniqueIndex<'a, Addr, LegacyAccount>,
-}
-
-impl IndexList<LegacyAccount> for LegacyAccountIndexes<'_> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<LegacyAccount>> + '_> {
-        let v: Vec<&dyn Index<LegacyAccount>> = vec![&self.account];
-        Box::new(v.into_iter())
-    }
-}
-
-// !!! DEPRECATED !!!
-// LEGACY_ACCOUNTS stores legacy account (all user's jobs share the same account, this is the old way of doing things before introducing job account)
-// As of late 2023, we introduced job account meaning each job will have its own account, no more job sharing the same account
-// We keep this for backward compatibility so user can withdraw from their old accounts
-#[allow(non_snake_case)]
-pub fn LEGACY_ACCOUNTS<'a>() -> IndexedMap<'a, Addr, LegacyAccount, LegacyAccountIndexes<'a>> {
-    let indexes = LegacyAccountIndexes {
-        account: UniqueIndex::new(|account| account.account.clone(), "accounts__account"),
-    };
-    IndexedMap::new("accounts", indexes)
 }
 
 pub const QUERY_PAGE_SIZE: u32 = 50;

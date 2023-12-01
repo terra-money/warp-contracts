@@ -132,10 +132,6 @@ pub fn execute(
             nonpayable(&info).unwrap();
             execute::controller::update_config(deps, env, info, data, config)
         }
-        ExecuteMsg::MigrateLegacyAccounts(data) => {
-            nonpayable(&info).unwrap();
-            migrate::legacy_account::migrate_legacy_accounts(deps, info, data, config)
-        }
         ExecuteMsg::MigrateFreeJobAccounts(data) => {
             nonpayable(&info).unwrap();
             migrate::job_account::migrate_free_job_accounts(deps.as_ref(), env, info, data, config)
@@ -165,15 +161,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryJob(data) => to_binary(&query::job::query_job(deps, env, data)?),
         QueryMsg::QueryJobs(data) => to_binary(&query::job::query_jobs(deps, env, data)?),
-
-        // For job account, please query it via the account tracker contract
-        QueryMsg::QueryLegacyAccount(data) => {
-            to_binary(&query::account::query_legacy_account(deps, env, data)?)
-        }
-        QueryMsg::QueryLegacyAccounts(data) => {
-            to_binary(&query::account::query_legacy_accounts(deps, env, data)?)
-        }
-
         QueryMsg::QueryConfig(data) => {
             to_binary(&query::controller::query_config(deps, env, data)?)
         }

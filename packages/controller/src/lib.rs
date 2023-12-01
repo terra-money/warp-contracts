@@ -1,6 +1,3 @@
-use crate::account::{
-    LegacyAccountResponse, LegacyAccountsResponse, QueryLegacyAccountMsg, QueryLegacyAccountsMsg,
-};
 use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, UpdateJobMsg,
@@ -100,7 +97,6 @@ pub enum ExecuteMsg {
 
     UpdateConfig(UpdateConfigMsg),
 
-    MigrateLegacyAccounts(MigrateLegacyAccountsMsg),
     MigrateFreeJobAccounts(MigrateJobAccountsMsg),
     MigrateTakenJobAccounts(MigrateJobAccountsMsg),
 
@@ -137,13 +133,6 @@ pub struct UpdateConfigMsg {
 }
 
 #[cw_serde]
-pub struct MigrateLegacyAccountsMsg {
-    pub warp_legacy_account_code_id: Uint64,
-    pub start_after: Option<String>,
-    pub limit: u8,
-}
-
-#[cw_serde]
 pub struct MigrateJobAccountsMsg {
     pub account_owner_addr: String,
     pub warp_job_account_code_id: Uint64,
@@ -168,13 +157,6 @@ pub enum QueryMsg {
     QueryJob(QueryJobMsg),
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
-
-    // For job account, please query it via the account tracker contract
-    // You can look at account tracker contract for more details
-    #[returns(LegacyAccountResponse)]
-    QueryLegacyAccount(QueryLegacyAccountMsg),
-    #[returns(LegacyAccountsResponse)]
-    QueryLegacyAccounts(QueryLegacyAccountsMsg),
 
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),

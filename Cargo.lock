@@ -605,19 +605,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "legacy-account"
-version = "0.1.0"
-dependencies = [
- "controller",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-multi-test",
- "prost 0.11.9",
- "schemars",
- "serde",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.138"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1037,7 +1024,6 @@ dependencies = [
  "job-account",
  "job-account-tracker",
  "json-codec-wasm",
- "legacy-account",
  "resolver",
  "schemars",
  "serde-json-wasm 0.4.1",
@@ -1087,31 +1073,6 @@ dependencies = [
  "cw721",
  "job-account-tracker",
  "json-codec-wasm",
- "prost 0.11.9",
- "schemars",
- "serde-json-wasm 0.4.1",
- "thiserror",
-]
-
-[[package]]
-name = "warp-legacy-account"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64",
- "controller",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-asset",
- "cw-multi-test",
- "cw-storage-plus 0.16.0",
- "cw-utils 0.16.0",
- "cw2 0.16.0",
- "cw20",
- "cw721",
- "json-codec-wasm",
- "legacy-account",
  "prost 0.11.9",
  "schemars",
  "serde-json-wasm 0.4.1",

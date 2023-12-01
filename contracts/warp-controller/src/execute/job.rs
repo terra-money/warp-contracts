@@ -12,16 +12,12 @@ use cosmwasm_std::{
     SubMsg, Uint128, Uint64, WasmMsg,
 };
 
-use crate::{
-    state::LEGACY_ACCOUNTS,
-    util::{
-        fee::deduct_from_native_funds,
-        legacy_account::is_legacy_account,
-        msg::{
-            build_account_withdraw_assets_msg, build_free_account_msg,
-            build_instantiate_warp_account_msg, build_taken_account_msg, build_transfer_cw20_msg,
-            build_transfer_cw721_msg, build_transfer_native_funds_msg,
-        },
+use crate::util::{
+    fee::deduct_from_native_funds,
+    msg::{
+        build_account_withdraw_assets_msg, build_free_account_msg,
+        build_instantiate_warp_account_msg, build_taken_account_msg, build_transfer_cw20_msg,
+        build_transfer_cw721_msg, build_transfer_native_funds_msg,
     },
 };
 
@@ -358,7 +354,6 @@ pub fn delete_job(
     fee_denom_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let job = JobQueue::get(&deps, data.id.into())?;
-    let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, job.owner.clone())?;
     let job_account_addr = job.account.clone();
 
     if job.status != JobStatus::Pending {
@@ -394,29 +389,27 @@ pub fn delete_job(
         vec![Coin::new(fee.u128(), config.fee_denom.clone())],
     ));
 
-    if !is_legacy_account(legacy_account, job_account_addr.clone()) {
-        // Free account
-        msgs.push(build_free_account_msg(
+    // Free account
+    msgs.push(build_free_account_msg(
+        config.job_account_tracker_address.to_string(),
+        job.owner.to_string(),
+        job_account_addr.to_string(),
+        job.id,
+    ));
+
+    if let Some(funding_account) = job.funding_account {
+        msgs.push(build_free_funding_account_msg(
             config.job_account_tracker_address.to_string(),
             job.owner.to_string(),
-            job_account_addr.to_string(),
+            funding_account.to_string(),
             job.id,
         ));
 
-        if let Some(funding_account) = job.funding_account {
-            msgs.push(build_free_funding_account_msg(
-                config.job_account_tracker_address.to_string(),
-                job.owner.to_string(),
-                funding_account.to_string(),
-                job.id,
-            ));
-
-            // withdraws all native funds from funding account
-            msgs.push(build_account_withdraw_assets_msg(
-                funding_account.to_string(),
-                vec![AssetInfo::Native(config.fee_denom)],
-            ));
-        }
+        // withdraws all native funds from funding account
+        msgs.push(build_account_withdraw_assets_msg(
+            funding_account.to_string(),
+            vec![AssetInfo::Native(config.fee_denom)],
+        ));
     }
 
     // Job owner withdraw all assets that are listed from warp account to itself
@@ -477,7 +470,6 @@ pub fn execute_job(
     config: Config,
 ) -> Result<Response, ContractError> {
     let job = JobQueue::get(&deps, data.id.into())?;
-    let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, job.owner.clone())?;
     let job_account_addr = job.account.clone();
 
     if job.status != JobStatus::Pending {
@@ -548,23 +540,21 @@ pub fn execute_job(
         vec![Coin::new(job.reward.u128(), config.fee_denom)],
     ));
 
-    if !is_legacy_account(legacy_account, job_account_addr.clone()) {
-        // Free account
-        msgs.push(build_free_account_msg(
+    // Free account
+    msgs.push(build_free_account_msg(
+        config.job_account_tracker_address.to_string(),
+        job.owner.to_string(),
+        job_account_addr.to_string(),
+        job.id,
+    ));
+
+    if let Some(funding_account) = job.funding_account {
+        msgs.push(build_free_funding_account_msg(
             config.job_account_tracker_address.to_string(),
             job.owner.to_string(),
-            job_account_addr.to_string(),
+            funding_account.to_string(),
             job.id,
         ));
-
-        if let Some(funding_account) = job.funding_account {
-            msgs.push(build_free_funding_account_msg(
-                config.job_account_tracker_address.to_string(),
-                job.owner.to_string(),
-                funding_account.to_string(),
-                job.id,
-            ));
-        }
     }
 
     Ok(Response::new()
@@ -585,7 +575,6 @@ pub fn evict_job(
     config: Config,
 ) -> Result<Response, ContractError> {
     let job = JobQueue::get(&deps, data.id.into())?;
-    let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, job.owner.clone())?;
     let job_account_addr = job.account.clone();
 
     if job.status != JobStatus::Pending {
@@ -618,15 +607,13 @@ pub fn evict_job(
         )],
     ));
 
-    if !is_legacy_account(legacy_account, job_account_addr.clone()) {
-        // Free account
-        msgs.push(build_free_account_msg(
-            config.job_account_tracker_address.to_string(),
-            job.owner.to_string(),
-            job_account_addr.to_string(),
-            job.id,
-        ));
-    }
+    // Free account
+    msgs.push(build_free_account_msg(
+        config.job_account_tracker_address.to_string(),
+        job.owner.to_string(),
+        job_account_addr.to_string(),
+        job.id,
+    ));
 
     Ok(Response::new()
         .add_messages(msgs)

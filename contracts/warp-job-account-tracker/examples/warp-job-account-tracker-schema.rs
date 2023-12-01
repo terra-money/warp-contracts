@@ -3,8 +3,8 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use job_account_tracker::{
-    Account, AccountResponse, AccountsResponse, Config, ConfigResponse, ExecuteMsg, InstantiateMsg,
-    QueryMsg, FundingAccountResponse, FundingAccountsResponse,
+    Account, AccountResponse, AccountsResponse, Config, ConfigResponse, ExecuteMsg,
+    FundingAccountResponse, FundingAccountsResponse, InstantiateMsg, QueryMsg,
 };
 
 fn main() {

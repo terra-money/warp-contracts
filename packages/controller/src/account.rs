@@ -52,33 +52,6 @@ pub enum Cw721ExecuteMsg {
 }
 
 #[cw_serde]
-pub struct QueryLegacyAccountMsg {
-    pub owner: String,
-}
-
-#[cw_serde]
-pub struct QueryLegacyAccountsMsg {
-    pub start_after: Option<String>,
-    pub limit: Option<u32>,
-}
-
-#[cw_serde]
-pub struct LegacyAccount {
-    pub owner: Addr,
-    pub account: Addr,
-}
-
-#[cw_serde]
-pub struct LegacyAccountResponse {
-    pub account: LegacyAccount,
-}
-
-#[cw_serde]
-pub struct LegacyAccountsResponse {
-    pub accounts: Vec<LegacyAccount>,
-}
-
-#[cw_serde]
 pub enum AssetInfo {
     Native(String),
     Cw20(Addr),

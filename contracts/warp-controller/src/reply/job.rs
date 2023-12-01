@@ -6,14 +6,10 @@ use cosmwasm_std::{
 use crate::{
     error::map_contract_error,
     execute::fee::{compute_burn_fee, compute_creation_fee, compute_maintenance_fee},
-    state::{JobQueue, CONFIG, LEGACY_ACCOUNTS, STATE},
-    util::{
-        legacy_account::is_legacy_account,
-        msg::{
-            build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-            build_take_funding_account_msg, build_taken_account_msg,
-            build_transfer_native_funds_msg,
-        },
+    state::{JobQueue, CONFIG, STATE},
+    util::msg::{
+        build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
+        build_take_funding_account_msg, build_taken_account_msg, build_transfer_native_funds_msg,
     },
     ContractError,
 };
@@ -60,18 +56,13 @@ pub fn execute_job(
 
     let reward_plus_fee = finished_job.reward + total_fees;
 
-    let legacy_account = LEGACY_ACCOUNTS().may_load(deps.storage, finished_job.owner.clone())?;
     let job_account_addr = finished_job.account.clone();
 
     let mut recurring_job_created = false;
 
-    // backwards compability with legacy accounts, funding account is job's account
-    let funding_account_addr = finished_job
-        .funding_account
-        .clone()
-        .unwrap_or(job_account_addr.clone());
-
     if finished_job.recurring {
+        let funding_account_addr = finished_job.funding_account.clone().unwrap();
+
         let operational_amount = deps
             .querier
             .query::<BalanceResponse>(&QueryRequest::Bank(BankQuery::Balance {
@@ -224,23 +215,23 @@ pub fn execute_job(
     }
 
     if recurring_job_created {
-        if !is_legacy_account(legacy_account, job_account_addr.clone()) {
-            // Take job account with the new job
-            msgs.push(build_taken_account_msg(
-                config.job_account_tracker_address.to_string(),
-                finished_job.owner.to_string(),
-                job_account_addr.to_string(),
-                new_job_id,
-            ));
+        let funding_account_addr = finished_job.funding_account.clone().unwrap();
 
-            // take funding account with new job
-            msgs.push(build_take_funding_account_msg(
-                config.job_account_tracker_address.to_string(),
-                finished_job.owner.to_string(),
-                funding_account_addr.to_string(),
-                new_job_id,
-            ));
-        }
+        // Take job account with the new job
+        msgs.push(build_taken_account_msg(
+            config.job_account_tracker_address.to_string(),
+            finished_job.owner.to_string(),
+            job_account_addr.to_string(),
+            new_job_id,
+        ));
+
+        // take funding account with new job
+        msgs.push(build_take_funding_account_msg(
+            config.job_account_tracker_address.to_string(),
+            finished_job.owner.to_string(),
+            funding_account_addr.to_string(),
+            new_job_id,
+        ));
     } else {
         // No new job created, account has been free in execute_job, no need to free here again
         // Job owner withdraw all assets that are listed from warp account to itself

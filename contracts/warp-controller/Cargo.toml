@@ -39,7 +39,6 @@ cw-storage-plus = "0.16"
 cw-utils = "0.16"
 cw2 = "0.16"
 cw20 = "0.16"
-legacy-account = { path = "../../packages/legacy-account", default-features = false, version = "*" }
 job-account = { path = "../../packages/job-account", default-features = false, version = "*" }
 job-account-tracker = { path = "../../packages/job-account-tracker", default-features = false, version = "*" }
 controller = { path = "../../packages/controller", default-features = false, version = "*" }
