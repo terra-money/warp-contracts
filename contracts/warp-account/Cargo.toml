@@ -1,5 +1,5 @@
 [package]
-name = "warp-job-account-tracker"
+name = "warp-account"
 version = "0.1.0"
 authors = ["Terra Money <core@terra.money>"]
 edition = "2021"
@@ -40,7 +40,8 @@ cw2 = "0.16"
 cw20 = "0.16"
 cw721 = "0.16.0"
 cw-utils = "0.16"
-job-account-tracker = { path = "../../packages/job-account-tracker", default-features = false, version = "*" }
+controller = { path = "../../packages/controller", default-features = false, version = "*" }
+account = { path = "../../packages/account", default-features = false, version = "*" }
 schemars = "0.8"
 thiserror = "1"
 serde-json-wasm = "0.4.1"

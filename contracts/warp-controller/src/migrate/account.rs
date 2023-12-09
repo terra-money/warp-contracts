@@ -1,25 +1,25 @@
 use cosmwasm_std::{to_binary, Deps, Env, MessageInfo, Response, WasmMsg};
 
 use crate::ContractError;
-use controller::{Config, MigrateJobAccountsMsg};
-use job_account_tracker::{
+use controller::{Config, MigrateAccountsMsg};
+use account_tracker::{
     AccountsResponse, MigrateMsg, QueryFreeAccountsMsg, QueryTakenAccountsMsg,
 };
 
-pub fn migrate_free_job_accounts(
+pub fn migrate_free_accounts(
     deps: Deps,
     _env: Env,
     info: MessageInfo,
-    msg: MigrateJobAccountsMsg,
+    msg: MigrateAccountsMsg,
     config: Config,
 ) -> Result<Response, ContractError> {
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    let free_job_accounts: AccountsResponse = deps.querier.query_wasm_smart(
-        config.job_account_tracker_address,
-        &job_account_tracker::QueryMsg::QueryFreeAccounts(QueryFreeAccountsMsg {
+    let free_accounts: AccountsResponse = deps.querier.query_wasm_smart(
+        config.account_tracker_address,
+        &account_tracker::QueryMsg::QueryFreeAccounts(QueryFreeAccountsMsg {
             account_owner_addr: msg.account_owner_addr,
             start_after: msg.start_after,
             limit: Some(msg.limit as u32),
@@ -27,10 +27,10 @@ pub fn migrate_free_job_accounts(
     )?;
 
     let mut migration_msgs = vec![];
-    for job_account in free_job_accounts.accounts {
+    for account in free_accounts.accounts {
         migration_msgs.push(WasmMsg::Migrate {
-            contract_addr: job_account.addr.to_string(),
-            new_code_id: msg.warp_job_account_code_id.u64(),
+            contract_addr: account.addr.to_string(),
+            new_code_id: msg.warp_account_code_id.u64(),
             msg: to_binary(&MigrateMsg {})?,
         });
     }
@@ -38,20 +38,20 @@ pub fn migrate_free_job_accounts(
     Ok(Response::new().add_messages(migration_msgs))
 }
 
-pub fn migrate_taken_job_accounts(
+pub fn migrate_taken_accounts(
     deps: Deps,
     _env: Env,
     info: MessageInfo,
-    msg: MigrateJobAccountsMsg,
+    msg: MigrateAccountsMsg,
     config: Config,
 ) -> Result<Response, ContractError> {
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    let taken_job_accounts: AccountsResponse = deps.querier.query_wasm_smart(
-        config.job_account_tracker_address,
-        &job_account_tracker::QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
+    let taken_accounts: AccountsResponse = deps.querier.query_wasm_smart(
+        config.account_tracker_address,
+        &account_tracker::QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
             account_owner_addr: msg.account_owner_addr,
             start_after: msg.start_after,
             limit: Some(msg.limit as u32),
@@ -59,10 +59,10 @@ pub fn migrate_taken_job_accounts(
     )?;
 
     let mut migration_msgs = vec![];
-    for job_account in taken_job_accounts.accounts {
+    for account in taken_accounts.accounts {
         migration_msgs.push(WasmMsg::Migrate {
-            contract_addr: job_account.addr.to_string(),
-            new_code_id: msg.warp_job_account_code_id.u64(),
+            contract_addr: account.addr.to_string(),
+            new_code_id: msg.warp_account_code_id.u64(),
             msg: to_binary(&MigrateMsg {})?,
         });
     }

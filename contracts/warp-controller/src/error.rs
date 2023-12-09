@@ -43,7 +43,7 @@ pub enum ContractError {
     AccountAlreadyExists {},
 
     #[error("Job account tracker already exists")]
-    JobAccountTrackerAlreadyExists {},
+    AccountTrackerAlreadyExists {},
 
     #[error("Account cannot create an account")]
     AccountCannotCreateAccount {},

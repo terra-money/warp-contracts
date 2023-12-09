@@ -7,7 +7,7 @@ use cw_utils::{must_pay, nonpayable};
 use crate::{
     execute, migrate, query, reply,
     state::{CONFIG, STATE},
-    util::msg::build_instantiate_job_account_tracker_msg,
+    util::msg::build_instantiate_account_tracker_msg,
     ContractError,
 };
 
@@ -39,7 +39,7 @@ pub fn instantiate(
         cancellation_fee_percentage: msg.cancellation_fee,
         resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
         // placeholder, will be updated in reply
-        job_account_tracker_address: deps.api.addr_validate(&msg.resolver_address)?,
+        account_tracker_address: deps.api.addr_validate(&msg.resolver_address)?,
         t_max: msg.t_max,
         t_min: msg.t_min,
         a_max: msg.a_max,
@@ -82,10 +82,10 @@ pub fn instantiate(
 
     let submsgs = vec![SubMsg {
         id: REPLY_ID_INSTANTIATE_SUB_CONTRACTS,
-        msg: build_instantiate_job_account_tracker_msg(
+        msg: build_instantiate_account_tracker_msg(
             config.owner.to_string(),
             env.contract.address.to_string(),
-            msg.job_account_tracker_code_id.u64(),
+            msg.account_tracker_code_id.u64(),
         ),
         gas_limit: None,
         reply_on: ReplyOn::Always,
@@ -131,13 +131,13 @@ pub fn execute(
             nonpayable(&info).unwrap();
             execute::controller::update_config(deps, env, info, data, config)
         }
-        ExecuteMsg::MigrateFreeJobAccounts(data) => {
+        ExecuteMsg::MigrateFreeAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::job_account::migrate_free_job_accounts(deps.as_ref(), env, info, data, config)
+            migrate::account::migrate_free_accounts(deps.as_ref(), env, info, data, config)
         }
-        ExecuteMsg::MigrateTakenJobAccounts(data) => {
+        ExecuteMsg::MigrateTakenAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::job_account::migrate_taken_job_accounts(deps.as_ref(), env, info, data, config)
+            migrate::account::migrate_taken_accounts(deps.as_ref(), env, info, data, config)
         }
 
         ExecuteMsg::MigratePendingJobs(data) => {
@@ -190,7 +190,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 
     match msg.id {
         REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => {
-            reply::account::create_job_account_and_job(deps, env, msg, config)
+            reply::account::create_account_and_job(deps, env, msg, config)
         }
         REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB => {
             reply::account::create_funding_account_and_job(deps, env, msg, config)

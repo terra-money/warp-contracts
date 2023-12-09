@@ -6,7 +6,7 @@ use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DistributionMsg, GovMsg, IbcMsg, IbcTimeout,
     IbcTimeoutBlock, Response, StakingMsg, Uint128, Uint64, VoteOption, WasmMsg,
 };
-use job_account::{ExecuteMsg, InstantiateMsg};
+use account::{ExecuteMsg, InstantiateMsg};
 
 #[test]
 fn test_execute_controller() {

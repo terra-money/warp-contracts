@@ -4,7 +4,7 @@ task(async ({ deployer, signer, refs }) => {
   deployer.buildContract("warp-controller");
   deployer.optimizeContract("warp-controller");
 
-  const job_account_contract_id = await deployer.storeCode("warp-job-account");
+  const account_contract_id = await deployer.storeCode("warp-account");
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
   await deployer.storeCode("warp-resolver");
@@ -16,8 +16,8 @@ task(async ({ deployer, signer, refs }) => {
   await deployer.storeCode("warp-controller");
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  const job_account_tracker_id = await deployer.storeCode(
-    "warp-job-account-tracker"
+  const account_tracker_id = await deployer.storeCode(
+    "warp-account-tracker"
   );
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
@@ -45,8 +45,8 @@ task(async ({ deployer, signer, refs }) => {
   const instantiateControllerMsg = {
     fee_denom: "uluna",
     fee_collector: signer.key.accAddress,
-    warp_account_code_id: job_account_contract_id,
-    job_account_tracker_code_id: job_account_tracker_id,
+    warp_account_code_id: account_contract_id,
+    account_tracker_code_id: account_tracker_id,
     minimum_reward: "10000",
     creation_fee: "5",
     cancellation_fee: "5",

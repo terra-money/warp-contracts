@@ -1,5 +1,5 @@
 [package]
-name = "job-account"
+name = "account"
 version = "0.1.0"
 authors = ["Terra Money <core@terra.money>"]
 edition = "2021"

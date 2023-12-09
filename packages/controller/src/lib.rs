@@ -21,7 +21,7 @@ pub struct Config {
     // By querying job account tracker contract
     // We know all accounts owned by that user and each account's availability
     // For more detail, please refer to job account tracker contract
-    pub job_account_tracker_address: Addr,
+    pub account_tracker_address: Addr,
     pub resolver_address: Addr,
     // maximum time for evictions
     pub t_max: Uint64,
@@ -61,7 +61,7 @@ pub struct InstantiateMsg {
     pub fee_denom: String,
     pub fee_collector: Option<String>,
     pub warp_account_code_id: Uint64,
-    pub job_account_tracker_code_id: Uint64,
+    pub account_tracker_code_id: Uint64,
     pub minimum_reward: Uint128,
     pub creation_fee: Uint64,
     pub cancellation_fee: Uint64,
@@ -97,8 +97,8 @@ pub enum ExecuteMsg {
 
     UpdateConfig(UpdateConfigMsg),
 
-    MigrateFreeJobAccounts(MigrateJobAccountsMsg),
-    MigrateTakenJobAccounts(MigrateJobAccountsMsg),
+    MigrateFreeAccounts(MigrateAccountsMsg),
+    MigrateTakenAccounts(MigrateAccountsMsg),
 
     MigratePendingJobs(MigrateJobsMsg),
     MigrateFinishedJobs(MigrateJobsMsg),
@@ -133,9 +133,9 @@ pub struct UpdateConfigMsg {
 }
 
 #[cw_serde]
-pub struct MigrateJobAccountsMsg {
+pub struct MigrateAccountsMsg {
     pub account_owner_addr: String,
-    pub warp_job_account_code_id: Uint64,
+    pub warp_account_code_id: Uint64,
     pub start_after: Option<String>,
     pub limit: u8,
 }

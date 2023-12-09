@@ -3,7 +3,7 @@ use cw_storage_plus::{Bound, PrefixBound};
 
 use crate::state::{CONFIG, FREE_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_ACCOUNTS};
 
-use job_account_tracker::{
+use account_tracker::{
     Account, AccountResponse, AccountsResponse, ConfigResponse, FundingAccountResponse,
     FundingAccountsResponse, QueryFirstFreeAccountMsg, QueryFirstFreeFundingAccountMsg,
     QueryFreeAccountsMsg, QueryFundingAccountMsg, QueryFundingAccountsMsg, QueryTakenAccountsMsg,

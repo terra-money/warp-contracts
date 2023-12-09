@@ -81,7 +81,7 @@ pub fn execute_job(
 
     let reward_plus_fee = finished_job.reward + total_fees;
 
-    let job_account_addr = finished_job.account.clone();
+    let account_addr = finished_job.account.clone();
 
     let mut recurring_job_created = false;
 
@@ -244,15 +244,15 @@ pub fn execute_job(
 
         // Take job account with the new job
         msgs.push(build_taken_account_msg(
-            config.job_account_tracker_address.to_string(),
+            config.account_tracker_address.to_string(),
             finished_job.owner.to_string(),
-            job_account_addr.to_string(),
+            account_addr.to_string(),
             new_job_id,
         ));
 
         // take funding account with new job
         msgs.push(build_take_funding_account_msg(
-            config.job_account_tracker_address.to_string(),
+            config.account_tracker_address.to_string(),
             finished_job.owner.to_string(),
             funding_account_addr.to_string(),
             new_job_id,
@@ -261,7 +261,7 @@ pub fn execute_job(
         // No new job created, account has been free in execute_job, no need to free here again
         // Job owner withdraw all assets that are listed from warp account to itself
         msgs.push(build_account_withdraw_assets_msg(
-            job_account_addr.to_string(),
+            account_addr.to_string(),
             finished_job.assets_to_withdraw,
         ));
 
@@ -291,7 +291,7 @@ pub fn instantiate_sub_contracts(
     let reply: cosmwasm_std::SubMsgResponse =
         msg.result.into_result().map_err(StdError::generic_err)?;
 
-    let job_account_tracker_instantiate_event = reply
+    let account_tracker_instantiate_event = reply
         .events
         .iter()
         .find(|event| {
@@ -302,17 +302,17 @@ pub fn instantiate_sub_contracts(
         })
         .ok_or_else(|| StdError::generic_err("cannot find `instantiate` event"))?;
 
-    let job_account_tracker_addr = deps.api.addr_validate(
-        &job_account_tracker_instantiate_event
+    let account_tracker_addr = deps.api.addr_validate(
+        &account_tracker_instantiate_event
             .attributes
             .iter()
             .cloned()
-            .find(|attr| attr.key == "job_account_tracker")
-            .ok_or_else(|| StdError::generic_err("cannot find `job_account_tracker` attribute"))?
+            .find(|attr| attr.key == "account_tracker")
+            .ok_or_else(|| StdError::generic_err("cannot find `account_tracker` attribute"))?
             .value,
     )?;
 
-    config.job_account_tracker_address = job_account_tracker_addr;
+    config.account_tracker_address = account_tracker_addr;
 
     CONFIG.save(deps.storage, &config)?;
 

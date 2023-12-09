@@ -4,13 +4,13 @@ use controller::account::{
     AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg, WarpMsg, WarpMsgs,
     WithdrawAssetsMsg,
 };
-use job_account_tracker::{
+use account_tracker::{
     AddFundingAccountMsg, FreeAccountMsg, FreeFundingAccountMsg, TakeAccountMsg,
     TakeFundingAccountMsg,
 };
 
 #[allow(clippy::too_many_arguments)]
-pub fn build_instantiate_job_account_tracker_msg(
+pub fn build_instantiate_account_tracker_msg(
     admin_addr: String,
     controller_addr: String,
     code_id: u64,
@@ -18,7 +18,7 @@ pub fn build_instantiate_job_account_tracker_msg(
     CosmosMsg::Wasm(WasmMsg::Instantiate {
         admin: Some(admin_addr.clone()),
         code_id,
-        msg: to_binary(&job_account_tracker::InstantiateMsg {
+        msg: to_binary(&account_tracker::InstantiateMsg {
             admin: admin_addr,
             warp_addr: controller_addr,
         })
@@ -41,7 +41,7 @@ pub fn build_instantiate_warp_account_msg(
     CosmosMsg::Wasm(WasmMsg::Instantiate {
         admin: Some(admin_addr),
         code_id,
-        msg: to_binary(&job_account::InstantiateMsg {
+        msg: to_binary(&account::InstantiateMsg {
             owner: account_owner.clone(),
             job_id,
             native_funds: native_funds.clone(),
@@ -55,14 +55,14 @@ pub fn build_instantiate_warp_account_msg(
 }
 
 pub fn build_free_account_msg(
-    job_account_tracker_addr: String,
+    account_tracker_addr: String,
     account_owner_addr: String,
     account_addr: String,
     last_job_id: Uint64,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: job_account_tracker_addr,
-        msg: to_binary(&job_account_tracker::ExecuteMsg::FreeAccount(
+        contract_addr: account_tracker_addr,
+        msg: to_binary(&account_tracker::ExecuteMsg::FreeAccount(
             FreeAccountMsg {
                 account_owner_addr,
                 account_addr,
@@ -75,14 +75,14 @@ pub fn build_free_account_msg(
 }
 
 pub fn build_taken_account_msg(
-    job_account_tracker_addr: String,
+    account_tracker_addr: String,
     account_owner_addr: String,
     account_addr: String,
     job_id: Uint64,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: job_account_tracker_addr,
-        msg: to_binary(&job_account_tracker::ExecuteMsg::TakeAccount(
+        contract_addr: account_tracker_addr,
+        msg: to_binary(&account_tracker::ExecuteMsg::TakeAccount(
             TakeAccountMsg {
                 account_owner_addr,
                 account_addr,
@@ -95,14 +95,14 @@ pub fn build_taken_account_msg(
 }
 
 pub fn build_free_funding_account_msg(
-    job_account_tracker_addr: String,
+    account_tracker_addr: String,
     account_owner_addr: String,
     account_addr: String,
     job_id: Uint64,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: job_account_tracker_addr,
-        msg: to_binary(&job_account_tracker::ExecuteMsg::FreeFundingAccount(
+        contract_addr: account_tracker_addr,
+        msg: to_binary(&account_tracker::ExecuteMsg::FreeFundingAccount(
             FreeFundingAccountMsg {
                 account_owner_addr,
                 account_addr,
@@ -115,14 +115,14 @@ pub fn build_free_funding_account_msg(
 }
 
 pub fn build_take_funding_account_msg(
-    job_account_tracker_addr: String,
+    account_tracker_addr: String,
     account_owner_addr: String,
     account_addr: String,
     job_id: Uint64,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: job_account_tracker_addr,
-        msg: to_binary(&job_account_tracker::ExecuteMsg::TakeFundingAccount(
+        contract_addr: account_tracker_addr,
+        msg: to_binary(&account_tracker::ExecuteMsg::TakeFundingAccount(
             TakeFundingAccountMsg {
                 account_owner_addr,
                 account_addr,
@@ -135,13 +135,13 @@ pub fn build_take_funding_account_msg(
 }
 
 pub fn build_add_funding_account_msg(
-    job_account_tracker_addr: String,
+    account_tracker_addr: String,
     account_owner_addr: String,
     account_addr: String,
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: job_account_tracker_addr,
-        msg: to_binary(&job_account_tracker::ExecuteMsg::AddFundingAccount(
+        contract_addr: account_tracker_addr,
+        msg: to_binary(&account_tracker::ExecuteMsg::AddFundingAccount(
             AddFundingAccountMsg {
                 account_owner_addr,
                 account_addr,
@@ -215,7 +215,7 @@ pub fn build_account_execute_warp_msgs(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_addr,
-        msg: to_binary(&job_account::ExecuteMsg::WarpMsgs(WarpMsgs {
+        msg: to_binary(&account::ExecuteMsg::WarpMsgs(WarpMsgs {
             msgs: warp_msgs_for_account_to_execute,
             job_id: None,
         }))

@@ -39,8 +39,8 @@ cw-storage-plus = "0.16"
 cw-utils = "0.16"
 cw2 = "0.16"
 cw20 = "0.16"
-job-account = { path = "../../packages/job-account", default-features = false, version = "*" }
-job-account-tracker = { path = "../../packages/job-account-tracker", default-features = false, version = "*" }
+account = { path = "../../packages/account", default-features = false, version = "*" }
+account-tracker = { path = "../../packages/account-tracker", default-features = false, version = "*" }
 controller = { path = "../../packages/controller", default-features = false, version = "*" }
 resolver = { path = "../../packages/resolver", default-features = false, version = "*" }
 schemars = "0.8"

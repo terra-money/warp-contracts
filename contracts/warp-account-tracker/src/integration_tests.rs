@@ -3,7 +3,7 @@ mod tests {
     use anyhow::Result as AnyResult;
     use cosmwasm_std::{Addr, Coin, Empty, Uint128, Uint64};
     use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
-    use job_account_tracker::{
+    use account_tracker::{
         Account, AccountResponse, AccountsResponse, Config, ConfigResponse, ExecuteMsg,
         FreeAccountMsg, InstantiateMsg, QueryConfigMsg, QueryFirstFreeAccountMsg,
         QueryFreeAccountsMsg, QueryMsg, QueryTakenAccountsMsg, TakeAccountMsg,
@@ -39,24 +39,24 @@ mod tests {
         })
     }
 
-    fn contract_warp_job_account_tracker() -> Box<dyn Contract<Empty>> {
+    fn contract_warp_account_tracker() -> Box<dyn Contract<Empty>> {
         let contract = ContractWrapper::new(execute, instantiate, query);
         Box::new(contract)
     }
 
-    fn init_warp_job_account_tracker(
+    fn init_warp_account_tracker(
         app: &mut App,
-        warp_job_account_tracker_contract_code_id: u64,
+        warp_account_tracker_contract_code_id: u64,
     ) -> Addr {
         app.instantiate_contract(
-            warp_job_account_tracker_contract_code_id,
+            warp_account_tracker_contract_code_id,
             Addr::unchecked(DUMMY_WARP_CONTROLLER_ADDR),
             &InstantiateMsg {
                 admin: USER_1.to_string(),
                 warp_addr: DUMMY_WARP_CONTROLLER_ADDR.to_string(),
             },
             &[],
-            "warp_job_account_tracker",
+            "warp_account_tracker",
             None,
         )
         .unwrap()
@@ -73,17 +73,17 @@ mod tests {
     }
 
     #[test]
-    fn warp_job_account_tracker_contract_multi_test_account_management() {
+    fn warp_account_tracker_contract_multi_test_account_management() {
         let mut app = mock_app();
-        let warp_job_account_tracker_contract_code_id =
-            app.store_code(contract_warp_job_account_tracker());
+        let warp_account_tracker_contract_code_id =
+            app.store_code(contract_warp_account_tracker());
 
         // Instantiate account
-        let warp_job_account_tracker_contract_addr =
-            init_warp_job_account_tracker(&mut app, warp_job_account_tracker_contract_code_id);
+        let warp_account_tracker_contract_addr =
+            init_warp_account_tracker(&mut app, warp_account_tracker_contract_code_id);
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryConfig(QueryConfigMsg {})
             ),
             Ok(ConfigResponse {
@@ -95,7 +95,7 @@ mod tests {
         );
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryFirstFreeAccount(QueryFirstFreeAccountMsg {
                     account_owner_addr: USER_1.to_string(),
                 })
@@ -104,7 +104,7 @@ mod tests {
         );
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryFreeAccounts(QueryFreeAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
@@ -118,7 +118,7 @@ mod tests {
         );
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
@@ -134,7 +134,7 @@ mod tests {
         // Mark first account as free
         let _ = app.execute_contract(
             Addr::unchecked(USER_1),
-            warp_job_account_tracker_contract_addr.clone(),
+            warp_account_tracker_contract_addr.clone(),
             &ExecuteMsg::FreeAccount(FreeAccountMsg {
                 account_owner_addr: USER_1.to_string(),
                 account_addr: DUMMY_WARP_ACCOUNT_1_ADDR.to_string(),
@@ -147,7 +147,7 @@ mod tests {
         assert_err(
             app.execute_contract(
                 Addr::unchecked(USER_1),
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &ExecuteMsg::FreeAccount(FreeAccountMsg {
                     account_owner_addr: USER_1.to_string(),
                     account_addr: DUMMY_WARP_ACCOUNT_1_ADDR.to_string(),
@@ -161,7 +161,7 @@ mod tests {
         // Mark second account as free
         let _ = app.execute_contract(
             Addr::unchecked(USER_1),
-            warp_job_account_tracker_contract_addr.clone(),
+            warp_account_tracker_contract_addr.clone(),
             &ExecuteMsg::FreeAccount(FreeAccountMsg {
                 account_owner_addr: USER_1.to_string(),
                 account_addr: DUMMY_WARP_ACCOUNT_2_ADDR.to_string(),
@@ -173,7 +173,7 @@ mod tests {
         // Mark third account as free
         let _ = app.execute_contract(
             Addr::unchecked(USER_1),
-            warp_job_account_tracker_contract_addr.clone(),
+            warp_account_tracker_contract_addr.clone(),
             &ExecuteMsg::FreeAccount(FreeAccountMsg {
                 account_owner_addr: USER_1.to_string(),
                 account_addr: DUMMY_WARP_ACCOUNT_3_ADDR.to_string(),
@@ -185,7 +185,7 @@ mod tests {
         // Query first free account
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryFirstFreeAccount(QueryFirstFreeAccountMsg {
                     account_owner_addr: USER_1.to_string(),
                 })
@@ -201,7 +201,7 @@ mod tests {
         // Query free accounts
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryFreeAccounts(QueryFreeAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
@@ -230,7 +230,7 @@ mod tests {
         // Query taken accounts
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
@@ -246,7 +246,7 @@ mod tests {
         // Take second account with job 1
         let _ = app.execute_contract(
             Addr::unchecked(USER_1),
-            warp_job_account_tracker_contract_addr.clone(),
+            warp_account_tracker_contract_addr.clone(),
             &ExecuteMsg::TakeAccount(TakeAccountMsg {
                 account_owner_addr: USER_1.to_string(),
                 account_addr: DUMMY_WARP_ACCOUNT_2_ADDR.to_string(),
@@ -259,7 +259,7 @@ mod tests {
         assert_err(
             app.execute_contract(
                 Addr::unchecked(USER_1),
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &ExecuteMsg::TakeAccount(TakeAccountMsg {
                     account_owner_addr: USER_1.to_string(),
                     account_addr: DUMMY_WARP_ACCOUNT_2_ADDR.to_string(),
@@ -273,7 +273,7 @@ mod tests {
         // Query free accounts
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryFreeAccounts(QueryFreeAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
@@ -298,7 +298,7 @@ mod tests {
         // Query taken accounts
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
@@ -317,7 +317,7 @@ mod tests {
         // Free second account
         let _ = app.execute_contract(
             Addr::unchecked(USER_1),
-            warp_job_account_tracker_contract_addr.clone(),
+            warp_account_tracker_contract_addr.clone(),
             &ExecuteMsg::FreeAccount(FreeAccountMsg {
                 account_owner_addr: USER_1.to_string(),
                 account_addr: DUMMY_WARP_ACCOUNT_2_ADDR.to_string(),
@@ -329,7 +329,7 @@ mod tests {
         // Query free accounts
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr.clone(),
+                warp_account_tracker_contract_addr.clone(),
                 &QueryMsg::QueryFreeAccounts(QueryFreeAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
@@ -358,7 +358,7 @@ mod tests {
         // Query taken accounts
         assert_eq!(
             app.wrap().query_wasm_smart(
-                warp_job_account_tracker_contract_addr,
+                warp_account_tracker_contract_addr,
                 &QueryMsg::QueryTakenAccounts(QueryTakenAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,

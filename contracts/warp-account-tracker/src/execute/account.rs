@@ -3,7 +3,7 @@ use crate::state::{
 };
 use crate::ContractError;
 use cosmwasm_std::{DepsMut, Response};
-use job_account_tracker::{
+use account_tracker::{
     AddFundingAccountMsg, FreeAccountMsg, FreeFundingAccountMsg, FundingAccount, TakeAccountMsg,
     TakeFundingAccountMsg,
 };
