@@ -6,8 +6,7 @@ use crate::state::{CONFIG, FREE_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_ACCOUN
 use job_account_tracker::{
     Account, AccountResponse, AccountsResponse, ConfigResponse, FundingAccountResponse,
     FundingAccountsResponse, QueryFirstFreeAccountMsg, QueryFirstFreeFundingAccountMsg,
-    QueryFreeAccountMsg, QueryFreeAccountsMsg, QueryFundingAccountMsg, QueryFundingAccountsMsg,
-    QueryTakenAccountsMsg,
+    QueryFreeAccountsMsg, QueryFundingAccountMsg, QueryFundingAccountsMsg, QueryTakenAccountsMsg,
 };
 
 const QUERY_LIMIT: u32 = 50;
@@ -116,30 +115,6 @@ pub fn query_free_accounts(deps: Deps, data: QueryFreeAccountsMsg) -> StdResult<
     Ok(AccountsResponse {
         total_count: accounts.len() as u32,
         accounts,
-    })
-}
-
-pub fn query_free_account(deps: Deps, data: QueryFreeAccountMsg) -> StdResult<AccountResponse> {
-    let account_addr_ref = &deps.api.addr_validate(data.account_addr.as_str())?;
-    let maybe_free_account = FREE_ACCOUNTS
-        .prefix_range(
-            deps.storage,
-            Some(PrefixBound::inclusive(account_addr_ref)),
-            Some(PrefixBound::inclusive(account_addr_ref)),
-            Order::Ascending,
-        )
-        .next();
-
-    let free_account = match maybe_free_account {
-        Some(Ok((account, last_job_id))) => Some(Account {
-            addr: account.1,
-            taken_by_job_id: Some(last_job_id),
-        }),
-        _ => None,
-    };
-
-    Ok(AccountResponse {
-        account: free_account,
     })
 }
 

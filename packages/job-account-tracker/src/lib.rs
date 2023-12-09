@@ -69,8 +69,6 @@ pub enum QueryMsg {
     QueryFreeAccounts(QueryFreeAccountsMsg),
     #[returns(AccountResponse)]
     QueryFirstFreeAccount(QueryFirstFreeAccountMsg),
-    #[returns(AccountResponse)]
-    QueryFreeAccount(QueryFreeAccountMsg),
     #[returns(FundingAccountResponse)]
     QueryFirstFreeFundingAccount(QueryFirstFreeFundingAccountMsg),
     #[returns(FundingAccountsResponse)]
