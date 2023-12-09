@@ -1,12 +1,12 @@
 use cosmwasm_std::{to_binary, BankMsg, Coin, CosmosMsg, Uint128, Uint64, WasmMsg};
 
-use controller::account::{
-    AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg, WarpMsg, WarpMsgs,
-    WithdrawAssetsMsg,
-};
 use account_tracker::{
     AddFundingAccountMsg, FreeAccountMsg, FreeFundingAccountMsg, TakeAccountMsg,
     TakeFundingAccountMsg,
+};
+use controller::account::{
+    AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg, WarpMsg, WarpMsgs,
+    WithdrawAssetsMsg,
 };
 
 #[allow(clippy::too_many_arguments)]
@@ -62,13 +62,11 @@ pub fn build_free_account_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_tracker_addr,
-        msg: to_binary(&account_tracker::ExecuteMsg::FreeAccount(
-            FreeAccountMsg {
-                account_owner_addr,
-                account_addr,
-                last_job_id,
-            },
-        ))
+        msg: to_binary(&account_tracker::ExecuteMsg::FreeAccount(FreeAccountMsg {
+            account_owner_addr,
+            account_addr,
+            last_job_id,
+        }))
         .unwrap(),
         funds: vec![],
     })
@@ -82,13 +80,11 @@ pub fn build_taken_account_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_tracker_addr,
-        msg: to_binary(&account_tracker::ExecuteMsg::TakeAccount(
-            TakeAccountMsg {
-                account_owner_addr,
-                account_addr,
-                job_id,
-            },
-        ))
+        msg: to_binary(&account_tracker::ExecuteMsg::TakeAccount(TakeAccountMsg {
+            account_owner_addr,
+            account_addr,
+            job_id,
+        }))
         .unwrap(),
         funds: vec![],
     })

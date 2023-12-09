@@ -1,10 +1,8 @@
 use cosmwasm_std::{to_binary, Deps, Env, MessageInfo, Response, WasmMsg};
 
 use crate::ContractError;
+use account_tracker::{AccountsResponse, MigrateMsg, QueryFreeAccountsMsg, QueryTakenAccountsMsg};
 use controller::{Config, MigrateAccountsMsg};
-use account_tracker::{
-    AccountsResponse, MigrateMsg, QueryFreeAccountsMsg, QueryTakenAccountsMsg,
-};
 
 pub fn migrate_free_accounts(
     deps: Deps,

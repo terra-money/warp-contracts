@@ -1,12 +1,12 @@
 use crate::contract::{execute, instantiate};
 use crate::ContractError;
+use account::{ExecuteMsg, InstantiateMsg};
 use controller::account::{WarpMsg, WarpMsgs};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DistributionMsg, GovMsg, IbcMsg, IbcTimeout,
     IbcTimeoutBlock, Response, StakingMsg, Uint128, Uint64, VoteOption, WasmMsg,
 };
-use account::{ExecuteMsg, InstantiateMsg};
 
 #[test]
 fn test_execute_controller() {

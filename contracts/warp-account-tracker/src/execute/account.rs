@@ -2,11 +2,11 @@ use crate::state::{
     FREE_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_ACCOUNTS, TAKEN_FUNDING_ACCOUNT_BY_JOB,
 };
 use crate::ContractError;
-use cosmwasm_std::{DepsMut, Response};
 use account_tracker::{
     AddFundingAccountMsg, FreeAccountMsg, FreeFundingAccountMsg, FundingAccount, TakeAccountMsg,
     TakeFundingAccountMsg,
 };
+use cosmwasm_std::{DepsMut, Response};
 
 pub fn taken_account(deps: DepsMut, data: TakeAccountMsg) -> Result<Response, ContractError> {
     let account_owner_ref = &deps.api.addr_validate(data.account_owner_addr.as_str())?;

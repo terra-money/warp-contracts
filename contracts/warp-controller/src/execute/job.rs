@@ -25,8 +25,8 @@ use crate::util::{
     },
 };
 
-use controller::{account::CwFund, Config};
 use account_tracker::{AccountResponse, FundingAccountResponse};
+use controller::{account::CwFund, Config};
 use resolver::QueryHydrateMsgsMsg;
 
 use super::fee::{compute_burn_fee, compute_creation_fee, compute_maintenance_fee};

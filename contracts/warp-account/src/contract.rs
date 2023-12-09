@@ -1,10 +1,10 @@
 use crate::state::CONFIG;
 use crate::{query, ContractError};
+use account::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use controller::account::{execute_warp_msgs, warp_msgs_to_cosmos_msgs};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
-use account::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

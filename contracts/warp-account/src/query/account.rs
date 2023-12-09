@@ -1,6 +1,6 @@
 use crate::state::CONFIG;
-use cosmwasm_std::{Deps, StdResult};
 use account::ConfigResponse;
+use cosmwasm_std::{Deps, StdResult};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;

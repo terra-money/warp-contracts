@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use anyhow::Result as AnyResult;
-    use cosmwasm_std::{Addr, Coin, Empty, Uint128, Uint64};
-    use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
     use account_tracker::{
         Account, AccountResponse, AccountsResponse, Config, ConfigResponse, ExecuteMsg,
         FreeAccountMsg, InstantiateMsg, QueryConfigMsg, QueryFirstFreeAccountMsg,
         QueryFreeAccountsMsg, QueryMsg, QueryTakenAccountsMsg, TakeAccountMsg,
     };
+    use anyhow::Result as AnyResult;
+    use cosmwasm_std::{Addr, Coin, Empty, Uint128, Uint64};
+    use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 
     use crate::{
         contract::{execute, instantiate, query},
@@ -75,8 +75,7 @@ mod tests {
     #[test]
     fn warp_account_tracker_contract_multi_test_account_management() {
         let mut app = mock_app();
-        let warp_account_tracker_contract_code_id =
-            app.store_code(contract_warp_account_tracker());
+        let warp_account_tracker_contract_code_id = app.store_code(contract_warp_account_tracker());
 
         // Instantiate account
         let warp_account_tracker_contract_addr =
