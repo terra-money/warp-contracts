@@ -15,6 +15,8 @@ pub struct Job {
     // As job creator can have infinite job accounts, each job account can only be used by up to 1 active job
     // So each job's fund is isolated
     pub account: Addr,
+    // Funding account is an optionally provided account from which job fees and rewards are deducted from, used only in case
+    // of recurring jobs - if a user doesn't provide a funding account, one is created on the fly
     pub funding_account: Option<Addr>,
     pub last_update_time: Uint64,
     pub name: String,
@@ -47,8 +49,6 @@ pub enum JobStatus {
     Evicted,
 }
 
-// Create a job using job account, if job account does not exist, create it
-// Each job account will only be used for 1 job, therefore we achieve funds isolation
 #[cw_serde]
 pub struct Execution {
     pub condition: String,
