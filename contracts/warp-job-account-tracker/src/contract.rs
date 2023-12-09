@@ -18,8 +18,6 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            // owner: deps.api.addr_validate(&msg.owner)?,
-            // creator_addr: info.sender,
             admin: deps.api.addr_validate(&msg.admin)?,
             warp_addr: deps.api.addr_validate(&msg.warp_addr)?,
         },
