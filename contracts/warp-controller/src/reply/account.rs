@@ -15,7 +15,7 @@ use crate::{
 };
 
 pub fn create_account_and_job(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     msg: Reply,
     config: Config,
@@ -90,9 +90,9 @@ pub fn create_account_and_job(
             .value,
     )?;
 
-    let mut job = JobQueue::get(&deps, job_id)?;
+    let mut job = JobQueue::get(deps.storage, job_id)?;
     job.account = account_addr.clone();
-    JobQueue::sync(&mut deps, env, job.clone())?;
+    JobQueue::sync(deps.storage, env, job.clone())?;
 
     let mut msgs: Vec<CosmosMsg> = vec![];
 
@@ -149,7 +149,7 @@ pub fn create_account_and_job(
 }
 
 pub fn create_funding_account_and_job(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     msg: Reply,
     config: Config,
@@ -204,9 +204,9 @@ pub fn create_funding_account_and_job(
             .value,
     )?;
 
-    let mut job = JobQueue::get(&deps, job_id)?;
+    let mut job = JobQueue::get(deps.storage, job_id)?;
     job.funding_account = Some(funding_account_addr.clone());
-    JobQueue::sync(&mut deps, env, job.clone())?;
+    JobQueue::sync(deps.storage, env, job.clone())?;
 
     let msgs: Vec<CosmosMsg> = vec![build_take_funding_account_msg(
         config.account_tracker_address.to_string(),

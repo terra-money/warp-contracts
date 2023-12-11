@@ -34,7 +34,7 @@ use super::fee::{compute_burn_fee, compute_creation_fee, compute_maintenance_fee
 const MAX_TEXT_LENGTH: usize = 280;
 
 pub fn create_job(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     data: CreateJobMsg,
@@ -110,7 +110,7 @@ pub fn create_job(
         .checked_sub(data.reward + total_fees)?;
 
     let mut job = JobQueue::add(
-        &mut deps,
+        deps.storage,
         Job {
             id: state.current_job_id,
             prev_id: None,
@@ -196,7 +196,7 @@ pub fn create_job(
             let available_account_addr = &available_account.addr;
             // Update job.account from placeholder value to job account
             job.account = available_account_addr.clone();
-            JobQueue::sync(&mut deps, env.clone(), job.clone())?;
+            JobQueue::sync(deps.storage, env.clone(), job.clone())?;
 
             if !native_funds_minus_operational_amount.is_empty() {
                 // Fund account in native coins
@@ -300,7 +300,7 @@ pub fn create_job(
                 let available_account_addr = &available_account.account_addr;
                 // Update funding_account from placeholder value to funding account
                 job.funding_account = Some(available_account_addr.clone());
-                JobQueue::sync(&mut deps, env, job.clone())?;
+                JobQueue::sync(deps.storage, env, job.clone())?;
 
                 // Fund account in native coins
                 msgs.push(build_transfer_native_funds_msg(
@@ -354,14 +354,14 @@ pub fn create_job(
 }
 
 pub fn delete_job(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     data: DeleteJobMsg,
     config: Config,
     fee_denom_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let job = JobQueue::get(&deps, data.id.into())?;
+    let job = JobQueue::get(deps.storage, data.id.into())?;
     let account_addr = job.account.clone();
 
     if job.status != JobStatus::Pending {
@@ -372,7 +372,7 @@ pub fn delete_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let _new_job = JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Cancelled)?;
+    let _new_job = JobQueue::finalize(deps.storage, env, job.id.into(), JobStatus::Cancelled)?;
 
     let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
     if fee > fee_denom_paid_amount {
@@ -435,12 +435,12 @@ pub fn delete_job(
 }
 
 pub fn update_job(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     data: UpdateJobMsg,
 ) -> Result<Response, ContractError> {
-    let job = JobQueue::get(&deps, data.id.into())?;
+    let job = JobQueue::get(deps.storage, data.id.into())?;
 
     if info.sender != job.owner {
         return Err(ContractError::Unauthorized {});
@@ -454,7 +454,7 @@ pub fn update_job(
         return Err(ContractError::NameTooShort {});
     }
 
-    let job = JobQueue::update(&mut deps, env, data)?;
+    let job = JobQueue::update(deps.storage, env, data)?;
 
     Ok(Response::new()
         .add_attribute("action", "update_job")
@@ -471,13 +471,13 @@ pub fn update_job(
 }
 
 pub fn execute_job(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     data: ExecuteJobMsg,
     config: Config,
 ) -> Result<Response, ContractError> {
-    let job = JobQueue::get(&deps, data.id.into())?;
+    let job = JobQueue::get(deps.storage, data.id.into())?;
     let account_addr = job.account.clone();
 
     if job.status != JobStatus::Pending {
@@ -537,7 +537,7 @@ pub fn execute_job(
             Err(e) => {
                 attrs.push(Attribute::new("job_condition_status", "invalid"));
                 attrs.push(Attribute::new("error", e.to_string()));
-                JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Failed)?;
+                JobQueue::finalize(deps.storage, env, job.id.into(), JobStatus::Failed)?;
                 break;
             }
         }
@@ -577,13 +577,13 @@ pub fn execute_job(
 }
 
 pub fn evict_job(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     data: EvictJobMsg,
     config: Config,
 ) -> Result<Response, ContractError> {
-    let job = JobQueue::get(&deps, data.id.into())?;
+    let job = JobQueue::get(deps.storage, data.id.into())?;
     let account_addr = job.account.clone();
 
     if job.status != JobStatus::Pending {
@@ -599,7 +599,8 @@ pub fn evict_job(
     let mut msgs = vec![];
 
     // Job will be evicted
-    let job_status = JobQueue::finalize(&mut deps, env, job.id.into(), JobStatus::Evicted)?.status;
+    let job_status =
+        JobQueue::finalize(deps.storage, env, job.id.into(), JobStatus::Evicted)?.status;
 
     // Controller sends eviction reward to evictor
     msgs.push(build_transfer_native_funds_msg(

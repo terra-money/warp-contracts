@@ -20,7 +20,7 @@ use controller::{
 };
 
 pub fn execute_job(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     msg: Reply,
     config: Config,
@@ -59,7 +59,7 @@ pub fn execute_job(
 
     let job_id = job_id_str.as_str().parse::<u64>()?;
 
-    let finished_job = JobQueue::finalize(&mut deps, env.clone(), job_id, new_status)?;
+    let finished_job = JobQueue::finalize(deps.storage, env.clone(), job_id, new_status)?;
 
     let res_attrs = match msg.result {
         SubMsgResult::Err(e) => vec![Attribute::new(
@@ -170,7 +170,7 @@ pub fn execute_job(
                     operational_amount.checked_sub(finished_job.reward + total_fees)?;
 
                 let new_job = JobQueue::add(
-                    &mut deps,
+                    deps.storage,
                     Job {
                         id: new_job_id,
                         prev_id: Some(finished_job.id),

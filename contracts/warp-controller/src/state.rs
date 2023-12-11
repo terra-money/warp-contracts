@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env, Uint64};
+use cosmwasm_std::{Env, Storage, Uint64};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex, UniqueIndex};
 
 use controller::{
@@ -59,16 +59,16 @@ pub const STATE: Item<State> = Item::new("state");
 pub struct JobQueue;
 
 impl JobQueue {
-    pub fn add(deps: &mut DepsMut, job: Job) -> Result<Job, ContractError> {
-        let state = STATE.load(deps.storage)?;
+    pub fn add(storage: &mut dyn Storage, job: Job) -> Result<Job, ContractError> {
+        let state: State = STATE.load(storage)?;
 
-        let job = PENDING_JOBS().update(deps.storage, state.current_job_id.u64(), |s| match s {
+        let job = PENDING_JOBS().update(storage, state.current_job_id.u64(), |s| match s {
             None => Ok(job),
             Some(_) => Err(ContractError::JobAlreadyExists {}),
         })?;
 
         STATE.save(
-            deps.storage,
+            storage,
             &State {
                 current_job_id: state.current_job_id.checked_add(Uint64::new(1))?,
                 q: state.q.checked_add(Uint64::new(1))?,
@@ -78,14 +78,14 @@ impl JobQueue {
         Ok(job)
     }
 
-    pub fn get(deps: &DepsMut, job_id: u64) -> Result<Job, ContractError> {
-        let job = PENDING_JOBS().load(deps.storage, job_id)?;
+    pub fn get(storage: &dyn Storage, job_id: u64) -> Result<Job, ContractError> {
+        let job = PENDING_JOBS().load(storage, job_id)?;
 
         Ok(job)
     }
 
-    pub fn sync(deps: &mut DepsMut, env: Env, job: Job) -> Result<Job, ContractError> {
-        PENDING_JOBS().update(deps.storage, job.id.u64(), |j| match j {
+    pub fn sync(storage: &mut dyn Storage, env: Env, job: Job) -> Result<Job, ContractError> {
+        PENDING_JOBS().update(storage, job.id.u64(), |j| match j {
             None => Err(ContractError::JobDoesNotExist {}),
             Some(job) => Ok(Job {
                 id: job.id,
@@ -111,8 +111,12 @@ impl JobQueue {
         })
     }
 
-    pub fn update(deps: &mut DepsMut, _env: Env, data: UpdateJobMsg) -> Result<Job, ContractError> {
-        PENDING_JOBS().update(deps.storage, data.id.u64(), |h| match h {
+    pub fn update(
+        storage: &mut dyn Storage,
+        _env: Env,
+        data: UpdateJobMsg,
+    ) -> Result<Job, ContractError> {
+        PENDING_JOBS().update(storage, data.id.u64(), |h| match h {
             None => Err(ContractError::JobDoesNotExist {}),
             Some(job) => Ok(Job {
                 id: job.id,
@@ -139,7 +143,7 @@ impl JobQueue {
     }
 
     pub fn finalize(
-        deps: &mut DepsMut,
+        storage: &mut dyn Storage,
         env: Env,
         job_id: u64,
         status: JobStatus,
@@ -148,7 +152,7 @@ impl JobQueue {
             return Err(ContractError::Unauthorized {});
         }
 
-        let job = PENDING_JOBS().load(deps.storage, job_id)?;
+        let job = PENDING_JOBS().load(storage, job_id)?;
 
         let new_job = Job {
             id: job.id,
@@ -172,16 +176,16 @@ impl JobQueue {
             operational_amount: job.operational_amount,
         };
 
-        FINISHED_JOBS().update(deps.storage, job_id, |j| match j {
+        FINISHED_JOBS().update(storage, job_id, |j| match j {
             None => Ok(new_job.clone()),
             Some(_) => Err(ContractError::JobAlreadyFinished {}),
         })?;
 
-        PENDING_JOBS().remove(deps.storage, job_id)?;
+        PENDING_JOBS().remove(storage, job_id)?;
 
-        let state = STATE.load(deps.storage)?;
+        let state = STATE.load(storage)?;
         STATE.save(
-            deps.storage,
+            storage,
             &State {
                 current_job_id: state.current_job_id,
                 q: state.q.checked_sub(Uint64::new(1))?,
