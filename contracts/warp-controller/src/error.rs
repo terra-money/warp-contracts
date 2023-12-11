@@ -15,6 +15,9 @@ pub enum ContractError {
     #[error("Insufficient funds to pay for reward and fee.")]
     InsufficientFundsToPayForRewardAndFee {},
 
+    #[error("Insufficient operational funds.")]
+    InsufficientOperationalFunds {},
+
     #[error("Insufficient funds to pay for fee.")]
     InsufficientFundsToPayForFee {},
 

@@ -74,6 +74,10 @@ pub fn create_job(
     let total_fees = creation_fee + maintenance_fee + burn_fee;
 
     if data.operational_amount > fee_denom_paid_amount {
+        return Err(ContractError::InsufficientOperationalFunds {});
+    }
+
+    if data.reward + total_fees > fee_denom_paid_amount {
         return Err(ContractError::InsufficientFundsToPayForRewardAndFee {});
     }
 

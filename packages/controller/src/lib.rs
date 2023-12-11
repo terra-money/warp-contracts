@@ -183,5 +183,4 @@ pub struct StateResponse {
 
 #[cw_serde]
 pub struct MigrateMsg {
-    pub warp_account_code_id: Uint64,
 }

@@ -15,7 +15,6 @@ task(async ({ deployer, signer, refs, network }) => {
     contract.address!,
     parseInt(contract.codeId!),
     {
-      warp_account_code_id: "12123"
     }
   );
 

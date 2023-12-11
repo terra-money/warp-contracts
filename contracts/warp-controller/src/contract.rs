@@ -168,13 +168,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    config.warp_account_code_id = msg.warp_account_code_id;
-
-    CONFIG.save(deps.storage, &config)?;
-
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::new())
 }
 
