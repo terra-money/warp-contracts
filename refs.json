@@ -24,7 +24,8 @@
       "address": "terra1g8v5syvvfcsdlwd5yyguujlsf6vnadhdxghmnwu3ah6q8m7vn0jq0hcgwt"
     },
     "warp-account-tracker": {
-      "codeId": "12322"
+      "codeId": "12322",
+      "address": "terra1lhxshdp748xs56v83rsegwpmyuqxf2uszdr3wuazjrfq2wza2kyslq800h"
     }
   },
   "mainnet": {
