@@ -85,9 +85,9 @@ impl JobQueue {
     }
 
     pub fn sync(storage: &mut dyn Storage, env: Env, job: Job) -> Result<Job, ContractError> {
-        PENDING_JOBS().update(storage, job.id.u64(), |j| match j {
+        let res = PENDING_JOBS().update(storage, job.id.u64(), |j| match j {
             None => Err(ContractError::JobDoesNotExist {}),
-            Some(job) => Ok(Job {
+            Some(_) => Ok(Job {
                 id: job.id,
                 prev_id: job.prev_id,
                 owner: job.owner,
@@ -108,7 +108,9 @@ impl JobQueue {
                 created_at_time: Uint64::from(env.block.time.seconds()),
                 funding_account: job.funding_account,
             }),
-        })
+        })?;
+
+        Ok(res)
     }
 
     pub fn update(
@@ -116,7 +118,7 @@ impl JobQueue {
         _env: Env,
         data: UpdateJobMsg,
     ) -> Result<Job, ContractError> {
-        PENDING_JOBS().update(storage, data.id.u64(), |h| match h {
+        let job = PENDING_JOBS().update(storage, data.id.u64(), |h| match h {
             None => Err(ContractError::JobDoesNotExist {}),
             Some(job) => Ok(Job {
                 id: job.id,
@@ -139,7 +141,9 @@ impl JobQueue {
                 funding_account: job.funding_account,
                 operational_amount: job.operational_amount,
             }),
-        })
+        })?;
+
+        Ok(job)
     }
 
     pub fn finalize(
