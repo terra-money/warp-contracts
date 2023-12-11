@@ -118,10 +118,9 @@ pub fn submit_template(
         id: state.current_template_id,
         owner: info.sender.clone(),
         name: data.name.clone(),
-        msg: data.msg.clone(),
+        executions: data.executions.clone(),
         formatted_str: data.formatted_str.clone(),
         vars: data.vars.clone(),
-        condition: data.condition.clone(),
     };
 
     TEMPLATES.save(deps.storage, state.current_template_id.u64(), &msg_template)?;
@@ -146,7 +145,7 @@ pub fn submit_template(
         .add_attribute("id", state.current_template_id)
         .add_attribute("owner", info.sender)
         .add_attribute("name", data.name)
-        .add_attribute("msg", data.msg)
+        .add_attribute("executions", serde_json_wasm::to_string(&data.executions)?)
         .add_attribute("formatted_str", data.formatted_str)
         .add_attribute("vars", serde_json_wasm::to_string(&data.vars)?))
 }
@@ -177,10 +176,9 @@ pub fn edit_template(
             id: t.id,
             owner: t.owner,
             name: data.name.unwrap_or(t.name),
-            msg: t.msg,
+            executions: t.executions,
             formatted_str: t.formatted_str,
             vars: t.vars,
-            condition: t.condition,
         }),
     })?;
 
@@ -189,7 +187,7 @@ pub fn edit_template(
         .add_attribute("id", t.id)
         .add_attribute("owner", info.sender)
         .add_attribute("name", t.name)
-        .add_attribute("msg", t.msg)
+        .add_attribute("executions", serde_json_wasm::to_string(&t.executions)?)
         .add_attribute("formatted_str", t.formatted_str)
         .add_attribute("vars", serde_json_wasm::to_string(&t.vars)?))
 }

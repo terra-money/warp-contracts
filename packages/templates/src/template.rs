@@ -1,6 +1,6 @@
+use controller::job::Execution;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint64};
-use resolver::condition::Condition;
 use resolver::variable::Variable;
 
 //msg templates
@@ -10,16 +10,14 @@ pub struct Template {
     pub owner: Addr,
     pub name: String,
     pub vars: Vec<Variable>,
-    pub msg: String,
-    pub condition: Option<Condition>,
+    pub executions: Vec<Execution>,
     pub formatted_str: String,
 }
 
 #[cw_serde]
 pub struct SubmitTemplateMsg {
     pub name: String,
-    pub msg: String,
-    pub condition: Option<Condition>,
+    pub executions: Vec<Execution>,
     pub formatted_str: String,
     pub vars: Vec<Variable>,
 }
