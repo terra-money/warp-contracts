@@ -182,5 +182,4 @@ pub struct StateResponse {
 }
 
 #[cw_serde]
-pub struct MigrateMsg {
-}
+pub struct MigrateMsg {}

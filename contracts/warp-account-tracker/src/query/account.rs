@@ -143,7 +143,12 @@ pub fn query_funding_accounts(
 ) -> StdResult<FundingAccountsResponse> {
     let account_owner_addr_ref = deps.api.addr_validate(data.account_owner_addr.as_str())?;
 
-    let funding_accounts = FUNDING_ACCOUNTS_BY_USER.load(deps.storage, &account_owner_addr_ref)?;
+    let resp = FUNDING_ACCOUNTS_BY_USER.load(deps.storage, &account_owner_addr_ref);
+
+    let funding_accounts = match resp {
+        Ok(funding_accounts) => funding_accounts,
+        Err(_) => vec![],
+    };
 
     Ok(FundingAccountsResponse { funding_accounts })
 }
@@ -154,12 +159,15 @@ pub fn query_first_free_funding_account(
 ) -> StdResult<FundingAccountResponse> {
     let account_owner_addr_ref = deps.api.addr_validate(data.account_owner_addr.as_str())?;
 
-    let funding_accounts = FUNDING_ACCOUNTS_BY_USER.load(deps.storage, &account_owner_addr_ref)?;
+    let resp = FUNDING_ACCOUNTS_BY_USER.load(deps.storage, &account_owner_addr_ref);
 
-    let funding_account = funding_accounts
-        .iter()
-        .find(|fa| fa.taken_by_job_ids.is_empty())
-        .cloned();
+    let funding_account = match resp {
+        Ok(funding_accounts) => funding_accounts
+            .iter()
+            .find(|fa| fa.taken_by_job_ids.is_empty())
+            .cloned(),
+        Err(_) => None,
+    };
 
     Ok(FundingAccountResponse { funding_account })
 }
