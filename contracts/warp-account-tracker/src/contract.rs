@@ -46,7 +46,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::TakeAccount(data) => {
             nonpayable(&info).unwrap();
-            execute::account::taken_account(deps, data)
+            execute::account::take_account(deps, data)
         }
         ExecuteMsg::FreeAccount(data) => {
             nonpayable(&info).unwrap();

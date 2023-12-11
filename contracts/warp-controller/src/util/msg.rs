@@ -72,7 +72,7 @@ pub fn build_free_account_msg(
     })
 }
 
-pub fn build_taken_account_msg(
+pub fn build_take_account_msg(
     account_tracker_addr: String,
     account_owner_addr: String,
     account_addr: String,

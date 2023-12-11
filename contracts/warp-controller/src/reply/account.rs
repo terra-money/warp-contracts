@@ -8,9 +8,8 @@ use controller::{
 use crate::{
     state::JobQueue,
     util::msg::{
-        build_account_execute_warp_msgs, build_add_funding_account_msg,
-        build_take_funding_account_msg, build_taken_account_msg, build_transfer_cw20_msg,
-        build_transfer_cw721_msg,
+        build_account_execute_warp_msgs, build_add_funding_account_msg, build_take_account_msg,
+        build_take_funding_account_msg, build_transfer_cw20_msg, build_transfer_cw721_msg,
     },
     ContractError,
 };
@@ -129,7 +128,7 @@ pub fn create_account_and_job(
     }
 
     // Take job account
-    msgs.push(build_taken_account_msg(
+    msgs.push(build_take_account_msg(
         config.account_tracker_address.to_string(),
         job.owner.to_string(),
         account_addr.to_string(),
@@ -139,7 +138,7 @@ pub fn create_account_and_job(
     Ok(Response::new()
         .add_messages(msgs)
         .add_attribute("action", "create_account_and_job_reply")
-        // .add_attribute("job_id", value)
+        .add_attribute("job_id", job_id.to_string())
         .add_attribute("owner", owner)
         .add_attribute("account_address", account_addr)
         .add_attribute("native_funds", serde_json_wasm::to_string(&native_funds)?)
@@ -218,8 +217,8 @@ pub fn create_funding_account_and_job(
 
     Ok(Response::new()
         .add_messages(msgs)
-        .add_attribute("action", "create_account_and_job_reply")
-        // .add_attribute("job_id", value)
+        .add_attribute("action", "create_funding_account_and_job_reply")
+        .add_attribute("job_id", job_id.to_string())
         .add_attribute("owner", owner)
         .add_attribute("funding_account_address", funding_account_addr)
         .add_attribute("native_funds", serde_json_wasm::to_string(&native_funds)?))
@@ -280,7 +279,7 @@ pub fn create_funding_account(
 
     Ok(Response::new()
         .add_messages(msgs)
-        .add_attribute("action", "create_account_reply")
+        .add_attribute("action", "create_funding_account_reply")
         .add_attribute("owner", owner)
         .add_attribute("funding_account_address", funding_account_addr)
         .add_attribute("native_funds", serde_json_wasm::to_string(&native_funds)?))

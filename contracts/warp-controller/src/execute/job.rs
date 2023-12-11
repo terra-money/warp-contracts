@@ -20,7 +20,7 @@ use crate::util::{
     fee::deduct_from_native_funds,
     msg::{
         build_account_withdraw_assets_msg, build_free_account_msg,
-        build_instantiate_warp_account_msg, build_taken_account_msg, build_transfer_cw20_msg,
+        build_instantiate_warp_account_msg, build_take_account_msg, build_transfer_cw20_msg,
         build_transfer_cw721_msg, build_transfer_native_funds_msg,
     },
 };
@@ -238,7 +238,7 @@ pub fn create_job(
             }
 
             // Take account
-            msgs.push(build_taken_account_msg(
+            msgs.push(build_take_account_msg(
                 config.account_tracker_address.to_string(),
                 job_owner.to_string(),
                 available_account_addr.to_string(),
