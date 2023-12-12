@@ -12,11 +12,11 @@
       "codeId": "12318"
     },
     "warp-controller": {
-      "codeId": "12339",
+      "codeId": "12369",
       "address": "terra1sylnrt9rkv7lraqvxssdzwmhm804qjtlp8ssjc502538ykyhdn5sns9edd"
     },
     "warp-resolver": {
-      "codeId": "12319",
+      "codeId": "12368",
       "address": "terra1yr249ds5f24u72cnyspdu0vghlkxyfanjj5kyagx9q4fm6nlsads89f9l7"
     },
     "warp-templates": {

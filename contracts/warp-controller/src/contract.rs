@@ -131,13 +131,13 @@ pub fn execute(
             nonpayable(&info).unwrap();
             execute::controller::update_config(deps, env, info, data, config)
         }
-        ExecuteMsg::MigrateFreeAccounts(data) => {
+        ExecuteMsg::MigrateFreeJobAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::account::migrate_free_accounts(deps.as_ref(), env, info, data, config)
+            migrate::account::migrate_free_job_accounts(deps.as_ref(), env, info, data, config)
         }
-        ExecuteMsg::MigrateTakenAccounts(data) => {
+        ExecuteMsg::MigrateTakenJobAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::account::migrate_taken_accounts(deps.as_ref(), env, info, data, config)
+            migrate::account::migrate_taken_job_accounts(deps.as_ref(), env, info, data, config)
         }
 
         ExecuteMsg::MigratePendingJobs(data) => {

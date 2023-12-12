@@ -17,22 +17,22 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
-    TakeAccount(TakeAccountMsg),
-    FreeAccount(FreeAccountMsg),
+    TakeJobAccount(TakeJobAccountMsg),
+    FreeJobAccount(FreeJobAccountMsg),
     TakeFundingAccount(TakeFundingAccountMsg),
     FreeFundingAccount(FreeFundingAccountMsg),
     AddFundingAccount(AddFundingAccountMsg),
 }
 
 #[cw_serde]
-pub struct TakeAccountMsg {
+pub struct TakeJobAccountMsg {
     pub account_owner_addr: String,
     pub account_addr: String,
     pub job_id: Uint64,
 }
 
 #[cw_serde]
-pub struct FreeAccountMsg {
+pub struct FreeJobAccountMsg {
     pub account_owner_addr: String,
     pub account_addr: String,
     pub last_job_id: Uint64,
@@ -64,11 +64,11 @@ pub enum QueryMsg {
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
     #[returns(AccountsResponse)]
-    QueryTakenAccounts(QueryTakenAccountsMsg),
+    QueryTakenJobAccounts(QueryTakenJobAccountsMsg),
     #[returns(AccountsResponse)]
-    QueryFreeAccounts(QueryFreeAccountsMsg),
+    QueryFreeJobAccounts(QueryFreeJobAccountsMsg),
     #[returns(AccountResponse)]
-    QueryFirstFreeAccount(QueryFirstFreeAccountMsg),
+    QueryFirstFreeJobAccount(QueryFirstFreeJobAccountMsg),
     #[returns(FundingAccountResponse)]
     QueryFirstFreeFundingAccount(QueryFirstFreeFundingAccountMsg),
     #[returns(FundingAccountsResponse)]
@@ -86,14 +86,14 @@ pub struct ConfigResponse {
 }
 
 #[cw_serde]
-pub struct QueryTakenAccountsMsg {
+pub struct QueryTakenJobAccountsMsg {
     pub account_owner_addr: String,
     pub start_after: Option<String>,
     pub limit: Option<u32>,
 }
 
 #[cw_serde]
-pub struct QueryFreeAccountsMsg {
+pub struct QueryFreeJobAccountsMsg {
     pub account_owner_addr: String,
     pub start_after: Option<String>,
     pub limit: Option<u32>,
@@ -118,12 +118,12 @@ pub struct AccountsResponse {
 }
 
 #[cw_serde]
-pub struct QueryFirstFreeAccountMsg {
+pub struct QueryFirstFreeJobAccountMsg {
     pub account_owner_addr: String,
 }
 
 #[cw_serde]
-pub struct QueryFreeAccountMsg {
+pub struct QueryFreeJobAccountMsg {
     pub account_addr: String,
 }
 

@@ -1,18 +1,18 @@
 use crate::state::{
-    FREE_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_ACCOUNTS, TAKEN_FUNDING_ACCOUNT_BY_JOB,
+    FREE_JOB_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_FUNDING_ACCOUNT_BY_JOB, TAKEN_JOB_ACCOUNTS,
 };
 use crate::ContractError;
 use account_tracker::{
-    AddFundingAccountMsg, FreeAccountMsg, FreeFundingAccountMsg, FundingAccount, TakeAccountMsg,
-    TakeFundingAccountMsg,
+    AddFundingAccountMsg, FreeFundingAccountMsg, FreeJobAccountMsg, FundingAccount,
+    TakeFundingAccountMsg, TakeJobAccountMsg,
 };
 use cosmwasm_std::{DepsMut, Response};
 
-pub fn take_account(deps: DepsMut, data: TakeAccountMsg) -> Result<Response, ContractError> {
+pub fn take_job_account(deps: DepsMut, data: TakeJobAccountMsg) -> Result<Response, ContractError> {
     let account_owner_ref = &deps.api.addr_validate(data.account_owner_addr.as_str())?;
     let account_addr_ref = &deps.api.addr_validate(data.account_addr.as_str())?;
-    FREE_ACCOUNTS.remove(deps.storage, (account_owner_ref, account_addr_ref));
-    TAKEN_ACCOUNTS.update(
+    FREE_JOB_ACCOUNTS.remove(deps.storage, (account_owner_ref, account_addr_ref));
+    TAKEN_JOB_ACCOUNTS.update(
         deps.storage,
         (account_owner_ref, account_addr_ref),
         |s| match s {
@@ -21,16 +21,16 @@ pub fn take_account(deps: DepsMut, data: TakeAccountMsg) -> Result<Response, Con
         },
     )?;
     Ok(Response::new()
-        .add_attribute("action", "take_account")
+        .add_attribute("action", "take_job_account")
         .add_attribute("account_addr", data.account_addr)
         .add_attribute("job_id", data.job_id))
 }
 
-pub fn free_account(deps: DepsMut, data: FreeAccountMsg) -> Result<Response, ContractError> {
+pub fn free_job_account(deps: DepsMut, data: FreeJobAccountMsg) -> Result<Response, ContractError> {
     let account_owner_ref = &deps.api.addr_validate(data.account_owner_addr.as_str())?;
     let account_addr_ref = &deps.api.addr_validate(data.account_addr.as_str())?;
-    TAKEN_ACCOUNTS.remove(deps.storage, (account_owner_ref, account_addr_ref));
-    FREE_ACCOUNTS.update(
+    TAKEN_JOB_ACCOUNTS.remove(deps.storage, (account_owner_ref, account_addr_ref));
+    FREE_JOB_ACCOUNTS.update(
         deps.storage,
         (account_owner_ref, account_addr_ref),
         |s| match s {
@@ -40,7 +40,7 @@ pub fn free_account(deps: DepsMut, data: FreeAccountMsg) -> Result<Response, Con
         },
     )?;
     Ok(Response::new()
-        .add_attribute("action", "free_account")
+        .add_attribute("action", "free_job_account")
         .add_attribute("account_addr", data.account_addr))
 }
 
@@ -52,8 +52,8 @@ pub fn take_funding_account(
     let account_addr_ref = &deps.api.addr_validate(data.account_addr.as_str())?;
 
     // prevent taking job accounts as funding accounts
-    if TAKEN_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, account_addr_ref))
-        || FREE_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, account_addr_ref))
+    if TAKEN_JOB_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, account_addr_ref))
+        || FREE_JOB_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, account_addr_ref))
     {
         return Err(ContractError::AccountAlreadyTakenError {});
     }
@@ -152,8 +152,8 @@ pub fn add_funding_account(
     let account_addr_ref = deps.api.addr_validate(&data.account_addr)?;
 
     // prevent adding job accounts as funding accounts
-    if TAKEN_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, &account_addr_ref))
-        || FREE_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, &account_addr_ref))
+    if TAKEN_JOB_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, &account_addr_ref))
+        || FREE_JOB_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, &account_addr_ref))
     {
         return Err(ContractError::AccountAlreadyTakenError {});
     }

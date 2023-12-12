@@ -19,8 +19,8 @@ use cosmwasm_std::{
 use crate::util::{
     fee::deduct_from_native_funds,
     msg::{
-        build_account_withdraw_assets_msg, build_free_account_msg,
-        build_instantiate_warp_account_msg, build_take_account_msg, build_transfer_cw20_msg,
+        build_account_withdraw_assets_msg, build_free_job_account_msg,
+        build_instantiate_warp_account_msg, build_take_job_account_msg, build_transfer_cw20_msg,
         build_transfer_cw721_msg, build_transfer_native_funds_msg,
     },
 };
@@ -141,8 +141,8 @@ pub fn create_job(
 
     let account_resp: AccountResponse = deps.querier.query_wasm_smart(
         account_tracker_address_ref,
-        &account_tracker::QueryMsg::QueryFirstFreeAccount(
-            account_tracker::QueryFirstFreeAccountMsg {
+        &account_tracker::QueryMsg::QueryFirstFreeJobAccount(
+            account_tracker::QueryFirstFreeJobAccountMsg {
                 account_owner_addr: job_owner.to_string(),
             },
         ),
@@ -238,7 +238,7 @@ pub fn create_job(
             }
 
             // Take account
-            msgs.push(build_take_account_msg(
+            msgs.push(build_take_job_account_msg(
                 config.account_tracker_address.to_string(),
                 job_owner.to_string(),
                 available_account_addr.to_string(),
@@ -398,7 +398,7 @@ pub fn delete_job(
     ));
 
     // Free account
-    msgs.push(build_free_account_msg(
+    msgs.push(build_free_job_account_msg(
         config.account_tracker_address.to_string(),
         job.owner.to_string(),
         account_addr.to_string(),
@@ -550,7 +550,7 @@ pub fn execute_job(
     ));
 
     // Free account
-    msgs.push(build_free_account_msg(
+    msgs.push(build_free_job_account_msg(
         config.account_tracker_address.to_string(),
         job.owner.to_string(),
         account_addr.to_string(),
@@ -618,7 +618,7 @@ pub fn evict_job(
     ));
 
     // Free account
-    msgs.push(build_free_account_msg(
+    msgs.push(build_free_job_account_msg(
         config.account_tracker_address.to_string(),
         job.owner.to_string(),
         account_addr.to_string(),

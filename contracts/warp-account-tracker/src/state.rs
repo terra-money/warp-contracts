@@ -5,10 +5,10 @@ use cw_storage_plus::{Item, Map};
 pub const CONFIG: Item<Config> = Item::new("config");
 
 // Key is the (account owner address, account address), value is the ID of the pending job currently using it
-pub const TAKEN_ACCOUNTS: Map<(&Addr, &Addr), Uint64> = Map::new("taken_accounts");
+pub const TAKEN_JOB_ACCOUNTS: Map<(&Addr, &Addr), Uint64> = Map::new("taken_job_accounts");
 
 // Key is the (account owner address, account address), value is id of the last job which reserved it
-pub const FREE_ACCOUNTS: Map<(&Addr, &Addr), Uint64> = Map::new("free_accounts");
+pub const FREE_JOB_ACCOUNTS: Map<(&Addr, &Addr), Uint64> = Map::new("free_job_accounts");
 
 // owner address -> funding_account[]
 // - user can have multiple funding accounts

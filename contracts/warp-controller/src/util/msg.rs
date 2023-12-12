@@ -1,8 +1,8 @@
 use cosmwasm_std::{to_binary, BankMsg, Coin, CosmosMsg, Uint128, Uint64, WasmMsg};
 
 use account_tracker::{
-    AddFundingAccountMsg, FreeAccountMsg, FreeFundingAccountMsg, TakeAccountMsg,
-    TakeFundingAccountMsg,
+    AddFundingAccountMsg, FreeFundingAccountMsg, FreeJobAccountMsg, TakeFundingAccountMsg,
+    TakeJobAccountMsg,
 };
 use controller::account::{
     AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg, WarpMsg, WarpMsgs,
@@ -54,7 +54,7 @@ pub fn build_instantiate_warp_account_msg(
     })
 }
 
-pub fn build_free_account_msg(
+pub fn build_free_job_account_msg(
     account_tracker_addr: String,
     account_owner_addr: String,
     account_addr: String,
@@ -62,17 +62,19 @@ pub fn build_free_account_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_tracker_addr,
-        msg: to_binary(&account_tracker::ExecuteMsg::FreeAccount(FreeAccountMsg {
-            account_owner_addr,
-            account_addr,
-            last_job_id,
-        }))
+        msg: to_binary(&account_tracker::ExecuteMsg::FreeJobAccount(
+            FreeJobAccountMsg {
+                account_owner_addr,
+                account_addr,
+                last_job_id,
+            },
+        ))
         .unwrap(),
         funds: vec![],
     })
 }
 
-pub fn build_take_account_msg(
+pub fn build_take_job_account_msg(
     account_tracker_addr: String,
     account_owner_addr: String,
     account_addr: String,
@@ -80,11 +82,13 @@ pub fn build_take_account_msg(
 ) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account_tracker_addr,
-        msg: to_binary(&account_tracker::ExecuteMsg::TakeAccount(TakeAccountMsg {
-            account_owner_addr,
-            account_addr,
-            job_id,
-        }))
+        msg: to_binary(&account_tracker::ExecuteMsg::TakeJobAccount(
+            TakeJobAccountMsg {
+                account_owner_addr,
+                account_addr,
+                job_id,
+            },
+        ))
         .unwrap(),
         funds: vec![],
     })

@@ -1,12 +1,13 @@
 use cosmwasm_std::{Deps, Order, StdResult};
 use cw_storage_plus::{Bound, PrefixBound};
 
-use crate::state::{CONFIG, FREE_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_ACCOUNTS};
+use crate::state::{CONFIG, FREE_JOB_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_JOB_ACCOUNTS};
 
 use account_tracker::{
     Account, AccountResponse, AccountsResponse, ConfigResponse, FundingAccountResponse,
-    FundingAccountsResponse, QueryFirstFreeAccountMsg, QueryFirstFreeFundingAccountMsg,
-    QueryFreeAccountsMsg, QueryFundingAccountMsg, QueryFundingAccountsMsg, QueryTakenAccountsMsg,
+    FundingAccountsResponse, QueryFirstFreeFundingAccountMsg, QueryFirstFreeJobAccountMsg,
+    QueryFreeJobAccountsMsg, QueryFundingAccountMsg, QueryFundingAccountsMsg,
+    QueryTakenJobAccountsMsg,
 };
 
 const QUERY_LIMIT: u32 = 50;
@@ -16,12 +17,12 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse { config })
 }
 
-pub fn query_first_free_account(
+pub fn query_first_free_job_account(
     deps: Deps,
-    data: QueryFirstFreeAccountMsg,
+    data: QueryFirstFreeJobAccountMsg,
 ) -> StdResult<AccountResponse> {
     let account_owner_ref = &deps.api.addr_validate(data.account_owner_addr.as_str())?;
-    let maybe_free_account = FREE_ACCOUNTS
+    let maybe_free_job_account = FREE_JOB_ACCOUNTS
         .prefix_range(
             deps.storage,
             Some(PrefixBound::inclusive(account_owner_ref)),
@@ -29,7 +30,7 @@ pub fn query_first_free_account(
             Order::Ascending,
         )
         .next();
-    let free_account = match maybe_free_account {
+    let free_job_account = match maybe_free_job_account {
         Some(Ok((account, last_job_id))) => Some(Account {
             addr: account.1,
             taken_by_job_id: Some(last_job_id),
@@ -37,19 +38,19 @@ pub fn query_first_free_account(
         _ => None,
     };
     Ok(AccountResponse {
-        account: free_account,
+        account: free_job_account,
     })
 }
 
-pub fn query_taken_accounts(
+pub fn query_taken_job_accounts(
     deps: Deps,
-    data: QueryTakenAccountsMsg,
+    data: QueryTakenJobAccountsMsg,
 ) -> StdResult<AccountsResponse> {
     let account_owner_ref = &deps.api.addr_validate(data.account_owner_addr.as_str())?;
     let iter = match data.start_after {
         Some(start_after) => {
             let start_after_account_addr = &deps.api.addr_validate(start_after.as_str())?;
-            TAKEN_ACCOUNTS.range(
+            TAKEN_JOB_ACCOUNTS.range(
                 deps.storage,
                 Some(Bound::exclusive((
                     account_owner_ref,
@@ -59,7 +60,7 @@ pub fn query_taken_accounts(
                 Order::Descending,
             )
         }
-        None => TAKEN_ACCOUNTS.prefix_range(
+        None => TAKEN_JOB_ACCOUNTS.prefix_range(
             deps.storage,
             Some(PrefixBound::inclusive(account_owner_ref)),
             Some(PrefixBound::inclusive(account_owner_ref)),
@@ -81,12 +82,15 @@ pub fn query_taken_accounts(
     })
 }
 
-pub fn query_free_accounts(deps: Deps, data: QueryFreeAccountsMsg) -> StdResult<AccountsResponse> {
+pub fn query_free_job_accounts(
+    deps: Deps,
+    data: QueryFreeJobAccountsMsg,
+) -> StdResult<AccountsResponse> {
     let account_owner_ref = &deps.api.addr_validate(data.account_owner_addr.as_str())?;
     let iter = match data.start_after {
         Some(start_after) => {
             let start_after_account_addr = &deps.api.addr_validate(start_after.as_str())?;
-            FREE_ACCOUNTS.range(
+            FREE_JOB_ACCOUNTS.range(
                 deps.storage,
                 Some(Bound::exclusive((
                     account_owner_ref,
@@ -96,7 +100,7 @@ pub fn query_free_accounts(deps: Deps, data: QueryFreeAccountsMsg) -> StdResult<
                 Order::Descending,
             )
         }
-        None => FREE_ACCOUNTS.prefix_range(
+        None => FREE_JOB_ACCOUNTS.prefix_range(
             deps.storage,
             Some(PrefixBound::inclusive(account_owner_ref)),
             Some(PrefixBound::inclusive(account_owner_ref)),

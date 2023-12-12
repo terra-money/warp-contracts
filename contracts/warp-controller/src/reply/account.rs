@@ -8,8 +8,9 @@ use controller::{
 use crate::{
     state::JobQueue,
     util::msg::{
-        build_account_execute_warp_msgs, build_add_funding_account_msg, build_take_account_msg,
-        build_take_funding_account_msg, build_transfer_cw20_msg, build_transfer_cw721_msg,
+        build_account_execute_warp_msgs, build_add_funding_account_msg,
+        build_take_funding_account_msg, build_take_job_account_msg, build_transfer_cw20_msg,
+        build_transfer_cw721_msg,
     },
     ContractError,
 };
@@ -128,7 +129,7 @@ pub fn create_account_and_job(
     }
 
     // Take job account
-    msgs.push(build_take_account_msg(
+    msgs.push(build_take_job_account_msg(
         config.account_tracker_address.to_string(),
         job.owner.to_string(),
         account_addr.to_string(),

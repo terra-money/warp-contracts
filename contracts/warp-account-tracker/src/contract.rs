@@ -44,13 +44,13 @@ pub fn execute(
     }
 
     match msg {
-        ExecuteMsg::TakeAccount(data) => {
+        ExecuteMsg::TakeJobAccount(data) => {
             nonpayable(&info).unwrap();
-            execute::account::take_account(deps, data)
+            execute::account::take_job_account(deps, data)
         }
-        ExecuteMsg::FreeAccount(data) => {
+        ExecuteMsg::FreeJobAccount(data) => {
             nonpayable(&info).unwrap();
-            execute::account::free_account(deps, data)
+            execute::account::free_job_account(deps, data)
         }
         ExecuteMsg::TakeFundingAccount(data) => {
             nonpayable(&info).unwrap();
@@ -71,14 +71,14 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::account::query_config(deps)?),
-        QueryMsg::QueryTakenAccounts(data) => {
-            to_binary(&query::account::query_taken_accounts(deps, data)?)
+        QueryMsg::QueryTakenJobAccounts(data) => {
+            to_binary(&query::account::query_taken_job_accounts(deps, data)?)
         }
-        QueryMsg::QueryFreeAccounts(data) => {
-            to_binary(&query::account::query_free_accounts(deps, data)?)
+        QueryMsg::QueryFreeJobAccounts(data) => {
+            to_binary(&query::account::query_free_job_accounts(deps, data)?)
         }
-        QueryMsg::QueryFirstFreeAccount(data) => {
-            to_binary(&query::account::query_first_free_account(deps, data)?)
+        QueryMsg::QueryFirstFreeJobAccount(data) => {
+            to_binary(&query::account::query_first_free_job_account(deps, data)?)
         }
         QueryMsg::QueryFundingAccounts(data) => {
             to_binary(&query::account::query_funding_accounts(deps, data)?)

@@ -13,5 +13,9 @@ pub fn deduct_from_native_funds(
             deducted_amount = Uint128::zero();
         }
     }
+
+    // Filter out coins with an amount of zero
+    funds.retain(|coin| !coin.amount.is_zero());
+
     funds
 }

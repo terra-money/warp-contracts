@@ -9,7 +9,8 @@ use crate::{
     state::{JobQueue, CONFIG, STATE},
     util::msg::{
         build_account_execute_generic_msgs, build_account_withdraw_assets_msg,
-        build_take_account_msg, build_take_funding_account_msg, build_transfer_native_funds_msg,
+        build_take_funding_account_msg, build_take_job_account_msg,
+        build_transfer_native_funds_msg,
     },
     ContractError,
 };
@@ -243,7 +244,7 @@ pub fn execute_job(
         let funding_account_addr = finished_job.funding_account.clone().unwrap();
 
         // Take job account with the new job
-        msgs.push(build_take_account_msg(
+        msgs.push(build_take_job_account_msg(
             config.account_tracker_address.to_string(),
             finished_job.owner.to_string(),
             account_addr.to_string(),
