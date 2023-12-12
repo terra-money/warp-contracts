@@ -4,7 +4,7 @@ use crate::util::variable::{
     vars_valid,
 };
 use crate::ContractError;
-use controller::account::WarpMsg;
+use controller::account::{warp_msgs_to_cosmos_msgs, WarpMsg};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
@@ -17,7 +17,7 @@ use resolver::{
     ExecuteResolveConditionMsg, ExecuteSimulateQueryMsg, ExecuteValidateJobCreationMsg,
     InstantiateMsg, MigrateMsg, QueryApplyVarFnMsg, QueryHydrateMsgsMsg, QueryHydrateVarsMsg,
     QueryMsg, QueryResolveConditionMsg, QueryValidateJobCreationMsg, SimulateQueryMsg,
-    SimulateResponse,
+    SimulateResponse, WarpMsgsToCosmosMsgsMsg,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -49,7 +49,23 @@ pub fn execute(
         }
         ExecuteMsg::ExecuteApplyVarFn(data) => execute_apply_var_fn(deps, env, info, data),
         ExecuteMsg::ExecuteHydrateMsgs(data) => execute_hydrate_msgs(deps, env, info, data),
+        ExecuteMsg::WarpMsgsToCosmosMsgs(data) => {
+            execute_warp_msgs_to_cosmos_msgs(deps, env, info, data)
+        }
     }
+}
+
+fn execute_warp_msgs_to_cosmos_msgs(
+    deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    msg: WarpMsgsToCosmosMsgsMsg,
+) -> Result<Response, ContractError> {
+    let result = warp_msgs_to_cosmos_msgs(deps.as_ref(), env, msg.msgs, &msg.owner)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "warp_msgs_to_cosmos_msgs")
+        .add_attribute("response", serde_json_wasm::to_string(&result)?))
 }
 
 pub fn execute_simulate_query(

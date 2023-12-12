@@ -6,7 +6,7 @@ use controller::{
     job::{Execution, ExternalInput, JobStatus},
 };
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::QueryRequest;
+use cosmwasm_std::{Addr, QueryRequest};
 #[cw_serde]
 pub struct InstantiateMsg {}
 
@@ -18,6 +18,7 @@ pub enum ExecuteMsg {
     ExecuteResolveCondition(ExecuteResolveConditionMsg),
     ExecuteApplyVarFn(ExecuteApplyVarFnMsg),
     ExecuteHydrateMsgs(ExecuteHydrateMsgsMsg),
+    WarpMsgsToCosmosMsgs(WarpMsgsToCosmosMsgsMsg),
 }
 
 #[derive(QueryResponses)]
@@ -39,6 +40,12 @@ pub enum QueryMsg {
 
 #[cw_serde]
 pub struct MigrateMsg {}
+
+#[cw_serde]
+pub struct WarpMsgsToCosmosMsgsMsg {
+    pub msgs: Vec<WarpMsg>,
+    pub owner: Addr,
+}
 
 #[cw_serde]
 pub struct ExecuteSimulateQueryMsg {
