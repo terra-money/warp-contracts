@@ -25,7 +25,7 @@ use crate::util::{
     },
 };
 
-use account_tracker::{AccountResponse, FundingAccountResponse};
+use account_tracker::{FundingAccountResponse, JobAccountResponse};
 use controller::{account::CwFund, Config};
 use resolver::QueryHydrateMsgsMsg;
 
@@ -139,7 +139,7 @@ pub fn create_job(
         },
     )?;
 
-    let account_resp: AccountResponse = deps.querier.query_wasm_smart(
+    let job_account_resp: JobAccountResponse = deps.querier.query_wasm_smart(
         account_tracker_address_ref,
         &account_tracker::QueryMsg::QueryFirstFreeJobAccount(
             account_tracker::QueryFirstFreeJobAccountMsg {
@@ -172,7 +172,7 @@ pub fn create_job(
         )?;
     }
 
-    match account_resp.account {
+    match job_account_resp.job_account {
         None => {
             // Create account then create job in reply
             submsgs.push(SubMsg {
@@ -193,7 +193,7 @@ pub fn create_job(
             attrs.push(Attribute::new("action", "create_account_and_job"));
         }
         Some(available_account) => {
-            let available_account_addr = &available_account.addr;
+            let available_account_addr = &available_account.account_addr;
             // Update job.account from placeholder value to job account
             job.account = available_account_addr.clone();
             JobQueue::sync(deps.storage, env.clone(), job.clone())?;

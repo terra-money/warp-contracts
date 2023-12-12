@@ -1,19 +1,22 @@
-use account_tracker::{Config, FundingAccount};
+use account_tracker::{Account, Config};
 use cosmwasm_std::{Addr, Uint64};
 use cw_storage_plus::{Item, Map};
 
 pub const CONFIG: Item<Config> = Item::new("config");
+
+// Key is the (account owner address, account address), value is the account struct
+pub const ACCOUNTS: Map<(&Addr, &Addr), Account> = Map::new("accounts");
+
+// Key is the (account owner address, account address), value is a vector of IDs of the jobs currently using it
+pub const TAKEN_FUNDING_ACCOUNTS: Map<(&Addr, &Addr), Vec<Uint64>> =
+    Map::new("taken_funding_accounts");
+
+// Key is the (account owner address, account address), value is id of the last job which reserved it (vec[last_job_id])
+pub const FREE_FUNDING_ACCOUNTS: Map<(&Addr, &Addr), Vec<Uint64>> =
+    Map::new("free_funding_accounts");
 
 // Key is the (account owner address, account address), value is the ID of the pending job currently using it
 pub const TAKEN_JOB_ACCOUNTS: Map<(&Addr, &Addr), Uint64> = Map::new("taken_job_accounts");
 
 // Key is the (account owner address, account address), value is id of the last job which reserved it
 pub const FREE_JOB_ACCOUNTS: Map<(&Addr, &Addr), Uint64> = Map::new("free_job_accounts");
-
-// owner address -> funding_account[]
-// - user can have multiple funding accounts
-// - a job can be assigned to only one funding account
-// - funding account can fund multiple jobs
-pub const FUNDING_ACCOUNTS_BY_USER: Map<&Addr, Vec<FundingAccount>> =
-    Map::new("funding_accounts_by_user");
-pub const TAKEN_FUNDING_ACCOUNT_BY_JOB: Map<u64, Addr> = Map::new("funding_account_by_job");

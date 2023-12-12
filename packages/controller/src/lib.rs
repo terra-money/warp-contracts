@@ -97,8 +97,7 @@ pub enum ExecuteMsg {
 
     UpdateConfig(UpdateConfigMsg),
 
-    MigrateFreeJobAccounts(MigrateAccountsMsg),
-    MigrateTakenJobAccounts(MigrateAccountsMsg),
+    MigrateAccounts(MigrateAccountsMsg),
 
     MigratePendingJobs(MigrateJobsMsg),
     MigrateFinishedJobs(MigrateJobsMsg),

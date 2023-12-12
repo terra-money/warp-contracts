@@ -14,8 +14,7 @@ task(async ({ deployer, signer, refs, network }) => {
     signer.key.accAddress,
     contract.address!,
     parseInt(contract.codeId!),
-    {
-    }
+    {}
   );
 
   try {

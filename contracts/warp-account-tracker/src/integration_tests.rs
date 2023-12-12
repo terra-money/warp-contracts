@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
     use account_tracker::{
-        Account, AccountResponse, AccountsResponse, Config, ConfigResponse, ExecuteMsg,
-        FreeJobAccountMsg, InstantiateMsg, QueryConfigMsg, QueryFirstFreeJobAccountMsg,
-        QueryFreeJobAccountsMsg, QueryMsg, QueryTakenJobAccountsMsg, TakeJobAccountMsg,
+        AccountStatus, Config, ConfigResponse, ExecuteMsg, FreeJobAccountMsg, InstantiateMsg,
+        JobAccount, JobAccountResponse, JobAccountsResponse, QueryConfigMsg,
+        QueryFirstFreeJobAccountMsg, QueryJobAccountsMsg, QueryMsg, TakeJobAccountMsg,
     };
     use anyhow::Result as AnyResult;
     use cosmwasm_std::{Addr, Coin, Empty, Uint128, Uint64};
@@ -99,33 +99,35 @@ mod tests {
                     account_owner_addr: USER_1.to_string(),
                 })
             ),
-            Ok(AccountResponse { account: None })
+            Ok(JobAccountResponse { job_account: None })
         );
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryFreeJobAccounts(QueryFreeJobAccountsMsg {
+                &QueryMsg::QueryJobAccounts(QueryJobAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
-                    limit: None
+                    limit: None,
+                    account_status: AccountStatus::Free
                 })
             ),
-            Ok(AccountsResponse {
-                accounts: vec![],
+            Ok(JobAccountsResponse {
+                job_accounts: vec![],
                 total_count: 0
             })
         );
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryTakenJobAccounts(QueryTakenJobAccountsMsg {
+                &QueryMsg::QueryJobAccounts(QueryJobAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
-                    limit: None
+                    limit: None,
+                    account_status: AccountStatus::Taken
                 })
             ),
-            Ok(AccountsResponse {
-                accounts: vec![],
+            Ok(JobAccountsResponse {
+                job_accounts: vec![],
                 total_count: 0
             })
         );
@@ -189,10 +191,11 @@ mod tests {
                     account_owner_addr: USER_1.to_string(),
                 })
             ),
-            Ok(AccountResponse {
-                account: Some(Account {
-                    addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
-                    taken_by_job_id: Some(DUMMY_JOB_1_ID)
+            Ok(JobAccountResponse {
+                job_account: Some(JobAccount {
+                    account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
+                    taken_by_job_id: DUMMY_JOB_1_ID,
+                    account_status: AccountStatus::Free
                 })
             })
         );
@@ -201,26 +204,30 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryFreeJobAccounts(QueryFreeJobAccountsMsg {
+                &QueryMsg::QueryJobAccounts(QueryJobAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
-                    limit: None
+                    limit: None,
+                    account_status: AccountStatus::Free
                 })
             ),
-            Ok(AccountsResponse {
-                accounts: vec![
-                    Account {
-                        addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_3_ADDR),
-                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
+            Ok(JobAccountsResponse {
+                job_accounts: vec![
+                    JobAccount {
+                        account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
+                        taken_by_job_id: DUMMY_JOB_1_ID,
+                        account_status: AccountStatus::Free
                     },
-                    Account {
-                        addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_2_ADDR),
-                        taken_by_job_id: Some(DUMMY_JOB_2_ID)
+                    JobAccount {
+                        account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_2_ADDR),
+                        taken_by_job_id: DUMMY_JOB_2_ID,
+                        account_status: AccountStatus::Free
                     },
-                    Account {
-                        addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
-                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
-                    }
+                    JobAccount {
+                        account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_3_ADDR),
+                        taken_by_job_id: DUMMY_JOB_1_ID,
+                        account_status: AccountStatus::Free
+                    },
                 ],
                 total_count: 3
             })
@@ -230,14 +237,15 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryTakenJobAccounts(QueryTakenJobAccountsMsg {
+                &QueryMsg::QueryJobAccounts(QueryJobAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
-                    limit: None
+                    limit: None,
+                    account_status: AccountStatus::Taken
                 })
             ),
-            Ok(AccountsResponse {
-                accounts: vec![],
+            Ok(JobAccountsResponse {
+                job_accounts: vec![],
                 total_count: 0
             })
         );
@@ -273,22 +281,25 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryFreeJobAccounts(QueryFreeJobAccountsMsg {
+                &QueryMsg::QueryJobAccounts(QueryJobAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
-                    limit: None
+                    limit: None,
+                    account_status: AccountStatus::Free
                 })
             ),
-            Ok(AccountsResponse {
-                accounts: vec![
-                    Account {
-                        addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_3_ADDR),
-                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
+            Ok(JobAccountsResponse {
+                job_accounts: vec![
+                    JobAccount {
+                        account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
+                        taken_by_job_id: DUMMY_JOB_1_ID,
+                        account_status: AccountStatus::Free
                     },
-                    Account {
-                        addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
-                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
-                    }
+                    JobAccount {
+                        account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_3_ADDR),
+                        taken_by_job_id: DUMMY_JOB_1_ID,
+                        account_status: AccountStatus::Free
+                    },
                 ],
                 total_count: 2
             })
@@ -298,16 +309,18 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryTakenJobAccounts(QueryTakenJobAccountsMsg {
+                &QueryMsg::QueryJobAccounts(QueryJobAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
-                    limit: None
+                    limit: None,
+                    account_status: AccountStatus::Taken
                 })
             ),
-            Ok(AccountsResponse {
-                accounts: vec![Account {
-                    addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_2_ADDR),
-                    taken_by_job_id: Some(DUMMY_JOB_1_ID)
+            Ok(JobAccountsResponse {
+                job_accounts: vec![JobAccount {
+                    account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_2_ADDR),
+                    taken_by_job_id: DUMMY_JOB_1_ID,
+                    account_status: AccountStatus::Taken
                 },],
                 total_count: 1
             })
@@ -329,26 +342,30 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_account_tracker_contract_addr.clone(),
-                &QueryMsg::QueryFreeJobAccounts(QueryFreeJobAccountsMsg {
+                &QueryMsg::QueryJobAccounts(QueryJobAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
-                    limit: None
+                    limit: None,
+                    account_status: AccountStatus::Free
                 })
             ),
-            Ok(AccountsResponse {
-                accounts: vec![
-                    Account {
-                        addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_3_ADDR),
-                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
+            Ok(JobAccountsResponse {
+                job_accounts: vec![
+                    JobAccount {
+                        account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
+                        taken_by_job_id: DUMMY_JOB_1_ID,
+                        account_status: AccountStatus::Free
                     },
-                    Account {
-                        addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_2_ADDR),
-                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
+                    JobAccount {
+                        account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_2_ADDR),
+                        taken_by_job_id: DUMMY_JOB_1_ID,
+                        account_status: AccountStatus::Free
                     },
-                    Account {
-                        addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_1_ADDR),
-                        taken_by_job_id: Some(DUMMY_JOB_1_ID)
-                    }
+                    JobAccount {
+                        account_addr: Addr::unchecked(DUMMY_WARP_ACCOUNT_3_ADDR),
+                        taken_by_job_id: DUMMY_JOB_1_ID,
+                        account_status: AccountStatus::Free
+                    },
                 ],
                 total_count: 3
             })
@@ -358,14 +375,15 @@ mod tests {
         assert_eq!(
             app.wrap().query_wasm_smart(
                 warp_account_tracker_contract_addr,
-                &QueryMsg::QueryTakenJobAccounts(QueryTakenJobAccountsMsg {
+                &QueryMsg::QueryJobAccounts(QueryJobAccountsMsg {
                     account_owner_addr: USER_1.to_string(),
                     start_after: None,
-                    limit: None
+                    limit: None,
+                    account_status: AccountStatus::Taken
                 })
             ),
-            Ok(AccountsResponse {
-                accounts: vec![],
+            Ok(JobAccountsResponse {
+                job_accounts: vec![],
                 total_count: 0
             })
         );

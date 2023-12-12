@@ -1,8 +1,7 @@
 use cosmwasm_std::{to_binary, BankMsg, Coin, CosmosMsg, Uint128, Uint64, WasmMsg};
 
 use account_tracker::{
-    AddFundingAccountMsg, FreeFundingAccountMsg, FreeJobAccountMsg, TakeFundingAccountMsg,
-    TakeJobAccountMsg,
+    FreeFundingAccountMsg, FreeJobAccountMsg, TakeFundingAccountMsg, TakeJobAccountMsg,
 };
 use controller::account::{
     AssetInfo, CwFund, FundTransferMsgs, TransferFromMsg, TransferNftMsg, WarpMsg, WarpMsgs,
@@ -127,24 +126,6 @@ pub fn build_take_funding_account_msg(
                 account_owner_addr,
                 account_addr,
                 job_id,
-            },
-        ))
-        .unwrap(),
-        funds: vec![],
-    })
-}
-
-pub fn build_add_funding_account_msg(
-    account_tracker_addr: String,
-    account_owner_addr: String,
-    account_addr: String,
-) -> CosmosMsg {
-    CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: account_tracker_addr,
-        msg: to_binary(&account_tracker::ExecuteMsg::AddFundingAccount(
-            AddFundingAccountMsg {
-                account_owner_addr,
-                account_addr,
             },
         ))
         .unwrap(),

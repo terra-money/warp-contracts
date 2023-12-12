@@ -1,16 +1,37 @@
 use crate::state::{
-    FREE_JOB_ACCOUNTS, FUNDING_ACCOUNTS_BY_USER, TAKEN_FUNDING_ACCOUNT_BY_JOB, TAKEN_JOB_ACCOUNTS,
+    ACCOUNTS, FREE_FUNDING_ACCOUNTS, FREE_JOB_ACCOUNTS, TAKEN_FUNDING_ACCOUNTS, TAKEN_JOB_ACCOUNTS,
 };
 use crate::ContractError;
 use account_tracker::{
-    AddFundingAccountMsg, FreeFundingAccountMsg, FreeJobAccountMsg, FundingAccount,
-    TakeFundingAccountMsg, TakeJobAccountMsg,
+    Account, AccountType, FreeFundingAccountMsg, FreeJobAccountMsg, TakeFundingAccountMsg,
+    TakeJobAccountMsg,
 };
-use cosmwasm_std::{DepsMut, Response};
+use cosmwasm_std::{DepsMut, Response, Uint64};
 
 pub fn take_job_account(deps: DepsMut, data: TakeJobAccountMsg) -> Result<Response, ContractError> {
     let account_owner_ref = &deps.api.addr_validate(data.account_owner_addr.as_str())?;
     let account_addr_ref = &deps.api.addr_validate(data.account_addr.as_str())?;
+
+    // Attempt to load the account; if it doesn't exist, create a new one
+    let account = ACCOUNTS.update(
+        deps.storage,
+        (account_owner_ref, account_addr_ref),
+        |s| -> Result<Account, ContractError> {
+            match s {
+                Some(account) => Ok(account),
+                None => Ok(Account {
+                    account_type: AccountType::Job,
+                    owner_addr: account_owner_ref.clone(),
+                    account_addr: account_addr_ref.clone(),
+                }),
+            }
+        },
+    )?;
+
+    if account.account_type != AccountType::Job {
+        return Err(ContractError::InvalidAccountType {});
+    }
+
     FREE_JOB_ACCOUNTS.remove(deps.storage, (account_owner_ref, account_addr_ref));
     TAKEN_JOB_ACCOUNTS.update(
         deps.storage,
@@ -20,15 +41,37 @@ pub fn take_job_account(deps: DepsMut, data: TakeJobAccountMsg) -> Result<Respon
             Some(_) => Err(ContractError::AccountAlreadyTakenError {}),
         },
     )?;
+
     Ok(Response::new()
         .add_attribute("action", "take_job_account")
         .add_attribute("account_addr", data.account_addr)
-        .add_attribute("job_id", data.job_id))
+        .add_attribute("job_id", data.job_id.to_string()))
 }
 
 pub fn free_job_account(deps: DepsMut, data: FreeJobAccountMsg) -> Result<Response, ContractError> {
     let account_owner_ref = &deps.api.addr_validate(data.account_owner_addr.as_str())?;
     let account_addr_ref = &deps.api.addr_validate(data.account_addr.as_str())?;
+
+    // Attempt to load the account; if it doesn't exist, create a new one
+    let account = ACCOUNTS.update(
+        deps.storage,
+        (account_owner_ref, account_addr_ref),
+        |s| -> Result<Account, ContractError> {
+            match s {
+                Some(account) => Ok(account),
+                None => Ok(Account {
+                    account_type: AccountType::Job,
+                    owner_addr: account_owner_ref.clone(),
+                    account_addr: account_addr_ref.clone(),
+                }),
+            }
+        },
+    )?;
+
+    if account.account_type != AccountType::Job {
+        return Err(ContractError::InvalidAccountType {});
+    }
+
     TAKEN_JOB_ACCOUNTS.remove(deps.storage, (account_owner_ref, account_addr_ref));
     FREE_JOB_ACCOUNTS.update(
         deps.storage,
@@ -39,6 +82,7 @@ pub fn free_job_account(deps: DepsMut, data: FreeJobAccountMsg) -> Result<Respon
             Some(_) => Err(ContractError::AccountAlreadyFreeError {}),
         },
     )?;
+
     Ok(Response::new()
         .add_attribute("action", "free_job_account")
         .add_attribute("account_addr", data.account_addr))
@@ -48,51 +92,40 @@ pub fn take_funding_account(
     deps: DepsMut,
     data: TakeFundingAccountMsg,
 ) -> Result<Response, ContractError> {
-    let account_owner_addr_ref = deps.api.addr_validate(&data.account_owner_addr)?;
+    let account_owner_addr_ref = &deps.api.addr_validate(&data.account_owner_addr)?;
     let account_addr_ref = &deps.api.addr_validate(data.account_addr.as_str())?;
 
-    // prevent taking job accounts as funding accounts
-    if TAKEN_JOB_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, account_addr_ref))
-        || FREE_JOB_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, account_addr_ref))
-    {
-        return Err(ContractError::AccountAlreadyTakenError {});
+    // Attempt to load the account; if it doesn't exist, create a new one
+    let account = ACCOUNTS.update(
+        deps.storage,
+        (account_owner_addr_ref, account_addr_ref),
+        |s| -> Result<Account, ContractError> {
+            match s {
+                Some(account) => Ok(account),
+                None => Ok(Account {
+                    account_type: AccountType::Job,
+                    owner_addr: account_owner_addr_ref.clone(),
+                    account_addr: account_addr_ref.clone(),
+                }),
+            }
+        },
+    )?;
+
+    if account.account_type != AccountType::Funding {
+        return Err(ContractError::InvalidAccountType {});
     }
 
-    TAKEN_FUNDING_ACCOUNT_BY_JOB.update(deps.storage, data.job_id.u64(), |s| match s {
-        // value is a dummy data because there is no built in support for set in cosmwasm
-        None => Ok(account_addr_ref.clone()),
-        Some(_) => Err(ContractError::AccountAlreadyTakenError {}),
-    })?;
-
-    FUNDING_ACCOUNTS_BY_USER.update(
+    FREE_FUNDING_ACCOUNTS.remove(deps.storage, (account_owner_addr_ref, account_addr_ref));
+    TAKEN_FUNDING_ACCOUNTS.update(
         deps.storage,
-        &account_owner_addr_ref,
-        |accounts_opt| -> Result<Vec<FundingAccount>, ContractError> {
-            match accounts_opt {
-                None => {
-                    // No funding accounts exist for this user, create a new vec
-                    Ok(vec![FundingAccount {
-                        account_addr: account_addr_ref.clone(),
-                        taken_by_job_ids: vec![data.job_id],
-                    }])
+        (account_owner_addr_ref, account_addr_ref),
+        |ids| -> Result<Vec<Uint64>, ContractError> {
+            match ids {
+                Some(mut id_list) => {
+                    id_list.push(data.job_id);
+                    Ok(id_list)
                 }
-                Some(mut accounts) => {
-                    // Check if a funding account with the specified address already exists
-                    if let Some(funding_account) = accounts
-                        .iter_mut()
-                        .find(|acc| acc.account_addr == account_addr_ref.clone())
-                    {
-                        // Funding account exists, update its job_ids
-                        funding_account.taken_by_job_ids.push(data.job_id);
-                    } else {
-                        // Funding account does not exist, add a new one
-                        accounts.push(FundingAccount {
-                            account_addr: account_addr_ref.clone(),
-                            taken_by_job_ids: vec![data.job_id],
-                        });
-                    }
-                    Ok(accounts)
-                }
+                None => Ok(vec![data.job_id]),
             }
         },
     )?;
@@ -107,87 +140,58 @@ pub fn free_funding_account(
     deps: DepsMut,
     data: FreeFundingAccountMsg,
 ) -> Result<Response, ContractError> {
-    let account_owner_addr_ref = deps.api.addr_validate(&data.account_owner_addr)?;
-    let account_addr_ref = deps.api.addr_validate(&data.account_addr)?;
+    let account_owner_addr_ref = &deps.api.addr_validate(&data.account_owner_addr)?;
+    let account_addr_ref = &deps.api.addr_validate(&data.account_addr)?;
 
-    TAKEN_FUNDING_ACCOUNT_BY_JOB.remove(deps.storage, data.job_id.u64());
-
-    FUNDING_ACCOUNTS_BY_USER.update(
+    // Attempt to load the account; if it doesn't exist, create a new one
+    let account = ACCOUNTS.update(
         deps.storage,
-        &account_owner_addr_ref,
-        |accounts_opt| -> Result<Vec<FundingAccount>, ContractError> {
-            match accounts_opt {
-                Some(mut accounts) => {
-                    // Find the funding account with the specified address
-                    if let Some(funding_account) = accounts
-                        .iter_mut()
-                        .find(|acc| acc.account_addr == account_addr_ref)
-                    {
-                        // Remove the specified job ID
-                        funding_account
-                            .taken_by_job_ids
-                            .retain(|&id| id != data.job_id);
-
-                        Ok(accounts)
-                    } else {
-                        Err(ContractError::AccountNotFound {})
-                    }
-                }
-                None => Err(ContractError::AccountNotFound {}),
+        (account_owner_addr_ref, account_addr_ref),
+        |s| -> Result<Account, ContractError> {
+            match s {
+                Some(account) => Ok(account),
+                None => Ok(Account {
+                    account_type: AccountType::Job,
+                    owner_addr: account_owner_addr_ref.clone(),
+                    account_addr: account_addr_ref.clone(),
+                }),
             }
         },
     )?;
+
+    if account.account_type != AccountType::Funding {
+        return Err(ContractError::InvalidAccountType {});
+    }
+
+    // Retrieve current job IDs for the funding account
+    let mut job_ids =
+        TAKEN_FUNDING_ACCOUNTS.load(deps.storage, (account_owner_addr_ref, account_addr_ref))?;
+
+    // Remove the specified job ID
+    job_ids.retain(|&id| id != data.job_id);
+
+    // Update or remove the entry in TAKEN_FUNDING_ACCOUNTS based on the updated list
+    if job_ids.is_empty() {
+        TAKEN_FUNDING_ACCOUNTS.remove(deps.storage, (account_owner_addr_ref, account_addr_ref));
+        FREE_FUNDING_ACCOUNTS.update(
+            deps.storage,
+            (account_owner_addr_ref, account_addr_ref),
+            |s| match s {
+                None => Ok(vec![data.job_id]),
+                Some(_) => Err(ContractError::AccountAlreadyFreeError {}),
+            },
+        )?;
+    } else {
+        // Update the entry in TAKEN_FUNDING_ACCOUNTS
+        TAKEN_FUNDING_ACCOUNTS.save(
+            deps.storage,
+            (account_owner_addr_ref, account_addr_ref),
+            &job_ids,
+        )?;
+    }
 
     Ok(Response::new()
         .add_attribute("action", "free_funding_account")
         .add_attribute("account_addr", data.account_addr)
         .add_attribute("job_id", data.job_id.to_string()))
-}
-
-pub fn add_funding_account(
-    deps: DepsMut,
-    data: AddFundingAccountMsg,
-) -> Result<Response, ContractError> {
-    let account_owner_addr_ref = deps.api.addr_validate(&data.account_owner_addr)?;
-    let account_addr_ref = deps.api.addr_validate(&data.account_addr)?;
-
-    // prevent adding job accounts as funding accounts
-    if TAKEN_JOB_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, &account_addr_ref))
-        || FREE_JOB_ACCOUNTS.has(deps.storage, (&account_owner_addr_ref, &account_addr_ref))
-    {
-        return Err(ContractError::AccountAlreadyTakenError {});
-    }
-
-    FUNDING_ACCOUNTS_BY_USER.update(
-        deps.storage,
-        &account_owner_addr_ref,
-        |accounts_opt| -> Result<Vec<FundingAccount>, ContractError> {
-            match accounts_opt {
-                Some(mut accounts) => {
-                    if accounts
-                        .iter_mut()
-                        .any(|acc| acc.account_addr == account_addr_ref.clone())
-                    {
-                        // account already exists, do nothing
-                        Ok(accounts)
-                    } else {
-                        accounts.push(FundingAccount {
-                            account_addr: account_addr_ref.clone(),
-                            taken_by_job_ids: vec![],
-                        });
-
-                        Ok(accounts)
-                    }
-                }
-                None => Ok(vec![FundingAccount {
-                    account_addr: account_addr_ref.clone(),
-                    taken_by_job_ids: vec![],
-                }]),
-            }
-        },
-    )?;
-
-    Ok(Response::new()
-        .add_attribute("action", "add_funding_account")
-        .add_attribute("account_addr", data.account_addr))
 }

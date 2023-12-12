@@ -16,9 +16,7 @@ task(async ({ deployer, signer, refs }) => {
   await deployer.storeCode("warp-controller");
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  const account_tracker_id = await deployer.storeCode(
-    "warp-account-tracker"
-  );
+  const account_tracker_id = await deployer.storeCode("warp-account-tracker");
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
   const instantiateTemplatesMsg = {

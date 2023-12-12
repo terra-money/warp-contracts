@@ -2,8 +2,8 @@ use std::env::current_dir;
 use std::fs::create_dir_all;
 
 use account_tracker::{
-    Account, AccountResponse, AccountsResponse, Config, ConfigResponse, ExecuteMsg,
-    FundingAccountResponse, FundingAccountsResponse, InstantiateMsg, QueryMsg,
+    Account, AccountsResponse, Config, ConfigResponse, ExecuteMsg, FundingAccountResponse,
+    FundingAccountsResponse, InstantiateMsg, JobAccountResponse, JobAccountsResponse, QueryMsg,
 };
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
@@ -18,9 +18,10 @@ fn main() {
     export_schema(&schema_for!(QueryMsg), &out_dir);
     export_schema(&schema_for!(Config), &out_dir);
     export_schema(&schema_for!(AccountsResponse), &out_dir);
-    export_schema(&schema_for!(AccountResponse), &out_dir);
     export_schema(&schema_for!(FundingAccountResponse), &out_dir);
     export_schema(&schema_for!(FundingAccountsResponse), &out_dir);
+    export_schema(&schema_for!(JobAccountResponse), &out_dir);
+    export_schema(&schema_for!(JobAccountsResponse), &out_dir);
     export_schema(&schema_for!(ConfigResponse), &out_dir);
     export_schema(&schema_for!(Account), &out_dir);
 }

@@ -131,13 +131,9 @@ pub fn execute(
             nonpayable(&info).unwrap();
             execute::controller::update_config(deps, env, info, data, config)
         }
-        ExecuteMsg::MigrateFreeJobAccounts(data) => {
+        ExecuteMsg::MigrateAccounts(data) => {
             nonpayable(&info).unwrap();
-            migrate::account::migrate_free_job_accounts(deps.as_ref(), env, info, data, config)
-        }
-        ExecuteMsg::MigrateTakenJobAccounts(data) => {
-            nonpayable(&info).unwrap();
-            migrate::account::migrate_taken_job_accounts(deps.as_ref(), env, info, data, config)
+            migrate::account::migrate_accounts(deps.as_ref(), env, info, data, config)
         }
 
         ExecuteMsg::MigratePendingJobs(data) => {
@@ -174,9 +170,8 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
 
 pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 0;
 pub const REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB: u64 = 1;
-pub const REPLY_ID_CREATE_FUNDING_ACCOUNT: u64 = 2;
-pub const REPLY_ID_INSTANTIATE_SUB_CONTRACTS: u64 = 3;
-pub const REPLY_ID_EXECUTE_JOB: u64 = 4;
+pub const REPLY_ID_INSTANTIATE_SUB_CONTRACTS: u64 = 2;
+pub const REPLY_ID_EXECUTE_JOB: u64 = 3;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
@@ -188,9 +183,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         }
         REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB => {
             reply::account::create_funding_account_and_job(deps, env, msg, config)
-        }
-        REPLY_ID_CREATE_FUNDING_ACCOUNT => {
-            reply::account::create_funding_account(deps, env, msg, config)
         }
         REPLY_ID_INSTANTIATE_SUB_CONTRACTS => {
             reply::job::instantiate_sub_contracts(deps, env, msg, config)

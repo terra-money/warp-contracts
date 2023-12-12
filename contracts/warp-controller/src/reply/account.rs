@@ -8,9 +8,8 @@ use controller::{
 use crate::{
     state::JobQueue,
     util::msg::{
-        build_account_execute_warp_msgs, build_add_funding_account_msg,
-        build_take_funding_account_msg, build_take_job_account_msg, build_transfer_cw20_msg,
-        build_transfer_cw721_msg,
+        build_account_execute_warp_msgs, build_take_funding_account_msg,
+        build_take_job_account_msg, build_transfer_cw20_msg, build_transfer_cw721_msg,
     },
     ContractError,
 };
@@ -220,67 +219,6 @@ pub fn create_funding_account_and_job(
         .add_messages(msgs)
         .add_attribute("action", "create_funding_account_and_job_reply")
         .add_attribute("job_id", job_id.to_string())
-        .add_attribute("owner", owner)
-        .add_attribute("funding_account_address", funding_account_addr)
-        .add_attribute("native_funds", serde_json_wasm::to_string(&native_funds)?))
-}
-
-pub fn create_funding_account(
-    deps: DepsMut,
-    _env: Env,
-    msg: Reply,
-    config: Config,
-) -> Result<Response, ContractError> {
-    let reply = msg.result.into_result().map_err(StdError::generic_err)?;
-
-    let funding_account_event = reply
-        .events
-        .iter()
-        .find(|event| {
-            event
-                .attributes
-                .iter()
-                .any(|attr| attr.key == "action" && attr.value == "instantiate")
-        })
-        .ok_or_else(|| StdError::generic_err("cannot find `instantiate` event"))?;
-
-    let owner = funding_account_event
-        .attributes
-        .iter()
-        .cloned()
-        .find(|attr| attr.key == "owner")
-        .ok_or_else(|| StdError::generic_err("cannot find `owner` attribute"))?
-        .value;
-
-    let funding_account_addr = deps.api.addr_validate(
-        &funding_account_event
-            .attributes
-            .iter()
-            .cloned()
-            .find(|attr| attr.key == "contract_addr")
-            .ok_or_else(|| StdError::generic_err("cannot find `contract_addr` attribute"))?
-            .value,
-    )?;
-
-    let native_funds: Vec<Coin> = serde_json_wasm::from_str(
-        &funding_account_event
-            .attributes
-            .iter()
-            .cloned()
-            .find(|attr| attr.key == "native_funds")
-            .ok_or_else(|| StdError::generic_err("cannot find `native_funds` attribute"))?
-            .value,
-    )?;
-
-    let msgs: Vec<CosmosMsg> = vec![build_add_funding_account_msg(
-        config.account_tracker_address.to_string(),
-        owner.to_string(),
-        funding_account_addr.to_string(),
-    )];
-
-    Ok(Response::new()
-        .add_messages(msgs)
-        .add_attribute("action", "create_funding_account_reply")
         .add_attribute("owner", owner)
         .add_attribute("funding_account_address", funding_account_addr)
         .add_attribute("native_funds", serde_json_wasm::to_string(&native_funds)?))

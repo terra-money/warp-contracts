@@ -49,6 +49,9 @@ pub enum ContractError {
 
     #[error("Account not found")]
     AccountNotFound {},
+
+    #[error("Invalid account type")]
+    InvalidAccountType {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {
