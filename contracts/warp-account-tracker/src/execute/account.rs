@@ -102,7 +102,7 @@ pub fn take_funding_account(
             match s {
                 Some(account) => Ok(account),
                 None => Ok(Account {
-                    account_type: AccountType::Job,
+                    account_type: AccountType::Funding,
                     owner_addr: account_owner_addr_ref.clone(),
                     account_addr: account_addr_ref.clone(),
                 }),
@@ -150,7 +150,7 @@ pub fn free_funding_account(
             match s {
                 Some(account) => Ok(account),
                 None => Ok(Account {
-                    account_type: AccountType::Job,
+                    account_type: AccountType::Funding,
                     owner_addr: account_owner_addr_ref.clone(),
                     account_addr: account_addr_ref.clone(),
                 }),

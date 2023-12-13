@@ -15,7 +15,6 @@ use crate::{
     ContractError,
 };
 use controller::{
-    account::AssetInfo,
     job::{Job, JobStatus},
     Config,
 };
@@ -110,6 +109,7 @@ pub fn execute_job(
                 "failed_invalid_job_status",
             ));
         } else {
+            // vars are updated to next job iteration
             let new_vars: String = deps.querier.query_wasm_smart(
                 config.resolver_address.clone(),
                 &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
@@ -120,6 +120,8 @@ pub fn execute_job(
             )?;
 
             let should_terminate_job: bool;
+
+            // check if terminate condition is true with updated vars
             match finished_job.terminate_condition.clone() {
                 Some(terminate_condition) => {
                     let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
@@ -167,9 +169,6 @@ pub fn execute_job(
             if !should_terminate_job {
                 recurring_job_created = true;
 
-                let operational_amount_minus_reward_and_fee =
-                    operational_amount.checked_sub(finished_job.reward + total_fees)?;
-
                 let new_job = JobQueue::add(
                     deps.storage,
                     Job {
@@ -187,7 +186,6 @@ pub fn execute_job(
                         vars: new_vars,
                         recurring: finished_job.recurring,
                         reward: finished_job.reward,
-                        operational_amount: operational_amount_minus_reward_and_fee,
                         assets_to_withdraw: finished_job.assets_to_withdraw.clone(),
                         duration_days: finished_job.duration_days,
                         created_at_time: Uint64::from(env.block.time.seconds()),
@@ -243,7 +241,7 @@ pub fn execute_job(
     if recurring_job_created {
         let funding_account_addr = finished_job.funding_account.clone().unwrap();
 
-        // Take job account with the new job
+        // Take job account with the new job, previously freed in execute_job
         msgs.push(build_take_job_account_msg(
             config.account_tracker_address.to_string(),
             finished_job.owner.to_string(),
@@ -251,7 +249,7 @@ pub fn execute_job(
             new_job_id,
         ));
 
-        // take funding account with new job
+        // take funding account with new job, previously freed in execute_job
         msgs.push(build_take_funding_account_msg(
             config.account_tracker_address.to_string(),
             finished_job.owner.to_string(),
@@ -265,14 +263,6 @@ pub fn execute_job(
             account_addr.to_string(),
             finished_job.assets_to_withdraw,
         ));
-
-        // withdraw all funds if funding acc exists
-        if let Some(acc) = finished_job.funding_account {
-            msgs.push(build_account_withdraw_assets_msg(
-                acc.to_string(),
-                vec![AssetInfo::Native(config.fee_denom)],
-            ));
-        }
     }
 
     Ok(Response::new()

@@ -12,6 +12,9 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
+    #[error("Funding account not provided for recurring job")]
+    FundingAccountMissingForRecurringJob {},
+
     #[error("Insufficient funds to pay for reward and fee.")]
     InsufficientFundsToPayForRewardAndFee {},
 

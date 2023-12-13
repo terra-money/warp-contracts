@@ -11,12 +11,13 @@ pub struct Job {
     // Exist if job is the follow up job of a recurring job
     pub prev_id: Option<Uint64>,
     pub owner: Addr,
-    // Warp account this job is associated with, job will be executed in the context of it and pay protocol fee from it
-    // As job creator can have infinite job accounts, each job account can only be used by up to 1 active job
-    // So each job's fund is isolated
+    // Warp account this job is associated with, job will be executed in the context of it and
+    // pay protocol fee from it. As job creator can have infinite job accounts, each job account
+    // can only be used by up to 1 active job, so each job's fund is isolated
     pub account: Addr,
-    // Funding account is an optionally provided account from which job fees and rewards are deducted from, used only in case
-    // of recurring jobs - if a user doesn't provide a funding account, one is created on the fly
+    // Funding account from which job fees and rewards are deducted.
+    // - required for recurring jobs
+    // - optionally provided for one time jobs
     pub funding_account: Option<Addr>,
     pub last_update_time: Uint64,
     pub name: String,
@@ -30,7 +31,9 @@ pub struct Job {
     pub duration_days: Uint64,
     pub created_at_time: Uint64,
     pub reward: Uint128,
-    pub operational_amount: Uint128,
+    // Acts like a lifecycle method - called on job termination.
+    // For withdrawing assets on each job execution (recurring jobs),
+    // use WithdrawAssets warp msg
     pub assets_to_withdraw: Vec<AssetInfo>,
 }
 
@@ -60,16 +63,26 @@ pub struct CreateJobMsg {
     pub name: String,
     pub description: String,
     pub labels: Vec<String>,
+    // exit condition for recurring jobs
     pub terminate_condition: Option<String>,
     pub executions: Vec<Execution>,
     pub vars: String,
     pub recurring: bool,
     pub reward: Uint128,
+    // without funding account: operational_amount needs to equal total_fees + reward
+    // with funding account: ignored, can be set to 0
     pub operational_amount: Uint128,
     pub duration_days: Uint64,
+    // Acts like a lifecycle method - called on job termination.
+    // For withdrawing assets on each job execution (recurring jobs),
+    // use WithdrawAssets warp msg
     pub assets_to_withdraw: Option<Vec<AssetInfo>>,
+    // messages that are executed via job-account when the job is created
     pub account_msgs: Option<Vec<WarpMsg>>,
     pub cw_funds: Option<Vec<CwFund>>,
+    // Funding account from which job fees and rewards are deducted.
+    // - required for recurring jobs
+    // - optionally provided for one time jobs
     pub funding_account: Option<Addr>,
 }
 

@@ -1,13 +1,11 @@
-use crate::contract::{
-    REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB, REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB,
-    REPLY_ID_EXECUTE_JOB,
-};
+use crate::contract::{REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB, REPLY_ID_EXECUTE_JOB};
 use crate::state::{JobQueue, STATE};
 use crate::util::msg::{
-    build_account_execute_warp_msgs, build_free_funding_account_msg, build_take_funding_account_msg,
+    build_account_execute_generic_msgs, build_account_execute_warp_msgs,
+    build_free_funding_account_msg, build_take_funding_account_msg,
 };
 use crate::ContractError;
-use controller::account::{AssetInfo, WarpMsgs};
+use controller::account::WarpMsgs;
 use controller::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, Execution, Job, JobStatus, UpdateJobMsg,
 };
@@ -25,7 +23,7 @@ use crate::util::{
     },
 };
 
-use account_tracker::{FundingAccountResponse, JobAccountResponse};
+use account_tracker::{FundingAccount, FundingAccountResponse, JobAccountResponse};
 use controller::{account::CwFund, Config};
 use resolver::QueryHydrateMsgsMsg;
 
@@ -39,7 +37,6 @@ pub fn create_job(
     info: MessageInfo,
     data: CreateJobMsg,
     config: Config,
-    fee_denom_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     if data.name.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::NameTooLong {});
@@ -73,41 +70,29 @@ pub fn create_job(
 
     let total_fees = creation_fee + maintenance_fee + burn_fee;
 
-    if data.operational_amount > fee_denom_paid_amount {
-        return Err(ContractError::InsufficientOperationalFunds {});
+    if data.funding_account.is_none() && data.recurring {
+        return Err(ContractError::FundingAccountMissingForRecurringJob {});
     }
 
-    if data.reward + total_fees > fee_denom_paid_amount {
-        return Err(ContractError::InsufficientFundsToPayForRewardAndFee {});
-    }
+    // ignore operational_amount when funding_account is provided
+    let operational_amount = if data.funding_account.is_some() {
+        Uint128::zero()
+    } else {
+        data.operational_amount
+    };
 
     // Reward and fee will always be in native denom
     let native_funds_minus_operational_amount = deduct_from_native_funds(
         info.funds.clone(),
         config.fee_denom.clone(),
-        data.operational_amount,
+        operational_amount,
     );
 
     let mut submsgs = vec![];
     let mut msgs = vec![];
     let mut attrs = vec![];
 
-    // Job owner sends reward to controller when it calls create_job
-    // Reward stays at controller, no need to send it elsewhere
-    msgs.push(
-        // Job owner sends fee to controller when it calls create_job
-        // Controller sends fee to fee collector
-        build_transfer_native_funds_msg(
-            config.fee_collector.to_string(),
-            vec![Coin::new(total_fees.u128(), config.fee_denom.clone())],
-        ),
-    );
-
     let state = STATE.load(deps.storage)?;
-
-    let operational_amount_minus_reward_and_fee = data
-        .operational_amount
-        .checked_sub(data.reward + total_fees)?;
 
     let mut job = JobQueue::add(
         deps.storage,
@@ -134,8 +119,6 @@ pub fn create_job(
             created_at_time: Uint64::from(env.block.time.seconds()),
             // placeholder, will be updated later on
             funding_account: None,
-            // needs to have reward and total_fees subtracted from it (reward is sent to controller, fees are sent to fee collector)
-            operational_amount: operational_amount_minus_reward_and_fee,
         },
     )?;
 
@@ -147,30 +130,6 @@ pub fn create_job(
             },
         ),
     )?;
-
-    let funding_account_resp: FundingAccountResponse;
-
-    if let Some(funding_account_addr) = data.funding_account {
-        // fetch funding account and check if it exists, throw otherwise
-        funding_account_resp = deps.querier.query_wasm_smart(
-            account_tracker_address_ref,
-            &account_tracker::QueryMsg::QueryFundingAccount(
-                account_tracker::QueryFundingAccountMsg {
-                    account_addr: funding_account_addr.to_string(),
-                    account_owner_addr: info.sender.to_string(),
-                },
-            ),
-        )?;
-    } else {
-        funding_account_resp = deps.querier.query_wasm_smart(
-            account_tracker_address_ref,
-            &account_tracker::QueryMsg::QueryFirstFreeFundingAccount(
-                account_tracker::QueryFirstFreeFundingAccountMsg {
-                    account_owner_addr: job_owner.to_string(),
-                },
-            ),
-        )?;
-    }
 
     match job_account_resp.job_account {
         None => {
@@ -272,80 +231,93 @@ pub fn create_job(
         }
     }
 
-    if data.recurring {
-        match funding_account_resp.funding_account {
-            None => {
-                // Create funding account then create job in reply
-                submsgs.push(SubMsg {
-                    id: REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB,
-                    msg: build_instantiate_warp_account_msg(
-                        job.id,
-                        env.contract.address.to_string(),
-                        config.warp_account_code_id.u64(),
-                        info.sender.to_string(),
-                        vec![Coin::new(
-                            operational_amount_minus_reward_and_fee.u128(),
-                            config.fee_denom,
-                        )],
-                        None,
-                        None,
-                    ),
-                    gas_limit: None,
-                    reply_on: ReplyOn::Always,
-                });
+    let mut funding_account: Option<FundingAccount> = None;
 
-                attrs.push(Attribute::new("action", "create_funding_account_and_job"));
-            }
-            Some(available_account) => {
-                let available_account_addr = &available_account.account_addr;
-                // Update funding_account from placeholder value to funding account
-                job.funding_account = Some(available_account_addr.clone());
-                JobQueue::sync(deps.storage, env, job.clone())?;
+    if let Some(funding_account_addr) = data.funding_account {
+        // fetch funding account and check if it exists, throw otherwise
+        let funding_account_resp: FundingAccountResponse = deps.querier.query_wasm_smart(
+            account_tracker_address_ref,
+            &account_tracker::QueryMsg::QueryFundingAccount(
+                account_tracker::QueryFundingAccountMsg {
+                    account_addr: funding_account_addr.to_string(),
+                    account_owner_addr: info.sender.to_string(),
+                },
+            ),
+        )?;
 
-                // Fund account in native coins
-                msgs.push(build_transfer_native_funds_msg(
-                    available_account_addr.to_string(),
-                    vec![Coin::new(
-                        operational_amount_minus_reward_and_fee.u128(),
-                        config.fee_denom,
-                    )],
-                ));
+        funding_account = funding_account_resp.funding_account;
+    }
 
-                // Take account
-                msgs.push(build_take_funding_account_msg(
-                    config.account_tracker_address.to_string(),
-                    job_owner.to_string(),
-                    available_account_addr.to_string(),
-                    job.id,
-                ));
-
-                attrs.push(Attribute::new("action", "create_job"));
-                attrs.push(Attribute::new("job_id", job.id));
-                attrs.push(Attribute::new("job_owner", job.owner));
-                attrs.push(Attribute::new("job_name", job.name));
-                attrs.push(Attribute::new(
-                    "job_status",
-                    serde_json_wasm::to_string(&job.status)?,
-                ));
-                attrs.push(Attribute::new(
-                    "job_executions",
-                    serde_json_wasm::to_string(&job.executions)?,
-                ));
-                attrs.push(Attribute::new("job_reward", job.reward));
-                attrs.push(Attribute::new("job_creation_fee", creation_fee.to_string()));
-                attrs.push(Attribute::new(
-                    "job_maintenance_fee",
-                    maintenance_fee.to_string(),
-                ));
-                attrs.push(Attribute::new("job_burn_fee", burn_fee.to_string()));
-                attrs.push(Attribute::new("job_total_fees", total_fees.to_string()));
-                attrs.push(Attribute::new(
-                    "job_last_updated_time",
-                    job.last_update_time,
-                ));
+    match funding_account {
+        None => {
+            // exit only applies for recurring jobs, otherwise funds are in controller
+            if data.recurring {
+                return Err(ContractError::FundingAccountMissingForRecurringJob {});
             }
         }
+        Some(available_account) => {
+            let available_account_addr = &available_account.account_addr;
+            // Update funding_account from placeholder value to funding account
+            job.funding_account = Some(available_account_addr.clone());
+            JobQueue::sync(deps.storage, env.clone(), job.clone())?;
+
+            // transfer reward + fees to controller from funding account
+            msgs.push(build_account_execute_generic_msgs(
+                job.funding_account.clone().unwrap().to_string(),
+                vec![build_transfer_native_funds_msg(
+                    env.contract.address.to_string(),
+                    vec![Coin::new(
+                        total_fees.u128() + data.reward.u128(),
+                        config.fee_denom.clone(),
+                    )],
+                )],
+            ));
+
+            // Take account
+            msgs.push(build_take_funding_account_msg(
+                config.account_tracker_address.to_string(),
+                job_owner.to_string(),
+                available_account_addr.to_string(),
+                job.id,
+            ));
+
+            attrs.push(Attribute::new("action", "create_job"));
+            attrs.push(Attribute::new("job_id", job.id));
+            attrs.push(Attribute::new("job_owner", job.owner));
+            attrs.push(Attribute::new("job_name", job.name));
+            attrs.push(Attribute::new(
+                "job_status",
+                serde_json_wasm::to_string(&job.status)?,
+            ));
+            attrs.push(Attribute::new(
+                "job_executions",
+                serde_json_wasm::to_string(&job.executions)?,
+            ));
+            attrs.push(Attribute::new("job_reward", job.reward));
+            attrs.push(Attribute::new("job_creation_fee", creation_fee.to_string()));
+            attrs.push(Attribute::new(
+                "job_maintenance_fee",
+                maintenance_fee.to_string(),
+            ));
+            attrs.push(Attribute::new("job_burn_fee", burn_fee.to_string()));
+            attrs.push(Attribute::new("job_total_fees", total_fees.to_string()));
+            attrs.push(Attribute::new(
+                "job_last_updated_time",
+                job.last_update_time,
+            ));
+        }
     }
+
+    // Job owner sends reward to controller when it calls create_job
+    // Reward stays at controller, no need to send it elsewhere
+    msgs.push(
+        // Job owner sends fee to controller when it calls create_job
+        // Controller sends fee to fee collector
+        build_transfer_native_funds_msg(
+            config.fee_collector.to_string(),
+            vec![Coin::new(total_fees.u128(), config.fee_denom)],
+        ),
+    );
 
     Ok(Response::new()
         .add_submessages(submsgs)
@@ -359,7 +331,6 @@ pub fn delete_job(
     info: MessageInfo,
     data: DeleteJobMsg,
     config: Config,
-    fee_denom_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let job = JobQueue::get(deps.storage, data.id.into())?;
     let account_addr = job.account.clone();
@@ -375,9 +346,6 @@ pub fn delete_job(
     let _new_job = JobQueue::finalize(deps.storage, env, job.id.into(), JobStatus::Cancelled)?;
 
     let fee = job.reward * Uint128::from(config.cancellation_fee_rate) / Uint128::new(100);
-    if fee > fee_denom_paid_amount {
-        return Err(ContractError::InsufficientFundsToPayForFee {});
-    }
 
     let mut msgs = vec![];
 
@@ -411,12 +379,6 @@ pub fn delete_job(
             job.owner.to_string(),
             funding_account.to_string(),
             job.id,
-        ));
-
-        // withdraws all native funds from funding account
-        msgs.push(build_account_withdraw_assets_msg(
-            funding_account.to_string(),
-            vec![AssetInfo::Native(config.fee_denom)],
         ));
     }
 
@@ -567,8 +529,8 @@ pub fn execute_job(
     }
 
     Ok(Response::new()
-        .add_submessages(submsgs)
         .add_messages(msgs)
+        .add_submessages(submsgs)
         .add_attribute("action", "execute_job")
         .add_attribute("executor", info.sender)
         .add_attribute("job_id", job.id)

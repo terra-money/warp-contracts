@@ -105,7 +105,6 @@ pub fn migrate_pending_jobs(
                 created_at_time: old_job.last_update_time,
                 // TODO: update to old_job.funding_account
                 funding_account: None,
-                operational_amount: old_job.reward,
             },
         )?;
     }
@@ -175,7 +174,6 @@ pub fn migrate_finished_jobs(
                 created_at_time: old_job.last_update_time,
                 // TODO: update to old_job.funding_account
                 funding_account: None,
-                operational_amount: old_job.reward,
             },
         )?;
     }

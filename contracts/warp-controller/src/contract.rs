@@ -2,7 +2,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
     StdResult, SubMsg, Uint64,
 };
-use cw_utils::{must_pay, nonpayable};
+use cw_utils::nonpayable;
 
 use crate::{
     execute, migrate, query, reply,
@@ -97,21 +97,8 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     match msg {
-        ExecuteMsg::CreateJob(data) => {
-            // IBC denoms can be passed alongside native, can't use must_pay
-            let fee_denom_paid_amount = info
-                .funds
-                .iter()
-                .find(|f| f.denom == config.fee_denom)
-                .unwrap()
-                .amount;
-
-            execute::job::create_job(deps, env, info, data, config, fee_denom_paid_amount)
-        }
-        ExecuteMsg::DeleteJob(data) => {
-            let fee_denom_paid_amount = must_pay(&info, &config.fee_denom).unwrap();
-            execute::job::delete_job(deps, env, info, data, config, fee_denom_paid_amount)
-        }
+        ExecuteMsg::CreateJob(data) => execute::job::create_job(deps, env, info, data, config),
+        ExecuteMsg::DeleteJob(data) => execute::job::delete_job(deps, env, info, data, config),
         ExecuteMsg::UpdateJob(data) => execute::job::update_job(deps, env, info, data),
         ExecuteMsg::ExecuteJob(data) => {
             nonpayable(&info).unwrap();
