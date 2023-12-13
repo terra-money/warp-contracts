@@ -16,31 +16,20 @@ pub struct Config {
     pub fee_collector: Addr,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
-    pub creation_fee_percentage: Uint64,
-    pub cancellation_fee_percentage: Uint64,
+    pub cancellation_fee_rate: Uint64,
     // By querying job account tracker contract
     // We know all accounts owned by that user and each account's availability
     // For more detail, please refer to job account tracker contract
     pub account_tracker_address: Addr,
     pub resolver_address: Addr,
-    // maximum time for evictions
-    pub t_max: Uint64,
-    // minimum time for evictions
-    pub t_min: Uint64,
-    // maximum fee for evictions
-    pub a_max: Uint128,
-    // minimum fee for evictions
-    pub a_min: Uint128,
-    // maximum length of queue modifier for evictions
-    pub q_max: Uint64,
     pub creation_fee_min: Uint128,
     pub creation_fee_max: Uint128,
     pub burn_fee_min: Uint128,
     pub maintenance_fee_min: Uint128,
     pub maintenance_fee_max: Uint128,
     // duration_days fn interval [left, right]
-    pub duration_days_left: Uint64,
-    pub duration_days_right: Uint64,
+    pub duration_days_min: Uint64,
+    pub duration_days_max: Uint64,
     // queue_size fn interval [left, right]
     pub queue_size_left: Uint64,
     pub queue_size_right: Uint64,
@@ -63,22 +52,16 @@ pub struct InstantiateMsg {
     pub warp_account_code_id: Uint64,
     pub account_tracker_code_id: Uint64,
     pub minimum_reward: Uint128,
-    pub creation_fee: Uint64,
-    pub cancellation_fee: Uint64,
+    pub cancellation_fee_rate: Uint64,
     pub resolver_address: String,
-    pub t_max: Uint64,
-    pub t_min: Uint64,
-    pub a_max: Uint128,
-    pub a_min: Uint128,
-    pub q_max: Uint64,
     pub creation_fee_min: Uint128,
     pub creation_fee_max: Uint128,
     pub burn_fee_min: Uint128,
     pub maintenance_fee_min: Uint128,
     pub maintenance_fee_max: Uint128,
     // duration_days fn interval [left, right]
-    pub duration_days_left: Uint64,
-    pub duration_days_right: Uint64,
+    pub duration_days_min: Uint64,
+    pub duration_days_max: Uint64,
     // queue_size fn interval [left, right]
     pub queue_size_left: Uint64,
     pub queue_size_right: Uint64,
@@ -110,24 +93,18 @@ pub struct UpdateConfigMsg {
     pub owner: Option<String>,
     pub fee_collector: Option<String>,
     pub minimum_reward: Option<Uint128>,
-    pub creation_fee_percentage: Option<Uint64>,
-    pub cancellation_fee_percentage: Option<Uint64>,
-    pub t_max: Option<Uint64>,
-    pub t_min: Option<Uint64>,
-    pub a_max: Option<Uint128>,
-    pub a_min: Option<Uint128>,
-    pub q_max: Option<Uint64>,
+    pub cancellation_fee_rate: Option<Uint64>,
     pub creation_fee_min: Option<Uint128>,
     pub creation_fee_max: Option<Uint128>,
     pub burn_fee_min: Option<Uint128>,
     pub maintenance_fee_min: Option<Uint128>,
     pub maintenance_fee_max: Option<Uint128>,
     // duration_days fn interval [left, right]
-    pub duration_days_left: Option<Uint128>,
-    pub duration_days_right: Option<Uint128>,
+    pub duration_days_min: Option<Uint64>,
+    pub duration_days_max: Option<Uint64>,
     // queue_size fn interval [left, right]
-    pub queue_size_left: Option<Uint128>,
-    pub queue_size_right: Option<Uint128>,
+    pub queue_size_left: Option<Uint64>,
+    pub queue_size_right: Option<Uint64>,
     pub burn_fee_rate: Option<Uint128>,
 }
 

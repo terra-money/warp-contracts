@@ -66,8 +66,8 @@ pub enum ContractError {
     #[error("Cancellation fee too high")]
     CancellationFeeTooHigh {},
 
-    #[error("Creation fee too high")]
-    CreationFeeTooHigh {},
+    #[error("Burn fee too high")]
+    BurnFeeTooHigh {},
 
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
@@ -82,14 +82,14 @@ pub enum ContractError {
     #[error("Error decoding JSON result")]
     DecodeError {},
 
-    #[error("Max eviction fee smaller than minimum eviction fee.")]
-    MaxFeeUnderMinFee {},
+    #[error("Creation max fee smaller than minimum fee.")]
+    CreationMaxFeeUnderMinFee {},
 
-    #[error("Max eviction time smaller than minimum eviction time.")]
-    MaxTimeUnderMinTime {},
+    #[error("Maintenance max fee smaller than minimum fee.")]
+    MaintenanceMaxFeeUnderMinFee {},
 
-    #[error("Job reward smaller than eviction fee.")]
-    RewardSmallerThanFee {},
+    #[error("Max duration days smaller than minimum duration days.")]
+    DurationMaxDaysUnderMinDays {},
 
     #[error("Eviction period not elapsed.")]
     EvictionPeriodNotElapsed {},

@@ -374,7 +374,7 @@ pub fn delete_job(
 
     let _new_job = JobQueue::finalize(deps.storage, env, job.id.into(), JobStatus::Cancelled)?;
 
-    let fee = job.reward * Uint128::from(config.cancellation_fee_percentage) / Uint128::new(100);
+    let fee = job.reward * Uint128::from(config.cancellation_fee_rate) / Uint128::new(100);
     if fee > fee_denom_paid_amount {
         return Err(ContractError::InsufficientFundsToPayForFee {});
     }
@@ -590,7 +590,7 @@ pub fn evict_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let eviction_fee = config.a_max;
+    let eviction_fee = config.maintenance_fee_min;
 
     if (env.block.time.seconds() - job.created_at_time.u64()) < (job.duration_days.u64() * 86400) {
         return Err(ContractError::EvictionPeriodNotElapsed {});

@@ -20,9 +20,9 @@ pub fn compute_creation_fee(queue_size: Uint64, config: &Config) -> Uint128 {
 }
 
 pub fn compute_maintenance_fee(duration_days: Uint64, config: &Config) -> Uint128 {
-    let x1 = Uint128::from(config.duration_days_left);
+    let x1 = Uint128::from(config.duration_days_min);
     let y1 = config.maintenance_fee_min;
-    let x2 = Uint128::from(config.duration_days_right);
+    let x2 = Uint128::from(config.duration_days_max);
     let y2 = config.maintenance_fee_max;
     let dd = Uint128::from(duration_days);
 

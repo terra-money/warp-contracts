@@ -25,37 +25,47 @@ pub fn update_config(
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
     config.minimum_reward = data.minimum_reward.unwrap_or(config.minimum_reward);
-    config.creation_fee_percentage = data
-        .creation_fee_percentage
-        .unwrap_or(config.creation_fee_percentage);
-    config.cancellation_fee_percentage = data
-        .cancellation_fee_percentage
-        .unwrap_or(config.cancellation_fee_percentage);
+    config.cancellation_fee_rate = data
+        .cancellation_fee_rate
+        .unwrap_or(config.cancellation_fee_rate);
 
-    config.a_max = data.a_max.unwrap_or(config.a_max);
-    config.a_min = data.a_min.unwrap_or(config.a_min);
-    config.t_max = data.t_max.unwrap_or(config.t_max);
-    config.t_min = data.t_min.unwrap_or(config.t_min);
-    config.q_max = data.q_max.unwrap_or(config.q_max);
+    config.creation_fee_min = data.creation_fee_min.unwrap_or(config.creation_fee_min);
+    config.creation_fee_max = data.creation_fee_max.unwrap_or(config.creation_fee_max);
+    config.burn_fee_min = data.burn_fee_min.unwrap_or(config.burn_fee_min);
+    config.maintenance_fee_min = data
+        .maintenance_fee_min
+        .unwrap_or(config.maintenance_fee_min);
+    config.maintenance_fee_max = data
+        .maintenance_fee_max
+        .unwrap_or(config.maintenance_fee_max);
+    config.duration_days_min = data.duration_days_min.unwrap_or(config.duration_days_min);
+    config.duration_days_max = data.duration_days_max.unwrap_or(config.duration_days_max);
+    config.queue_size_left = data.queue_size_left.unwrap_or(config.queue_size_left);
+    config.queue_size_right = data.queue_size_right.unwrap_or(config.queue_size_right);
+    config.burn_fee_rate = data.burn_fee_rate.unwrap_or(config.burn_fee_rate);
 
-    if config.a_max < config.a_min {
-        return Err(ContractError::MaxFeeUnderMinFee {});
+    if config.burn_fee_rate.u128() > 100 {
+        return Err(ContractError::BurnFeeTooHigh {});
     }
 
-    if config.t_max < config.t_min {
-        return Err(ContractError::MaxTimeUnderMinTime {});
+    if config.creation_fee_max < config.creation_fee_min {
+        return Err(ContractError::CreationMaxFeeUnderMinFee {});
     }
 
-    if config.minimum_reward < config.a_min {
-        return Err(ContractError::RewardSmallerThanFee {});
+    if config.maintenance_fee_max < config.maintenance_fee_min {
+        return Err(ContractError::MaintenanceMaxFeeUnderMinFee {});
     }
 
-    if config.creation_fee_percentage.u64() > 100 {
-        return Err(ContractError::CreationFeeTooHigh {});
+    if config.duration_days_max < config.duration_days_min {
+        return Err(ContractError::DurationMaxDaysUnderMinDays {});
     }
 
-    if config.cancellation_fee_percentage.u64() > 100 {
+    if config.cancellation_fee_rate.u64() > 100 {
         return Err(ContractError::CancellationFeeTooHigh {});
+    }
+
+    if config.burn_fee_rate.u128() > 100 {
+        return Err(ContractError::BurnFeeTooHigh {});
     }
 
     CONFIG.save(deps.storage, &config)?;
@@ -65,17 +75,5 @@ pub fn update_config(
         .add_attribute("config_owner", config.owner)
         .add_attribute("config_fee_collector", config.fee_collector)
         .add_attribute("config_minimum_reward", config.minimum_reward)
-        .add_attribute(
-            "config_creation_fee_percentage",
-            config.creation_fee_percentage,
-        )
-        .add_attribute(
-            "config_cancellation_fee_percentage",
-            config.cancellation_fee_percentage,
-        )
-        .add_attribute("config_a_max", config.a_max)
-        .add_attribute("config_a_min", config.a_min)
-        .add_attribute("config_t_max", config.t_max)
-        .add_attribute("config_t_min", config.t_min)
-        .add_attribute("config_q_max", config.q_max))
+        .add_attribute("config_cancellation_fee_rate", config.cancellation_fee_rate))
 }

@@ -35,46 +35,40 @@ pub fn instantiate(
             .addr_validate(&msg.fee_collector.unwrap_or_else(|| info.sender.to_string()))?,
         warp_account_code_id: msg.warp_account_code_id,
         minimum_reward: msg.minimum_reward,
-        creation_fee_percentage: msg.creation_fee,
-        cancellation_fee_percentage: msg.cancellation_fee,
         resolver_address: deps.api.addr_validate(&msg.resolver_address)?,
         // placeholder, will be updated in reply
         account_tracker_address: deps.api.addr_validate(&msg.resolver_address)?,
-        t_max: msg.t_max,
-        t_min: msg.t_min,
-        a_max: msg.a_max,
-        a_min: msg.a_min,
-        q_max: msg.q_max,
         creation_fee_min: msg.creation_fee_min,
         creation_fee_max: msg.creation_fee_max,
         burn_fee_min: msg.burn_fee_min,
         maintenance_fee_min: msg.maintenance_fee_min,
         maintenance_fee_max: msg.maintenance_fee_max,
-        duration_days_left: msg.duration_days_left,
-        duration_days_right: msg.duration_days_right,
+        duration_days_min: msg.duration_days_min,
+        duration_days_max: msg.duration_days_max,
         queue_size_left: msg.queue_size_left,
         queue_size_right: msg.queue_size_right,
         burn_fee_rate: msg.burn_fee_rate,
+        cancellation_fee_rate: msg.cancellation_fee_rate,
     };
 
-    if config.a_max < config.a_min {
-        return Err(ContractError::MaxFeeUnderMinFee {});
+    if config.creation_fee_max < config.creation_fee_min {
+        return Err(ContractError::CreationMaxFeeUnderMinFee {});
     }
 
-    if config.t_max < config.t_min {
-        return Err(ContractError::MaxTimeUnderMinTime {});
+    if config.maintenance_fee_max < config.maintenance_fee_min {
+        return Err(ContractError::MaintenanceMaxFeeUnderMinFee {});
     }
 
-    if config.minimum_reward < config.a_min {
-        return Err(ContractError::RewardSmallerThanFee {});
+    if config.duration_days_max < config.duration_days_min {
+        return Err(ContractError::DurationMaxDaysUnderMinDays {});
     }
 
-    if config.creation_fee_percentage.u64() > 100 {
-        return Err(ContractError::CreationFeeTooHigh {});
-    }
-
-    if config.cancellation_fee_percentage.u64() > 100 {
+    if config.cancellation_fee_rate.u64() > 100 {
         return Err(ContractError::CancellationFeeTooHigh {});
+    }
+
+    if config.burn_fee_rate.u128() > 100 {
+        return Err(ContractError::BurnFeeTooHigh {});
     }
 
     STATE.save(deps.storage, &state)?;
