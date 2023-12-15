@@ -163,8 +163,13 @@ pub fn free_funding_account(
     }
 
     // Retrieve current job IDs for the funding account
-    let mut job_ids =
-        TAKEN_FUNDING_ACCOUNTS.load(deps.storage, (account_owner_addr_ref, account_addr_ref))?;
+    let mut job_ids = match TAKEN_FUNDING_ACCOUNTS
+        .may_load(deps.storage, (account_owner_addr_ref, account_addr_ref))
+    {
+        Ok(Some(job_ids)) => job_ids,
+        Ok(None) => vec![],
+        Err(err) => return Err(ContractError::Std(err)),
+    };
 
     // Remove the specified job ID
     job_ids.retain(|&id| id != data.job_id);

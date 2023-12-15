@@ -151,8 +151,9 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
 
 pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 0;
 pub const REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB: u64 = 1;
-pub const REPLY_ID_INSTANTIATE_SUB_CONTRACTS: u64 = 2;
-pub const REPLY_ID_EXECUTE_JOB: u64 = 3;
+pub const REPLY_ID_CREATE_FUNDING_ACCOUNT: u64 = 2;
+pub const REPLY_ID_INSTANTIATE_SUB_CONTRACTS: u64 = 3;
+pub const REPLY_ID_EXECUTE_JOB: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
@@ -164,6 +165,9 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         }
         REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB => {
             reply::account::create_funding_account_and_job(deps, env, msg, config)
+        }
+        REPLY_ID_CREATE_FUNDING_ACCOUNT => {
+            reply::account::create_funding_account(deps, env, msg, config)
         }
         REPLY_ID_INSTANTIATE_SUB_CONTRACTS => {
             reply::job::instantiate_sub_contracts(deps, env, msg, config)
