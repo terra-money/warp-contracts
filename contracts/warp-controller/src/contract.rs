@@ -21,7 +21,8 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let state = State {
-        current_job_id: Uint64::one(),
+        // first 10 slots reserved for reply calls
+        current_job_id: Uint64::new(10u64),
         q: Uint64::zero(),
     };
 
@@ -149,11 +150,11 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
     Ok(Response::new())
 }
 
+// first 10 slots (0-9) are reserved for custom reply calls
 pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 0;
 pub const REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB: u64 = 1;
 pub const REPLY_ID_CREATE_FUNDING_ACCOUNT: u64 = 2;
 pub const REPLY_ID_INSTANTIATE_SUB_CONTRACTS: u64 = 3;
-pub const REPLY_ID_EXECUTE_JOB: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
@@ -172,7 +173,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         REPLY_ID_INSTANTIATE_SUB_CONTRACTS => {
             reply::job::instantiate_sub_contracts(deps, env, msg, config)
         }
-        REPLY_ID_EXECUTE_JOB => reply::job::execute_job(deps, env, msg, config),
-        _ => panic!(),
+        _ => reply::job::execute_job(deps, env, msg, config),
     }
 }

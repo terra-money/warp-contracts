@@ -32,32 +32,7 @@ pub fn execute_job(
         SubMsgResult::Err(_) => JobStatus::Failed,
     };
 
-    let reply: cosmwasm_std::SubMsgResponse = msg
-        .result
-        .clone()
-        .into_result()
-        .map_err(StdError::generic_err)?;
-
-    let warp_msgs_event = reply
-        .events
-        .iter()
-        .find(|event| {
-            event
-                .attributes
-                .iter()
-                .any(|attr| attr.key == "action" && attr.value == "warp_msgs")
-        })
-        .ok_or_else(|| StdError::generic_err("cannot find `warp_msgs` event"))?;
-
-    let job_id_str = warp_msgs_event
-        .attributes
-        .iter()
-        .cloned()
-        .find(|attr| attr.key == "job_id")
-        .ok_or_else(|| StdError::generic_err("cannot find `job_id` attribute"))?
-        .value;
-
-    let job_id = job_id_str.as_str().parse::<u64>()?;
+    let job_id = msg.id;
 
     let finished_job = JobQueue::finalize(deps.storage, env.clone(), job_id, new_status)?;
 
