@@ -570,9 +570,9 @@ pub fn evict_job(
         vec![Coin::new(eviction_fee.u128(), config.fee_denom.clone())],
     ));
 
-    // Controller sends execution reward minus eviction reward back to account
+    // Controller sends execution reward minus eviction reward back to owner
     msgs.push(build_transfer_native_funds_msg(
-        job.account.to_string(),
+        job.owner.to_string(),
         vec![Coin::new(
             (job.reward - eviction_fee).u128(),
             config.fee_denom.clone(),
@@ -595,6 +595,12 @@ pub fn evict_job(
             job.id,
         ));
     }
+
+    // Job owner withdraw all assets that are listed from warp account to itself
+    msgs.push(build_account_withdraw_assets_msg(
+        account_addr.to_string(),
+        job.assets_to_withdraw,
+    ));
 
     Ok(Response::new()
         .add_messages(msgs)
