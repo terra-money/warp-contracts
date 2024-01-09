@@ -587,6 +587,15 @@ pub fn evict_job(
         job.id,
     ));
 
+    if let Some(funding_account) = job.funding_account {
+        msgs.push(build_free_funding_account_msg(
+            config.account_tracker_address.to_string(),
+            job.owner.to_string(),
+            funding_account.to_string(),
+            job.id,
+        ));
+    }
+
     Ok(Response::new()
         .add_messages(msgs)
         .add_attribute("action", "evict_job")
