@@ -2,8 +2,8 @@ import { MsgMigrateContract } from "@terra-money/terra.js";
 import task, { info } from "@terra-money/terrariums";
 
 task(async ({ deployer, signer, refs, network }) => {
-  // deployer.buildContract("warp-controller");
-  // deployer.optimizeContract("warp-controller");
+  deployer.buildContract("warp-controller");
+  deployer.optimizeContract("warp-controller");
 
   await deployer.storeCode("warp-controller");
   await new Promise((resolve) => setTimeout(resolve, 3000));
