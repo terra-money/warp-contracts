@@ -47,8 +47,9 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
             deps,
             env,
             name,
+            owner,
             job_status,
-            start_after.map(|i| (owner.to_string(), i._1.u64())),
+            start_after.map(|i| (i._1.u64())),
             page_size as usize,
         ),
         QueryJobsMsg {
@@ -151,11 +152,12 @@ pub fn query_jobs_by_owner(
     deps: Deps,
     env: Env,
     name: Option<String>,
+    owner: Addr,
     job_status: Option<JobStatus>,
-    start_after: Option<(String, u64)>,
+    start_after: Option<u64>,
     limit: usize,
 ) -> StdResult<JobsResponse> {
-    let start = start_after.map(Bound::inclusive);
+    let start = start_after.map(Bound::exclusive);
     let map = if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
         FINISHED_JOBS()
     } else {
@@ -164,6 +166,7 @@ pub fn query_jobs_by_owner(
     let infos = map
         .idx
         .owner
+        .prefix(owner.to_string())
         .range(deps.storage, start, None, Order::Ascending)
         .filter(|h| {
             resolve_filters(
