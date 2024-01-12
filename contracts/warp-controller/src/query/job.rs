@@ -38,6 +38,22 @@ pub fn query_jobs(deps: Deps, env: Env, data: QueryJobsMsg) -> StdResult<JobsRes
         QueryJobsMsg {
             active: _,
             name,
+            owner: Some(owner),
+            job_status,
+            start_after,
+            limit: _,
+            ..
+        } => query_jobs_by_owner(
+            deps,
+            env,
+            name,
+            job_status,
+            start_after.map(|i| (owner.to_string(), i._1.u64())),
+            page_size as usize,
+        ),
+        QueryJobsMsg {
+            active: _,
+            name,
             owner,
             job_status,
             start_after,
@@ -115,6 +131,47 @@ pub fn query_jobs_by_reward(
                 h.as_ref().unwrap().clone().1,
                 name.clone(),
                 owner.clone(),
+                job_status.clone(),
+            )
+        })
+        .take(limit)
+        .collect::<StdResult<Vec<_>>>()?;
+
+    let mut jobs = vec![];
+    for info in infos.clone() {
+        jobs.push(info.1);
+    }
+    Ok(JobsResponse {
+        jobs,
+        total_count: infos.len(),
+    })
+}
+
+pub fn query_jobs_by_owner(
+    deps: Deps,
+    env: Env,
+    name: Option<String>,
+    job_status: Option<JobStatus>,
+    start_after: Option<(String, u64)>,
+    limit: usize,
+) -> StdResult<JobsResponse> {
+    let start = start_after.map(Bound::exclusive);
+    let map = if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
+        FINISHED_JOBS()
+    } else {
+        PENDING_JOBS()
+    };
+    let infos = map
+        .idx
+        .owner
+        .range(deps.storage, None, start, Order::Descending)
+        .filter(|h| {
+            resolve_filters(
+                deps,
+                env.clone(),
+                h.as_ref().unwrap().clone().1,
+                name.clone(),
+                None,
                 job_status.clone(),
             )
         })

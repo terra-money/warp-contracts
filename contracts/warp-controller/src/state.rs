@@ -8,6 +8,7 @@ use controller::{Config, State};
 pub struct JobIndexes<'a> {
     pub reward: UniqueIndex<'a, (u128, u64), Job>,
     pub publish_time: MultiIndex<'a, u64, Job, u64>,
+    pub owner: MultiIndex<'a, String, Job, u64>,
 }
 
 impl IndexList<Job> for JobIndexes<'_> {
@@ -29,6 +30,11 @@ pub fn PENDING_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
             "pending_jobs_v3",
             "pending_jobs__publish_timestamp_v3",
         ),
+        owner: MultiIndex::new(
+            |_pk, job| job.owner.to_string(),
+            "pending_jobs_v3",
+            "pending_jobs__owner_v3",
+        ),
     };
     IndexedMap::new("pending_jobs_v3", indexes)
 }
@@ -44,6 +50,11 @@ pub fn FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
             |_pk, job| job.last_update_time.u64(),
             "finished_jobs_v3",
             "finished_jobs__publish_timestamp_v3",
+        ),
+        owner: MultiIndex::new(
+            |_pk, job| job.owner.to_string(),
+            "finished_jobs_v3",
+            "finished_jobs__owner_v3",
         ),
     };
     IndexedMap::new("finished_jobs_v3", indexes)
