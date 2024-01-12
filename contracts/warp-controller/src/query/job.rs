@@ -155,7 +155,7 @@ pub fn query_jobs_by_owner(
     start_after: Option<(String, u64)>,
     limit: usize,
 ) -> StdResult<JobsResponse> {
-    let start = start_after.map(Bound::exclusive);
+    let start = start_after.map(Bound::inclusive);
     let map = if job_status.is_some() && job_status.clone().unwrap() != JobStatus::Pending {
         FINISHED_JOBS()
     } else {
@@ -164,7 +164,7 @@ pub fn query_jobs_by_owner(
     let infos = map
         .idx
         .owner
-        .range(deps.storage, None, start, Order::Descending)
+        .range(deps.storage, start, None, Order::Ascending)
         .filter(|h| {
             resolve_filters(
                 deps,
