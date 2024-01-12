@@ -74,6 +74,23 @@ pub fn create_job(
         return Err(ContractError::FundingAccountMissingForRecurringJob {});
     }
 
+    if data.funding_account.is_none() {
+        if data.operational_amount < total_fees + data.reward {
+            return Err(ContractError::InsufficientOperationalFunds {});
+        }
+
+        let fee_denom_paid_amount = info
+            .funds
+            .iter()
+            .find(|f| f.denom == config.fee_denom)
+            .unwrap()
+            .amount;
+
+        if fee_denom_paid_amount < data.operational_amount {
+            return Err(ContractError::InsufficientFundsToPayForRewardAndFee {});
+        }
+    }
+
     // ignore operational_amount when funding_account is provided
     let operational_amount = if data.funding_account.is_some() {
         Uint128::zero()
