@@ -143,23 +143,7 @@ pub fn migrate_pending_jobs(
         PENDING_JOBS().save(
             deps.storage,
             job_key,
-            &Job {
-                id: v1_job.id,
-                owner: v1_job.owner,
-                last_update_time: v1_job.last_update_time,
-                name: v1_job.name,
-                description: v1_job.description,
-                labels: v1_job.labels,
-                status: v1_job.status,
-                condition: v1_job.condition,
-                terminate_condition: v1_job.terminate_condition,
-                msgs: v1_job.msgs,
-                vars: v1_job.vars,
-                recurring: v1_job.recurring,
-                requeue_on_evict: v1_job.requeue_on_evict,
-                reward: v1_job.reward,
-                assets_to_withdraw: v1_job.assets_to_withdraw,
-            },
+            &v1_job,
         )?;
     }
 
@@ -191,23 +175,7 @@ pub fn migrate_finished_jobs(
         FINISHED_JOBS().save(
             deps.storage,
             job_key,
-            &Job {
-                id: v1_job.id,
-                owner: v1_job.owner,
-                last_update_time: v1_job.last_update_time,
-                name: v1_job.name,
-                description: v1_job.description,
-                labels: v1_job.labels,
-                status: v1_job.status,
-                condition: v1_job.condition,
-                terminate_condition: v1_job.terminate_condition,
-                msgs: v1_job.msgs,
-                vars: v1_job.vars,
-                recurring: v1_job.recurring,
-                requeue_on_evict: v1_job.requeue_on_evict,
-                reward: v1_job.reward,
-                assets_to_withdraw: v1_job.assets_to_withdraw,
-            },
+            &v1_job,
         )?;
     }
 
