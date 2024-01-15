@@ -133,5 +133,4 @@ pub struct ConfigResponse {
 
 //migrate//{"resolver_address":"terra1a8dxkrapwj4mkpfnrv7vahd0say0lxvd0ft6qv","warp_account_code_id":"10081"}
 #[cw_serde]
-pub struct MigrateMsg {
-}
+pub struct MigrateMsg {}
