@@ -2,7 +2,6 @@ use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
 use crate::ContractError;
 use controller::{MigrateAccountsMsg, MigrateJobsMsg, UpdateConfigMsg};
 
-use controller::job::Job;
 use cosmwasm_std::{to_binary, DepsMut, Env, MessageInfo, Order, Response, WasmMsg};
 use cw_storage_plus::Bound;
 
@@ -137,18 +136,13 @@ pub fn migrate_pending_jobs(
         .take(msg.limit as usize)
         .collect();
     let job_keys = job_keys?;
-    for job_key in job_keys {
+    for job_key in job_keys.clone() {
         let v1_job = PENDING_JOBS().load(deps.storage, job_key)?;
 
-        PENDING_JOBS().save(
-            deps.storage,
-            job_key,
-            &v1_job,
-        )?;
+        PENDING_JOBS().save(deps.storage, job_key, &v1_job)?;
     }
 
-    Ok(Response::new()
-        .add_attribute("refreshed_finished_jobs", job_keys.len().to_string()))
+    Ok(Response::new().add_attribute("refreshed_finished_jobs", job_keys.len().to_string()))
 }
 
 pub fn migrate_finished_jobs(
@@ -170,16 +164,11 @@ pub fn migrate_finished_jobs(
         .take(msg.limit as usize)
         .collect();
     let job_keys = job_keys?;
-    for job_key in job_keys {
+    for job_key in job_keys.clone() {
         let v1_job = FINISHED_JOBS().load(deps.storage, job_key)?;
 
-        FINISHED_JOBS().save(
-            deps.storage,
-            job_key,
-            &v1_job,
-        )?;
+        FINISHED_JOBS().save(deps.storage, job_key, &v1_job)?;
     }
 
-    Ok(Response::new()
-        .add_attribute("refreshed_finished_jobs", job_keys.len().to_string()))
+    Ok(Response::new().add_attribute("refreshed_finished_jobs", job_keys.len().to_string()))
 }
