@@ -147,7 +147,8 @@ pub fn migrate_pending_jobs(
         )?;
     }
 
-    Ok(Response::new())
+    Ok(Response::new()
+        .add_attribute("refreshed_finished_jobs", job_keys.len().to_string()))
 }
 
 pub fn migrate_finished_jobs(
@@ -179,5 +180,6 @@ pub fn migrate_finished_jobs(
         )?;
     }
 
-    Ok(Response::new())
+    Ok(Response::new()
+        .add_attribute("refreshed_finished_jobs", job_keys.len().to_string()))
 }
