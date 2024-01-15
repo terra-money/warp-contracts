@@ -13,7 +13,7 @@ pub struct JobIndexes<'a> {
 
 impl IndexList<Job> for JobIndexes<'_> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Job>> + '_> {
-        let v: Vec<&dyn Index<Job>> = vec![&self.reward, &self.publish_time];
+        let v: Vec<&dyn Index<Job>> = vec![&self.reward, &self.publish_time, &self.owner];
         Box::new(v.into_iter())
     }
 }
