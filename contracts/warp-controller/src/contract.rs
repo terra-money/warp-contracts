@@ -4,15 +4,13 @@ use crate::{execute, query, state::STATE, ContractError};
 use account::{GenericMsg, WithdrawAssetsMsg};
 use controller::account::{Account, Fund, FundTransferMsgs, TransferFromMsg, TransferNftMsg};
 use controller::job::{Job, JobStatus};
-use cosmwasm_schema::cw_serde;
 
 use controller::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State};
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
+    entry_point, to_binary, Attribute, BalanceResponse, BankMsg, BankQuery, Binary, Coin,
     CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, Response, StdError, StdResult,
     SubMsgResult, Uint128, Uint64, WasmMsg,
 };
-use cw_storage_plus::Item;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
