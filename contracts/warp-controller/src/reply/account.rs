@@ -1,16 +1,12 @@
 use cosmwasm_std::{Coin, CosmosMsg, DepsMut, Env, Reply, Response, StdError, Uint64};
 
-use controller::{
-    account::{CwFund, WarpMsg},
-    Config,
-};
+use controller::{account::CwFund, Config};
 
 use crate::{
     state::JobQueue,
     util::msg::{
-        build_account_execute_warp_msgs, build_free_funding_account_msg,
-        build_take_funding_account_msg, build_take_job_account_msg, build_transfer_cw20_msg,
-        build_transfer_cw721_msg,
+        build_free_funding_account_msg, build_take_funding_account_msg, build_take_job_account_msg,
+        build_transfer_cw20_msg, build_transfer_cw721_msg,
     },
     ContractError,
 };
@@ -81,16 +77,6 @@ pub fn create_account_and_job(
             .value,
     )?;
 
-    let account_msgs: Option<Vec<WarpMsg>> = serde_json_wasm::from_str(
-        &account_event
-            .attributes
-            .iter()
-            .cloned()
-            .find(|attr| attr.key == "account_msgs")
-            .ok_or_else(|| StdError::generic_err("cannot find `account_msgs` attribute"))?
-            .value,
-    )?;
-
     let mut job = JobQueue::get(deps.storage, job_id)?;
     job.account = account_addr.clone();
     JobQueue::sync(deps.storage, env, job.clone())?;
@@ -118,14 +104,6 @@ pub fn create_account_and_job(
                 ),
             })
         }
-    }
-
-    if let Some(account_msgs) = account_msgs {
-        // Account execute msgs
-        msgs.push(build_account_execute_warp_msgs(
-            account_addr.to_string(),
-            account_msgs,
-        ));
     }
 
     // Take job account
