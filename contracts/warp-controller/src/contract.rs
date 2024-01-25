@@ -46,6 +46,7 @@ pub fn instantiate(
         maintenance_fee_max: msg.maintenance_fee_max,
         duration_days_min: msg.duration_days_min,
         duration_days_max: msg.duration_days_max,
+        duration_days_limit: msg.duration_days_limit,
         queue_size_left: msg.queue_size_left,
         queue_size_right: msg.queue_size_right,
         burn_fee_rate: msg.burn_fee_rate,
@@ -60,7 +61,7 @@ pub fn instantiate(
         return Err(ContractError::MaintenanceMaxFeeUnderMinFee {});
     }
 
-    if config.duration_days_max < config.duration_days_min {
+    if config.duration_days_max <= config.duration_days_min {
         return Err(ContractError::DurationMaxDaysUnderMinDays {});
     }
 
@@ -70,6 +71,16 @@ pub fn instantiate(
 
     if config.burn_fee_rate.u128() > 100 {
         return Err(ContractError::BurnFeeTooHigh {});
+    }
+
+    if config.queue_size_right <= config.queue_size_left {
+        return Err(ContractError::QueueSizeRightUnderQueueSizeLeft {});
+    }
+
+    if config.duration_days_max > config.duration_days_limit
+        || config.duration_days_min > config.duration_days_limit
+    {
+        return Err(ContractError::DurationDaysLimit {});
     }
 
     STATE.save(deps.storage, &state)?;

@@ -30,6 +30,7 @@ pub struct Config {
     // duration_days fn interval [left, right]
     pub duration_days_min: Uint64,
     pub duration_days_max: Uint64,
+    pub duration_days_limit: Uint64,
     // queue_size fn interval [left, right]
     pub queue_size_left: Uint64,
     pub queue_size_right: Uint64,
@@ -62,6 +63,7 @@ pub struct InstantiateMsg {
     // duration_days fn interval [left, right]
     pub duration_days_min: Uint64,
     pub duration_days_max: Uint64,
+    pub duration_days_limit: Uint64,
     // queue_size fn interval [left, right]
     pub queue_size_left: Uint64,
     pub queue_size_right: Uint64,
@@ -102,6 +104,7 @@ pub struct UpdateConfigMsg {
     // duration_days fn interval [left, right]
     pub duration_days_min: Option<Uint64>,
     pub duration_days_max: Option<Uint64>,
+    pub duration_days_limit: Option<Uint64>,
     // queue_size fn interval [left, right]
     pub queue_size_left: Option<Uint64>,
     pub queue_size_right: Option<Uint64>,

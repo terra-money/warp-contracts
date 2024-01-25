@@ -36,6 +36,9 @@ pub enum ContractError {
     #[error("Name cannot exceed 280 characters")]
     NameTooLong {},
 
+    #[error("Duration days exceeds limit.")]
+    DurationDaysLimit {},
+
     #[error("Attempting to distribute more rewards than received from the action")]
     DistributingMoreRewardThanReceived {},
 
@@ -93,6 +96,9 @@ pub enum ContractError {
 
     #[error("Max duration days smaller than minimum duration days.")]
     DurationMaxDaysUnderMinDays {},
+
+    #[error("Queue size right smaller than queue size left.")]
+    QueueSizeRightUnderQueueSizeLeft {},
 
     #[error("Eviction period not elapsed.")]
     EvictionPeriodNotElapsed {},

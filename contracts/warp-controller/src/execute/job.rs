@@ -50,6 +50,10 @@ pub fn create_job(
         return Err(ContractError::RewardTooSmall {});
     }
 
+    if data.duration_days > config.duration_days_limit {
+        return Err(ContractError::DurationDaysLimit {});
+    }
+
     let state = STATE.load(deps.storage)?;
 
     let job_owner = info.sender.clone();

@@ -56,7 +56,7 @@ pub fn update_config(
         return Err(ContractError::MaintenanceMaxFeeUnderMinFee {});
     }
 
-    if config.duration_days_max < config.duration_days_min {
+    if config.duration_days_max <= config.duration_days_min {
         return Err(ContractError::DurationMaxDaysUnderMinDays {});
     }
 
@@ -66,6 +66,16 @@ pub fn update_config(
 
     if config.burn_fee_rate.u128() > 100 {
         return Err(ContractError::BurnFeeTooHigh {});
+    }
+
+    if config.queue_size_right <= config.queue_size_left {
+        return Err(ContractError::QueueSizeRightUnderQueueSizeLeft {});
+    }
+
+    if config.duration_days_max > config.duration_days_limit
+        || config.duration_days_min > config.duration_days_limit
+    {
+        return Err(ContractError::DurationDaysLimit {});
     }
 
     CONFIG.save(deps.storage, &config)?;
