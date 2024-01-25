@@ -163,7 +163,6 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
 
 // first 10 slots (0-9) are reserved for custom reply calls
 pub const REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB: u64 = 0;
-pub const REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB: u64 = 1;
 pub const REPLY_ID_CREATE_FUNDING_ACCOUNT: u64 = 2;
 pub const REPLY_ID_INSTANTIATE_SUB_CONTRACTS: u64 = 3;
 
@@ -174,9 +173,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
     match msg.id {
         REPLY_ID_CREATE_JOB_ACCOUNT_AND_JOB => {
             reply::account::create_account_and_job(deps, env, msg, config)
-        }
-        REPLY_ID_CREATE_FUNDING_ACCOUNT_AND_JOB => {
-            reply::account::create_funding_account_and_job(deps, env, msg, config)
         }
         REPLY_ID_CREATE_FUNDING_ACCOUNT => {
             reply::account::create_funding_account(deps, env, msg, config)
