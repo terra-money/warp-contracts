@@ -113,8 +113,6 @@ pub fn create_job(
     let mut msgs = vec![];
     let mut attrs = vec![];
 
-    let state = STATE.load(deps.storage)?;
-
     let mut job = JobQueue::add(
         deps.storage,
         Job {
