@@ -1,3 +1,4 @@
+use crate::execute::config::update_config;
 use crate::state::CONFIG;
 use crate::{execute, query, ContractError};
 use account_tracker::{Config, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -34,7 +35,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -60,6 +61,7 @@ pub fn execute(
             nonpayable(&info).unwrap();
             execute::account::free_funding_account(deps, data)
         }
+        ExecuteMsg::UpdateConfig(data) => update_config(deps, env, info, data),
     }
 }
 

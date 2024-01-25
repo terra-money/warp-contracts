@@ -34,6 +34,12 @@ pub enum ExecuteMsg {
     FreeJobAccount(FreeJobAccountMsg),
     TakeFundingAccount(TakeFundingAccountMsg),
     FreeFundingAccount(FreeFundingAccountMsg),
+    UpdateConfig(UpdateConfigMsg),
+}
+
+#[cw_serde]
+pub struct UpdateConfigMsg {
+    pub admin: Option<String>,
 }
 
 #[cw_serde]
