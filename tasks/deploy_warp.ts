@@ -55,6 +55,7 @@ task(async ({ deployer, signer, refs }) => {
     maintenance_fee_max: "10000000",
     duration_days_min: "10",
     duration_days_max: "100",
+    duration_days_limit: "180",
     queue_size_left: "5000",
     queue_size_right: "50000",
     burn_fee_rate: "25",
