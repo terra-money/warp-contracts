@@ -45,20 +45,20 @@ task(async ({ deployer, signer, refs }) => {
     fee_collector: signer.key.accAddress,
     warp_account_code_id: account_contract_id,
     account_tracker_code_id: account_tracker_id,
-    minimum_reward: "10000",
+    minimum_reward: "100000", // 0.1 LUNA
     cancellation_fee_rate: "5",
     resolver_address: resolver_address,
-    creation_fee_min: "500000",
-    creation_fee_max: "100000000",
-    burn_fee_min: "100000",
-    maintenance_fee_min: "50000",
-    maintenance_fee_max: "10000000",
-    duration_days_min: "10",
-    duration_days_max: "100",
+    creation_fee_min: "500000", // 0.5 LUNA
+    creation_fee_max: "100000000", // 100 LUNA
+    burn_fee_min: "250000", // 0.25 LUNA
+    maintenance_fee_min: "250000", // 0.25 LUNA
+    maintenance_fee_max: "10000000", // 10 LUNA
+    duration_days_min: "7",
+    duration_days_max: "90",
     duration_days_limit: "180",
     queue_size_left: "5000",
     queue_size_right: "50000",
-    burn_fee_rate: "25",
+    burn_fee_rate: "25", // 25% of job reward
   };
 
   await deployer.instantiate("warp-controller", instantiateControllerMsg, {
