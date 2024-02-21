@@ -187,6 +187,6 @@ pub fn query_jobs_by_owner(
     }
     Ok(JobsResponse {
         jobs,
-        total_count: infos.len(),
+        total_count: infos.len() as u32,
     })
 }
