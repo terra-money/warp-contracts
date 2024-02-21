@@ -11,11 +11,12 @@ use crate::ContractError;
 pub struct JobIndexes<'a> {
     pub reward: UniqueIndex<'a, (u128, u64), Job>,
     pub publish_time: MultiIndex<'a, u64, Job, u64>,
+    pub owner: MultiIndex<'a, String, Job, u64>,
 }
 
 impl IndexList<Job> for JobIndexes<'_> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Job>> + '_> {
-        let v: Vec<&dyn Index<Job>> = vec![&self.reward, &self.publish_time];
+        let v: Vec<&dyn Index<Job>> = vec![&self.reward, &self.publish_time, &self.owner];
         Box::new(v.into_iter())
     }
 }
@@ -32,6 +33,11 @@ pub fn PENDING_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
             "pending_jobs_v6",
             "pending_jobs__publish_timestamp_v6",
         ),
+        owner: MultiIndex::new(
+            |_pk, job| job.owner.to_string(),
+            "pending_jobs_v6",
+            "pending_jobs__owner_v6",
+        ),
     };
     IndexedMap::new("pending_jobs_v6", indexes)
 }
@@ -47,6 +53,11 @@ pub fn FINISHED_JOBS<'a>() -> IndexedMap<'a, u64, Job, JobIndexes<'a>> {
             |_pk, job| job.last_update_time.u64(),
             "finished_jobs_v6",
             "finished_jobs__publish_timestamp_v6",
+        ),
+        owner: MultiIndex::new(
+            |_pk, job| job.owner.to_string(),
+            "finished_jobs_v6",
+            "finished_jobs__owner_v6",
         ),
     };
     IndexedMap::new("finished_jobs_v6", indexes)
