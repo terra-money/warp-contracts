@@ -91,7 +91,7 @@ controller_code_id=$(store_contract "warp_controller")
 account_tracker_id=$(store_contract "warp_account_tracker")
 
 # Instantiate contracts with parameters
-instantiate_contract "warp_templates" "7859" "$instantiate_templates_msg"
+instantiate_contract "warp_templates" "$templates_code_id" "$instantiate_templates_msg"
 resolver_address=$(instantiate_contract "warp_resolver" $resolver_code_id '{}')
 
 # Update controller message with dynamic data
