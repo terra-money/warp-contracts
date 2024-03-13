@@ -76,7 +76,18 @@ instantiate_contract() {
     echo >&2 "Contract Address = $CONTRACT_ADDRESS"
 
     echo >&2 "Instantiated $contract_name with contract address: $CONTRACT_ADDRESS"
-    echo "$CONTRACT_ADDRESS" # Return the contract address for use in calling script
+
+    echo "$CONTRACT_ADDRESS"
+}
+
+fetch_account_tracker_address() {
+    local controller_contract=$1
+    QUERY_OUTPUT=$(injectived query wasm contract-state smart $controller_contract '{"query_config":{}}' --node="$node" --chain-id="$chain_id" --output json)
+    ACCOUNT_TRACKER_ADDRESS=$(echo "$QUERY_OUTPUT" | jq -r '.data.config.account_tracker_address')
+
+    echo >&2 "Account Tracker Address: $ACCOUNT_TRACKER_ADDRESS"
+
+    echo "$ACCOUNT_TRACKER_ADDRESS"
 }
 
 # Prepare instantiation messages
@@ -91,9 +102,17 @@ controller_code_id=$(store_contract "warp_controller")
 account_tracker_id=$(store_contract "warp_account_tracker")
 
 # Instantiate contracts with parameters
-instantiate_contract "warp_templates" "$templates_code_id" "$instantiate_templates_msg"
+templates_address=$(instantiate_contract "warp_templates" "$templates_code_id" "$instantiate_templates_msg")
 resolver_address=$(instantiate_contract "warp_resolver" $resolver_code_id '{}')
 
 # Update controller message with dynamic data
 updated_instantiate_controller_msg=$(echo $instantiate_controller_msg | sed "s/RESOLVER_ADDRESS/$resolver_address/g" | sed "s/ACCOUNT_CONTRACT_ID/$account_contract_id/g" | sed "s/ACCOUNT_TRACKER_ID/$account_tracker_id/g")
-instantiate_contract "warp_controller" $controller_code_id "$updated_instantiate_controller_msg"
+controller_address=$(instantiate_contract "warp_controller" $controller_code_id "$updated_instantiate_controller_msg")
+
+account_tracker_address=$(fetch_account_tracker_address $controller_address)
+
+echo "warp-account:$account_contract_id"
+echo "warp-account-tracker:$account_tracker_address:$account_tracker_id"
+echo "warp-templates:$templates_address:$templates_code_id"
+echo "warp-resolver:$resolver_address:$resolver_code_id"
+echo "warp-controller:$controller_address:$controller_code_id"
