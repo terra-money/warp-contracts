@@ -12,7 +12,10 @@
   "scripts": {
     "deploy:warp": "TERRARIUMS_ARCH_ARM64=true yarn terrariums run tasks/deploy_warp.ts --network testnet --signer pisco",
     "migrate:warp": "TERRARIUMS_ARCH_ARM64=true yarn terrariums run tasks/migrate_warp.ts --network testnet --signer pisco",
-    "postinstall": "husky install"
+    "build:warp": "TERRARIUMS_ARCH_ARM64=true yarn terrariums run tasks/build_warp.ts --network testnet --signer pisco",
+    "postinstall": "husky install",
+    "deploy:injective": "yarn build:warp && yarn deploy:inj",
+    "deploy:inj": "./tasks/injective/deploy.sh testnet"
   },
   "dependencies": {
     "@terra-money/terrariums": "^1.1.9",
