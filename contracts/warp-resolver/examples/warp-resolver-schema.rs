@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use controller::account::WarpMsg;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
-use cosmwasm_std::{CosmosMsg, QueryRequest};
+use cosmwasm_std::{CosmosMsg, Empty, QueryRequest};
 use resolver::{
     condition::Condition, variable::Variable, ExecuteMsg, InstantiateMsg, QueryMsg,
     SimulateResponse,
@@ -22,6 +22,6 @@ fn main() {
     export_schema(&schema_for!(Condition), &out_dir);
     export_schema(&schema_for!(SimulateResponse), &out_dir);
     export_schema(&schema_for!(CosmosMsg), &out_dir);
-    export_schema(&schema_for!(QueryRequest<String>), &out_dir);
+    export_schema(&schema_for!(QueryRequest<Empty>), &out_dir);
     export_schema(&schema_for!(WarpMsg), &out_dir);
 }

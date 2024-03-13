@@ -6,7 +6,7 @@ use controller::{
     job::{Execution, ExternalInput, JobStatus},
 };
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, QueryRequest};
+use cosmwasm_std::{Addr, Empty, QueryRequest};
 #[cw_serde]
 pub struct InstantiateMsg {}
 
@@ -49,7 +49,7 @@ pub struct WarpMsgsToCosmosMsgsMsg {
 
 #[cw_serde]
 pub struct ExecuteSimulateQueryMsg {
-    pub query: QueryRequest<String>,
+    pub query: QueryRequest<Empty>,
 }
 
 #[cw_serde]
@@ -122,7 +122,7 @@ pub struct QueryApplyVarFnMsg {
 
 #[cw_serde]
 pub struct SimulateQueryMsg {
-    pub query: QueryRequest<String>,
+    pub query: QueryRequest<Empty>,
 }
 
 #[cw_serde]

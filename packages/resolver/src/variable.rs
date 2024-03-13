@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Decimal256, QueryRequest, Uint256};
+use cosmwasm_std::{Decimal256, Empty, QueryRequest, Uint256};
 
 use crate::condition::StringValue;
 
@@ -48,7 +48,7 @@ pub enum Method {
 #[cw_serde]
 pub struct QueryExpr {
     pub selector: String,
-    pub query: QueryRequest<String>,
+    pub query: QueryRequest<Empty>,
 }
 
 #[cw_serde]
