@@ -12,6 +12,18 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
+    #[error("Funding account not provided for recurring job")]
+    FundingAccountMissingForRecurringJob {},
+
+    #[error("Insufficient funds to pay for reward and fee.")]
+    InsufficientFundsToPayForRewardAndFee {},
+
+    #[error("Insufficient operational funds.")]
+    InsufficientOperationalFunds {},
+
+    #[error("Insufficient funds to pay for fee.")]
+    InsufficientFundsToPayForFee {},
+
     #[error("Funds array in message does not match funds array in job.")]
     FundsMismatch {},
 
@@ -24,6 +36,9 @@ pub enum ContractError {
     #[error("Name cannot exceed 280 characters")]
     NameTooLong {},
 
+    #[error("Duration days exceeds limit.")]
+    DurationDaysLimit {},
+
     #[error("Attempting to distribute more rewards than received from the action")]
     DistributingMoreRewardThanReceived {},
 
@@ -35,6 +50,9 @@ pub enum ContractError {
 
     #[error("Account already exists")]
     AccountAlreadyExists {},
+
+    #[error("Job account tracker already exists")]
+    AccountTrackerAlreadyExists {},
 
     #[error("Account cannot create an account")]
     AccountCannotCreateAccount {},
@@ -54,8 +72,8 @@ pub enum ContractError {
     #[error("Cancellation fee too high")]
     CancellationFeeTooHigh {},
 
-    #[error("Creation fee too high")]
-    CreationFeeTooHigh {},
+    #[error("Burn fee too high")]
+    BurnFeeTooHigh {},
 
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
@@ -70,17 +88,23 @@ pub enum ContractError {
     #[error("Error decoding JSON result")]
     DecodeError {},
 
-    #[error("Max eviction fee smaller than minimum eviction fee.")]
-    MaxFeeUnderMinFee {},
+    #[error("Creation max fee smaller than minimum fee.")]
+    CreationMaxFeeUnderMinFee {},
 
-    #[error("Max eviction time smaller than minimum eviction time.")]
-    MaxTimeUnderMinTime {},
+    #[error("Maintenance max fee smaller than minimum fee.")]
+    MaintenanceMaxFeeUnderMinFee {},
 
-    #[error("Job reward smaller than eviction fee.")]
-    RewardSmallerThanFee {},
+    #[error("Max duration days smaller than minimum duration days.")]
+    DurationMaxDaysUnderMinDays {},
+
+    #[error("Queue size right smaller than queue size left.")]
+    QueueSizeRightUnderQueueSizeLeft {},
 
     #[error("Eviction period not elapsed.")]
     EvictionPeriodNotElapsed {},
+
+    #[error("Unknown reply ID.")]
+    UnknownReplyId {},
 }
 
 impl From<serde_json_wasm::de::Error> for ContractError {

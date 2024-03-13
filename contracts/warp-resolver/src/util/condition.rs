@@ -9,7 +9,8 @@ use json_codec_wasm::ast::Ref;
 use json_codec_wasm::Decoder;
 use resolver::condition::{
     BlockExpr, Condition, DecimalFnOp, Expr, GenExpr, IntFnOp, NumEnvValue, NumExprOp,
-    NumExprValue, NumFnValue, NumOp, NumValue, StringOp, TimeExpr, TimeOp, Value,
+    NumExprValue, NumFnValue, NumOp, NumValue, StringEnvValue, StringOp, StringValue, TimeExpr,
+    TimeOp,
 };
 use resolver::variable::{QueryExpr, Variable};
 use std::str::FromStr;
@@ -19,11 +20,12 @@ pub fn resolve_cond(
     env: Env,
     cond: Condition,
     vars: &Vec<Variable>,
+    warp_account_addr: Option<String>,
 ) -> Result<bool, ContractError> {
     match cond {
         Condition::And(conds) => {
             for cond in conds {
-                if !resolve_cond(deps, env.clone(), *cond, vars)? {
+                if !resolve_cond(deps, env.clone(), *cond, vars, warp_account_addr.clone())? {
                     return Ok(false);
                 }
             }
@@ -31,14 +33,14 @@ pub fn resolve_cond(
         }
         Condition::Or(conds) => {
             for cond in conds {
-                if resolve_cond(deps, env.clone(), *cond, vars)? {
+                if resolve_cond(deps, env.clone(), *cond, vars, warp_account_addr.clone())? {
                     return Ok(true);
                 }
             }
             Ok(false)
         }
-        Condition::Not(cond) => Ok(!resolve_cond(deps, env, *cond, vars)?),
-        Condition::Expr(expr) => Ok(resolve_expr(deps, env, *expr, vars)?),
+        Condition::Not(cond) => Ok(!resolve_cond(deps, env, *cond, vars, warp_account_addr)?),
+        Condition::Expr(expr) => Ok(resolve_expr(deps, env, *expr, vars, warp_account_addr)?),
     }
 }
 
@@ -47,9 +49,10 @@ pub fn resolve_expr(
     env: Env,
     expr: Expr,
     vars: &Vec<Variable>,
+    warp_account_addr: Option<String>,
 ) -> Result<bool, ContractError> {
     match expr {
-        Expr::String(expr) => resolve_string_expr(deps, env, expr, vars),
+        Expr::String(expr) => resolve_string_expr(deps, env, expr, vars, warp_account_addr),
         Expr::Uint(expr) => resolve_uint_expr(deps, env, expr, vars),
         Expr::Int(expr) => resolve_int_expr(deps, env, expr, vars),
         Expr::Decimal(expr) => resolve_decimal_expr(deps, env, expr, vars),
@@ -97,7 +100,9 @@ fn resolve_ref_int(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => {
-            let val = s.clone().value;
+            let val = s.clone().value.ok_or(ContractError::ConditionError {
+                msg: format!("Int Static value not found: {}", s.name),
+            })?;
             str::parse::<i128>(&val)?
         }
         Variable::Query(q) => {
@@ -213,7 +218,9 @@ fn resolve_ref_uint(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => {
-            let val = s.clone().value;
+            let val = s.clone().value.ok_or(ContractError::ConditionError {
+                msg: format!("Uint Static value not found: {}", s.name),
+            })?;
             Uint256::from_str(&val)?
         }
         Variable::Query(q) => {
@@ -331,7 +338,9 @@ fn resolve_ref_decimal(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => {
-            let val = s.clone().value;
+            let val = s.clone().value.ok_or(ContractError::ConditionError {
+                msg: format!("Decimal Static value not found: {}", s.name),
+            })?;
             Decimal256::from_str(&val)?
         }
         Variable::Query(q) => {
@@ -486,34 +495,52 @@ pub fn resolve_decimal_op(
 pub fn resolve_string_expr(
     deps: Deps,
     env: Env,
-    expr: GenExpr<Value<String>, StringOp>,
+    expr: GenExpr<StringValue<String>, StringOp>,
     vars: &Vec<Variable>,
+    warp_account_addr: Option<String>,
 ) -> Result<bool, ContractError> {
-    match (expr.left, expr.right) {
-        (Value::Simple(left), Value::Simple(right)) => {
-            Ok(resolve_str_op(deps, env, left, right, expr.op))
-        }
-        (Value::Simple(left), Value::Ref(right)) => Ok(resolve_str_op(
-            deps,
-            env.clone(),
-            left,
-            resolve_ref_string(deps, env, right, vars)?,
-            expr.op,
-        )),
-        (Value::Ref(left), Value::Simple(right)) => Ok(resolve_str_op(
-            deps,
-            env.clone(),
-            resolve_ref_string(deps, env, left, vars)?,
-            right,
-            expr.op,
-        )),
-        (Value::Ref(left), Value::Ref(right)) => Ok(resolve_str_op(
-            deps,
-            env.clone(),
-            resolve_ref_string(deps, env.clone(), left, vars)?,
-            resolve_ref_string(deps, env, right, vars)?,
-            expr.op,
-        )),
+    let left = match expr.left {
+        StringValue::Simple(left) => left,
+        StringValue::Ref(left) => resolve_ref_string(deps, env.clone(), left, vars)?,
+        StringValue::Env(left) => resolve_string_value_env(deps, left, warp_account_addr.clone())?,
+    };
+    let right = match expr.right {
+        StringValue::Simple(right) => right,
+        StringValue::Ref(right) => resolve_ref_string(deps, env.clone(), right, vars)?,
+        StringValue::Env(right) => resolve_string_value_env(deps, right, warp_account_addr)?,
+    };
+    Ok(resolve_str_op(deps, env, left, right, expr.op))
+}
+
+pub fn resolve_string_value(
+    deps: Deps,
+    env: Env,
+    value: StringValue<String>,
+    vars: &Vec<Variable>,
+    warp_account_addr: Option<String>,
+) -> Result<String, ContractError> {
+    match value {
+        StringValue::Simple(value) => Ok(value),
+        StringValue::Ref(r) => resolve_ref_string(deps, env, r, vars),
+        StringValue::Env(value) => resolve_string_value_env(deps, value, warp_account_addr),
+    }
+}
+
+pub fn resolve_string_value_env(
+    deps: Deps,
+    value: StringEnvValue,
+    warp_account_addr: Option<String>,
+) -> Result<String, ContractError> {
+    match value {
+        StringEnvValue::WarpAccountAddr => match warp_account_addr {
+            Some(addr) => {
+                deps.api.addr_validate(&addr)?;
+                Ok(addr)
+            }
+            None => Err(ContractError::HydrationError {
+                msg: "Warp account addr not found.".to_string(),
+            }),
+        },
     }
 }
 
@@ -525,7 +552,9 @@ fn resolve_ref_string(
 ) -> Result<String, ContractError> {
     let var = get_var(r, vars)?;
     let res = match var {
-        Variable::Static(s) => s.value.clone(),
+        Variable::Static(s) => s.value.clone().ok_or(ContractError::ConditionError {
+            msg: format!("String Static value not found: {}", s.name),
+        })?,
         Variable::Query(q) => q.value.clone().ok_or(ContractError::ConditionError {
             msg: format!("String Query value not found: {}", q.name),
         })?,
@@ -591,7 +620,9 @@ pub fn resolve_ref_bool(
     let var = get_var(r, vars)?;
     let res = match var {
         Variable::Static(s) => {
-            let val = s.clone().value;
+            let val = s.clone().value.ok_or(ContractError::ConditionError {
+                msg: format!("Bool Static value not found: {}", s.name),
+            })?;
             str::parse::<bool>(&val)?
         }
         Variable::Query(q) => {

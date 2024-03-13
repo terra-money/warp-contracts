@@ -1,17 +1,16 @@
-use crate::state::{ACCOUNTS, CONFIG, FINISHED_JOBS, PENDING_JOBS};
-use crate::ContractError;
-use controller::{MigrateAccountsMsg, MigrateJobsMsg, UpdateConfigMsg};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use cosmwasm_std::{to_binary, DepsMut, Env, MessageInfo, Order, Response, WasmMsg};
-use cw_storage_plus::Bound;
+use crate::{state::CONFIG, ContractError};
+
+use controller::{Config, UpdateConfigMsg};
 
 pub fn update_config(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     data: UpdateConfigMsg,
+    mut config: Config,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
@@ -26,37 +25,53 @@ pub fn update_config(
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
     config.minimum_reward = data.minimum_reward.unwrap_or(config.minimum_reward);
-    config.creation_fee_percentage = data
-        .creation_fee_percentage
-        .unwrap_or(config.creation_fee_percentage);
-    config.cancellation_fee_percentage = data
-        .cancellation_fee_percentage
-        .unwrap_or(config.cancellation_fee_percentage);
+    config.cancellation_fee_rate = data
+        .cancellation_fee_rate
+        .unwrap_or(config.cancellation_fee_rate);
 
-    config.a_max = data.a_max.unwrap_or(config.a_max);
-    config.a_min = data.a_min.unwrap_or(config.a_min);
-    config.t_max = data.t_max.unwrap_or(config.t_max);
-    config.t_min = data.t_min.unwrap_or(config.t_min);
-    config.q_max = data.q_max.unwrap_or(config.q_max);
+    config.creation_fee_min = data.creation_fee_min.unwrap_or(config.creation_fee_min);
+    config.creation_fee_max = data.creation_fee_max.unwrap_or(config.creation_fee_max);
+    config.burn_fee_min = data.burn_fee_min.unwrap_or(config.burn_fee_min);
+    config.maintenance_fee_min = data
+        .maintenance_fee_min
+        .unwrap_or(config.maintenance_fee_min);
+    config.maintenance_fee_max = data
+        .maintenance_fee_max
+        .unwrap_or(config.maintenance_fee_max);
+    config.duration_days_min = data.duration_days_min.unwrap_or(config.duration_days_min);
+    config.duration_days_max = data.duration_days_max.unwrap_or(config.duration_days_max);
+    config.queue_size_left = data.queue_size_left.unwrap_or(config.queue_size_left);
+    config.queue_size_right = data.queue_size_right.unwrap_or(config.queue_size_right);
+    config.burn_fee_rate = data.burn_fee_rate.unwrap_or(config.burn_fee_rate);
 
-    if config.a_max < config.a_min {
-        return Err(ContractError::MaxFeeUnderMinFee {});
+    if config.burn_fee_rate.u128() > 100 {
+        return Err(ContractError::BurnFeeTooHigh {});
     }
 
-    if config.t_max < config.t_min {
-        return Err(ContractError::MaxTimeUnderMinTime {});
+    if config.creation_fee_max < config.creation_fee_min {
+        return Err(ContractError::CreationMaxFeeUnderMinFee {});
     }
 
-    if config.minimum_reward < config.a_min {
-        return Err(ContractError::RewardSmallerThanFee {});
+    if config.maintenance_fee_max < config.maintenance_fee_min {
+        return Err(ContractError::MaintenanceMaxFeeUnderMinFee {});
     }
 
-    if config.creation_fee_percentage.u64() > 100 {
-        return Err(ContractError::CreationFeeTooHigh {});
+    if config.duration_days_max <= config.duration_days_min {
+        return Err(ContractError::DurationMaxDaysUnderMinDays {});
     }
 
-    if config.cancellation_fee_percentage.u64() > 100 {
+    if config.cancellation_fee_rate.u64() > 100 {
         return Err(ContractError::CancellationFeeTooHigh {});
+    }
+
+    if config.queue_size_right <= config.queue_size_left {
+        return Err(ContractError::QueueSizeRightUnderQueueSizeLeft {});
+    }
+
+    if config.duration_days_max > config.duration_days_limit
+        || config.duration_days_min > config.duration_days_limit
+    {
+        return Err(ContractError::DurationDaysLimit {});
     }
 
     CONFIG.save(deps.storage, &config)?;
@@ -66,109 +81,5 @@ pub fn update_config(
         .add_attribute("config_owner", config.owner)
         .add_attribute("config_fee_collector", config.fee_collector)
         .add_attribute("config_minimum_reward", config.minimum_reward)
-        .add_attribute(
-            "config_creation_fee_percentage",
-            config.creation_fee_percentage,
-        )
-        .add_attribute(
-            "config_cancellation_fee_percentage",
-            config.cancellation_fee_percentage,
-        )
-        .add_attribute("config_a_max", config.a_max)
-        .add_attribute("config_a_min", config.a_min)
-        .add_attribute("config_t_max", config.t_max)
-        .add_attribute("config_t_min", config.t_min)
-        .add_attribute("config_q_max", config.q_max))
-}
-
-pub fn migrate_accounts(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: MigrateAccountsMsg,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let start_after = match msg.start_after {
-        None => None,
-        Some(s) => Some(deps.api.addr_validate(s.as_str())?),
-    };
-    let start_after = start_after.map(Bound::exclusive);
-
-    let account_keys: Result<Vec<_>, _> = ACCOUNTS()
-        .keys(deps.storage, start_after, None, Order::Ascending)
-        .take(msg.limit as usize)
-        .collect();
-    let account_keys = account_keys?;
-    let mut migration_msgs = vec![];
-
-    for account_key in account_keys {
-        let account_address = ACCOUNTS().load(deps.storage, account_key)?.account;
-        migration_msgs.push(WasmMsg::Migrate {
-            contract_addr: account_address.to_string(),
-            new_code_id: msg.warp_account_code_id.u64(),
-            msg: to_binary(&account::MigrateMsg {})?,
-        })
-    }
-
-    Ok(Response::new().add_messages(migration_msgs))
-}
-
-pub fn migrate_pending_jobs(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: MigrateJobsMsg,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let start_after = msg.start_after;
-    let start_after = start_after.map(Bound::exclusive);
-
-    let job_keys: Result<Vec<_>, _> = PENDING_JOBS()
-        .keys(deps.storage, start_after, None, Order::Ascending)
-        .take(msg.limit as usize)
-        .collect();
-    let job_keys = job_keys?;
-    for job_key in job_keys.clone() {
-        let v1_job = PENDING_JOBS().load(deps.storage, job_key)?;
-
-        PENDING_JOBS().save(deps.storage, job_key, &v1_job)?;
-    }
-
-    Ok(Response::new().add_attribute("refreshed_finished_jobs", job_keys.len().to_string()))
-}
-
-pub fn migrate_finished_jobs(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: MigrateJobsMsg,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let start_after = msg.start_after;
-    let start_after = start_after.map(Bound::exclusive);
-
-    let job_keys: Result<Vec<_>, _> = FINISHED_JOBS()
-        .keys(deps.storage, start_after, None, Order::Ascending)
-        .take(msg.limit as usize)
-        .collect();
-    let job_keys = job_keys?;
-    for job_key in job_keys.clone() {
-        let v1_job = FINISHED_JOBS().load(deps.storage, job_key)?;
-
-        FINISHED_JOBS().save(deps.storage, job_key, &v1_job)?;
-    }
-
-    Ok(Response::new().add_attribute("refreshed_finished_jobs", job_keys.len().to_string()))
+        .add_attribute("config_cancellation_fee_rate", config.cancellation_fee_rate))
 }

@@ -10,20 +10,9 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 cosmwasm-std = "1.1"
-cosmwasm-storage = "1.1"
 cosmwasm-schema = "1.1"
-cw-asset = "2.2"
-cw20 = "0.16"
-cw-storage-plus = "0.16"
-cw2 = "0.16"
-schemars = "0.8"
-serde = { version = "1", default-features = false, features = ["derive"] }
-resolver = { path = "../resolver", default-features = false, version = "*" }
-json-codec-wasm = "0.1.0"
-strum = "0.24"
-strum_macros = "0.24"
-thiserror = { version = "1" }
-controller = {path = "../controller"}
+controller = { path = "../controller" }
+resolver = { path = "../resolver" }
 
 [dev-dependencies]
 cw-multi-test = "0.16"

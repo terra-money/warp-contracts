@@ -10,17 +10,15 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 cosmwasm-std = "1.1"
-cosmwasm-storage = "1.1"
 cosmwasm-schema = "1.1"
-cw-asset = "2.2"
-cw20 = "0.16"
-cw-storage-plus = "0.16"
-cw2 = "0.16"
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 strum = "0.24"
 strum_macros = "0.24"
-thiserror = { version = "1" }
+prost = "0.11.9"
+cw20 = "0.16"
+cw721 = "0.16.0"
+serde-json-wasm = "0.4.1"
 
 [dev-dependencies]
 cw-multi-test = "0.16"

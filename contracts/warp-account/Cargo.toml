@@ -39,6 +39,7 @@ cw-storage-plus = "0.16"
 cw2 = "0.16"
 cw20 = "0.16"
 cw721 = "0.16.0"
+cw-utils = "0.16"
 controller = { path = "../../packages/controller", default-features = false, version = "*" }
 account = { path = "../../packages/account", default-features = false, version = "*" }
 schemars = "0.8"
@@ -49,3 +50,4 @@ prost = "0.11.9"
 
 [dev-dependencies]
 cw-multi-test = "0.16.0"
+anyhow = "1.0.71"

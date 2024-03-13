@@ -4,11 +4,12 @@ use crate::util::variable::{
     vars_valid,
 };
 use crate::ContractError;
+use controller::account::{warp_msgs_to_cosmos_msgs, WarpMsg};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
+use cw_utils::nonpayable;
 use resolver::condition::Condition;
 use resolver::variable::{QueryExpr, Variable};
 use resolver::{
@@ -16,7 +17,7 @@ use resolver::{
     ExecuteResolveConditionMsg, ExecuteSimulateQueryMsg, ExecuteValidateJobCreationMsg,
     InstantiateMsg, MigrateMsg, QueryApplyVarFnMsg, QueryHydrateMsgsMsg, QueryHydrateVarsMsg,
     QueryMsg, QueryResolveConditionMsg, QueryValidateJobCreationMsg, SimulateQueryMsg,
-    SimulateResponse,
+    SimulateResponse, WarpMsgsToCosmosMsgsMsg,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -36,6 +37,7 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info).unwrap();
     match msg {
         ExecuteMsg::ExecuteSimulateQuery(msg) => execute_simulate_query(deps, env, info, msg),
         ExecuteMsg::ExecuteValidateJobCreation(data) => {
@@ -47,7 +49,23 @@ pub fn execute(
         }
         ExecuteMsg::ExecuteApplyVarFn(data) => execute_apply_var_fn(deps, env, info, data),
         ExecuteMsg::ExecuteHydrateMsgs(data) => execute_hydrate_msgs(deps, env, info, data),
+        ExecuteMsg::WarpMsgsToCosmosMsgs(data) => {
+            execute_warp_msgs_to_cosmos_msgs(deps, env, info, data)
+        }
     }
+}
+
+fn execute_warp_msgs_to_cosmos_msgs(
+    deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    msg: WarpMsgsToCosmosMsgsMsg,
+) -> Result<Response, ContractError> {
+    let result = warp_msgs_to_cosmos_msgs(deps.as_ref(), env, msg.msgs, &msg.owner)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "warp_msgs_to_cosmos_msgs")
+        .add_attribute("response", serde_json_wasm::to_string(&result)?))
 }
 
 pub fn execute_simulate_query(
@@ -73,10 +91,9 @@ pub fn execute_validate_job_creation(
         deps.as_ref(),
         env,
         QueryValidateJobCreationMsg {
-            condition: data.condition,
             terminate_condition: data.terminate_condition,
             vars: data.vars,
-            msgs: data.msgs,
+            executions: data.executions,
         },
     )?;
 
@@ -104,6 +121,7 @@ pub fn execute_hydrate_vars(
         QueryHydrateVarsMsg {
             vars: data.vars,
             external_inputs: data.external_inputs,
+            warp_account_addr: data.warp_account_addr,
         },
     )?;
 
@@ -124,6 +142,7 @@ pub fn execute_resolve_condition(
         QueryResolveConditionMsg {
             condition: data.condition,
             vars: data.vars,
+            warp_account_addr: data.warp_account_addr,
         },
     )?;
 
@@ -144,6 +163,7 @@ pub fn execute_apply_var_fn(
         QueryApplyVarFnMsg {
             vars: data.vars,
             status: data.status,
+            warp_account_addr: data.warp_account_addr,
         },
     )?;
     Ok(Response::new()
@@ -192,46 +212,48 @@ fn query_validate_job_creation(
     _env: Env,
     data: QueryValidateJobCreationMsg,
 ) -> StdResult<String> {
-    let _condition: Condition = serde_json_wasm::from_str(&data.condition)
-        .map_err(|e| StdError::generic_err(format!("Condition input invalid: {}", e)))?;
-    let terminate_condition_str = data.terminate_condition.clone().unwrap_or("".to_string());
-    if !terminate_condition_str.is_empty() {
-        let _terminate_condition: Condition = serde_json_wasm::from_str(&terminate_condition_str)
-            .map_err(|e| {
-            StdError::generic_err(format!("Terminate condition input invalid: {}", e))
-        })?;
-    }
-    let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
-        .map_err(|e| StdError::generic_err(format!("Vars input invalid: {}", e)))?;
+    for execution in data.executions {
+        let _condition: Condition = serde_json_wasm::from_str(&execution.condition)
+            .map_err(|e| StdError::generic_err(format!("Condition input invalid: {}", e)))?;
+        let terminate_condition_str = data.terminate_condition.clone().unwrap_or("".to_string());
+        if !terminate_condition_str.is_empty() {
+            let _terminate_condition: Condition =
+                serde_json_wasm::from_str(&terminate_condition_str).map_err(|e| {
+                    StdError::generic_err(format!("Terminate condition input invalid: {}", e))
+                })?;
+        }
+        let vars: Vec<Variable> = serde_json_wasm::from_str(&data.vars)
+            .map_err(|e| StdError::generic_err(format!("Vars input invalid: {}", e)))?;
 
-    if !vars_valid(&vars) {
-        return Err(StdError::generic_err(
-            ContractError::InvalidVariables {}.to_string(),
-        ));
-    }
+        if !vars_valid(&vars) {
+            return Err(StdError::generic_err(
+                ContractError::InvalidVariables {}.to_string(),
+            ));
+        }
 
-    if has_duplicates(&vars) {
-        return Err(StdError::generic_err(
-            ContractError::VariablesContainDuplicates {}.to_string(),
-        ));
-    }
+        if has_duplicates(&vars) {
+            return Err(StdError::generic_err(
+                ContractError::VariablesContainDuplicates {}.to_string(),
+            ));
+        }
 
-    if !(string_vars_in_vector(&vars, &data.condition)
-        && string_vars_in_vector(&vars, &terminate_condition_str)
-        && string_vars_in_vector(&vars, &data.msgs))
-    {
-        return Err(StdError::generic_err(
-            ContractError::VariablesMissingFromVector {}.to_string(),
-        ));
-    }
+        if !(string_vars_in_vector(&vars, &execution.condition)
+            && string_vars_in_vector(&vars, &terminate_condition_str)
+            && string_vars_in_vector(&vars, &execution.msgs))
+        {
+            return Err(StdError::generic_err(
+                ContractError::VariablesMissingFromVector {}.to_string(),
+            ));
+        }
 
-    if !msgs_valid(&data.msgs, &vars).map_err(|e| StdError::generic_err(e.to_string()))? {
-        return Err(StdError::generic_err(
-            ContractError::MsgError {
-                msg: "msgs are invalid".to_string(),
-            }
-            .to_string(),
-        ));
+        if !msgs_valid(&execution.msgs, &vars).map_err(|e| StdError::generic_err(e.to_string()))? {
+            return Err(StdError::generic_err(
+                ContractError::MsgError {
+                    msg: "msgs are invalid".to_string(),
+                }
+                .to_string(),
+            ));
+        }
     }
 
     Ok("".to_string())
@@ -240,9 +262,16 @@ fn query_validate_job_creation(
 fn query_hydrate_vars(deps: Deps, env: Env, data: QueryHydrateVarsMsg) -> StdResult<String> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
+
     serde_json_wasm::to_string(
-        &hydrate_vars(deps, env, vars, data.external_inputs)
-            .map_err(|e| StdError::generic_err(e.to_string()))?,
+        &hydrate_vars(
+            deps,
+            env,
+            vars,
+            data.external_inputs,
+            data.warp_account_addr,
+        )
+        .map_err(|e| StdError::generic_err(e.to_string()))?,
     )
     .map_err(|e| StdError::generic_err(e.to_string()))
 }
@@ -257,21 +286,23 @@ fn query_resolve_condition(
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    resolve_cond(deps, env, condition, &vars).map_err(|e| StdError::generic_err(e.to_string()))
+    resolve_cond(deps, env, condition, &vars, data.warp_account_addr)
+        .map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 fn query_apply_var_fn(deps: Deps, env: Env, data: QueryApplyVarFnMsg) -> StdResult<String> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 
-    apply_var_fn(deps, env, vars, data.status).map_err(|e| StdError::generic_err(e.to_string()))
+    apply_var_fn(deps, env, vars, data.status, data.warp_account_addr)
+        .map_err(|e| StdError::generic_err(e.to_string()))
 }
 
 fn query_hydrate_msgs(
     _deps: Deps,
     _env: Env,
     data: QueryHydrateMsgsMsg,
-) -> StdResult<Vec<CosmosMsg>> {
+) -> StdResult<Vec<WarpMsg>> {
     let vars: Vec<Variable> =
         serde_json_wasm::from_str(&data.vars).map_err(|e| StdError::generic_err(e.to_string()))?;
 

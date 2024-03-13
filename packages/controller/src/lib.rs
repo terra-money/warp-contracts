@@ -1,6 +1,3 @@
-use crate::account::{
-    AccountResponse, AccountsResponse, CreateAccountMsg, QueryAccountMsg, QueryAccountsMsg,
-};
 use crate::job::{
     CreateJobMsg, DeleteJobMsg, EvictJobMsg, ExecuteJobMsg, JobResponse, JobsResponse, QueryJobMsg,
     QueryJobsMsg, UpdateJobMsg,
@@ -19,19 +16,25 @@ pub struct Config {
     pub fee_collector: Addr,
     pub warp_account_code_id: Uint64,
     pub minimum_reward: Uint128,
-    pub creation_fee_percentage: Uint64,
-    pub cancellation_fee_percentage: Uint64,
+    pub cancellation_fee_rate: Uint64,
+    // By querying job account tracker contract
+    // We know all accounts owned by that user and each account's availability
+    // For more detail, please refer to job account tracker contract
+    pub account_tracker_address: Addr,
     pub resolver_address: Addr,
-    // maximum time for evictions
-    pub t_max: Uint64,
-    // minimum time for evictions
-    pub t_min: Uint64,
-    // maximum fee for evictions
-    pub a_max: Uint128,
-    // minimum fee for evictions
-    pub a_min: Uint128,
-    // maximum length of queue modifier for evictions
-    pub q_max: Uint64,
+    pub creation_fee_min: Uint128,
+    pub creation_fee_max: Uint128,
+    pub burn_fee_min: Uint128,
+    pub maintenance_fee_min: Uint128,
+    pub maintenance_fee_max: Uint128,
+    // duration_days fn interval [left, right]
+    pub duration_days_min: Uint64,
+    pub duration_days_max: Uint64,
+    pub duration_days_limit: Uint64,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Uint64,
+    pub queue_size_right: Uint64,
+    pub burn_fee_rate: Uint128,
 }
 
 #[cw_serde]
@@ -48,19 +51,28 @@ pub struct InstantiateMsg {
     pub fee_denom: String,
     pub fee_collector: Option<String>,
     pub warp_account_code_id: Uint64,
+    pub account_tracker_code_id: Uint64,
     pub minimum_reward: Uint128,
-    pub creation_fee: Uint64,
-    pub cancellation_fee: Uint64,
+    pub cancellation_fee_rate: Uint64,
     pub resolver_address: String,
-    pub t_max: Uint64,
-    pub t_min: Uint64,
-    pub a_max: Uint128,
-    pub a_min: Uint128,
-    pub q_max: Uint64,
+    pub creation_fee_min: Uint128,
+    pub creation_fee_max: Uint128,
+    pub burn_fee_min: Uint128,
+    pub maintenance_fee_min: Uint128,
+    pub maintenance_fee_max: Uint128,
+    // duration_days fn interval [left, right]
+    pub duration_days_min: Uint64,
+    pub duration_days_max: Uint64,
+    pub duration_days_limit: Uint64,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Uint64,
+    pub queue_size_right: Uint64,
+    pub burn_fee_rate: Uint128,
 }
 
 //execute
 #[cw_serde]
+#[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     CreateJob(CreateJobMsg),
     DeleteJob(DeleteJobMsg),
@@ -68,13 +80,14 @@ pub enum ExecuteMsg {
     ExecuteJob(ExecuteJobMsg),
     EvictJob(EvictJobMsg),
 
-    CreateAccount(CreateAccountMsg),
-
     UpdateConfig(UpdateConfigMsg),
 
     MigrateAccounts(MigrateAccountsMsg),
+
     MigratePendingJobs(MigrateJobsMsg),
     MigrateFinishedJobs(MigrateJobsMsg),
+
+    CreateFundingAccount(CreateFundingAccountMsg),
 }
 
 #[cw_serde]
@@ -82,17 +95,25 @@ pub struct UpdateConfigMsg {
     pub owner: Option<String>,
     pub fee_collector: Option<String>,
     pub minimum_reward: Option<Uint128>,
-    pub creation_fee_percentage: Option<Uint64>,
-    pub cancellation_fee_percentage: Option<Uint64>,
-    pub t_max: Option<Uint64>,
-    pub t_min: Option<Uint64>,
-    pub a_max: Option<Uint128>,
-    pub a_min: Option<Uint128>,
-    pub q_max: Option<Uint64>,
+    pub cancellation_fee_rate: Option<Uint64>,
+    pub creation_fee_min: Option<Uint128>,
+    pub creation_fee_max: Option<Uint128>,
+    pub burn_fee_min: Option<Uint128>,
+    pub maintenance_fee_min: Option<Uint128>,
+    pub maintenance_fee_max: Option<Uint128>,
+    // duration_days fn interval [left, right]
+    pub duration_days_min: Option<Uint64>,
+    pub duration_days_max: Option<Uint64>,
+    pub duration_days_limit: Option<Uint64>,
+    // queue_size fn interval [left, right]
+    pub queue_size_left: Option<Uint64>,
+    pub queue_size_right: Option<Uint64>,
+    pub burn_fee_rate: Option<Uint128>,
 }
 
 #[cw_serde]
 pub struct MigrateAccountsMsg {
+    pub account_owner_addr: String,
     pub warp_account_code_id: Uint64,
     pub start_after: Option<String>,
     pub limit: u8,
@@ -104,6 +125,9 @@ pub struct MigrateJobsMsg {
     pub limit: u8,
 }
 
+#[cw_serde]
+pub struct CreateFundingAccountMsg {}
+
 //query
 #[derive(QueryResponses)]
 #[cw_serde]
@@ -113,24 +137,28 @@ pub enum QueryMsg {
     #[returns(JobsResponse)]
     QueryJobs(QueryJobsMsg),
 
-    #[returns(AccountResponse)]
-    QueryAccount(QueryAccountMsg),
-    #[returns(AccountsResponse)]
-    QueryAccounts(QueryAccountsMsg),
-
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
+
+    #[returns(StateResponse)]
+    QueryState(QueryStateMsg),
 }
 
 #[cw_serde]
 pub struct QueryConfigMsg {}
 
-//responses
 #[cw_serde]
 pub struct ConfigResponse {
     pub config: Config,
 }
 
-//migrate//{"resolver_address":"terra1a8dxkrapwj4mkpfnrv7vahd0say0lxvd0ft6qv","warp_account_code_id":"10081"}
+#[cw_serde]
+pub struct QueryStateMsg {}
+
+#[cw_serde]
+pub struct StateResponse {
+    pub state: State,
+}
+
 #[cw_serde]
 pub struct MigrateMsg {}

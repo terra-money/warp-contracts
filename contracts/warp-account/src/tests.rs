@@ -1,10 +1,11 @@
 use crate::contract::{execute, instantiate};
 use crate::ContractError;
-use account::{ExecuteMsg, GenericMsg, InstantiateMsg};
+use account::{ExecuteMsg, InstantiateMsg};
+use controller::account::{WarpMsg, WarpMsgs};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DistributionMsg, GovMsg, IbcMsg, IbcTimeout,
-    IbcTimeoutBlock, Response, StakingMsg, Uint128, VoteOption, WasmMsg,
+    IbcTimeoutBlock, Response, StakingMsg, Uint128, Uint64, VoteOption, WasmMsg,
 };
 
 #[test]
@@ -19,42 +20,47 @@ fn test_execute_controller() {
         info.clone(),
         InstantiateMsg {
             owner: "vlad".to_string(),
-            funds: None,
+            job_id: Uint64::zero(),
+            native_funds: vec![],
+            cw_funds: vec![],
+            msgs: vec![],
         },
     );
 
-    let execute_msg = ExecuteMsg::Generic(GenericMsg {
+    let execute_msg = ExecuteMsg::WarpMsgs(WarpMsgs {
         msgs: vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
+            WarpMsg::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
                 msg: to_binary("test").unwrap(),
                 funds: vec![Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
                 }],
-            }),
-            CosmosMsg::Bank(BankMsg::Send {
+            })),
+            WarpMsg::Generic(CosmosMsg::Bank(BankMsg::Send {
                 to_address: "vlad2".to_string(),
                 amount: vec![Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
                 }],
-            }),
-            CosmosMsg::Gov(GovMsg::Vote {
+            })),
+            WarpMsg::Generic(CosmosMsg::Gov(GovMsg::Vote {
                 proposal_id: 0,
                 vote: VoteOption::Yes,
-            }),
-            CosmosMsg::Staking(StakingMsg::Delegate {
+            })),
+            WarpMsg::Generic(CosmosMsg::Staking(StakingMsg::Delegate {
                 validator: "vladidator".to_string(),
                 amount: Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
                 },
-            }),
-            CosmosMsg::Distribution(DistributionMsg::SetWithdrawAddress {
-                address: "vladdress".to_string(),
-            }),
-            CosmosMsg::Ibc(IbcMsg::Transfer {
+            })),
+            WarpMsg::Generic(CosmosMsg::Distribution(
+                DistributionMsg::SetWithdrawAddress {
+                    address: "vladdress".to_string(),
+                },
+            )),
+            WarpMsg::Generic(CosmosMsg::Ibc(IbcMsg::Transfer {
                 channel_id: "channel_vlad".to_string(),
                 to_address: "vlad3".to_string(),
                 amount: Coin {
@@ -65,12 +71,13 @@ fn test_execute_controller() {
                     revision: 0,
                     height: 0,
                 }),
-            }),
-            CosmosMsg::Stargate {
+            })),
+            WarpMsg::Generic(CosmosMsg::Stargate {
                 type_url: "utl".to_string(),
                 value: Default::default(),
-            },
+            }),
         ],
+        job_id: None,
     });
 
     let execute_res = execute(deps.as_mut(), env, info, execute_msg).unwrap();
@@ -78,7 +85,7 @@ fn test_execute_controller() {
     assert_eq!(
         execute_res,
         Response::new()
-            .add_attribute("action", "generic")
+            .add_attribute("action", "warp_msgs")
             .add_messages(vec![
                 CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: "contract".to_string(),
@@ -141,42 +148,47 @@ fn test_execute_owner() {
         info,
         InstantiateMsg {
             owner: "vlad".to_string(),
-            funds: None,
+            job_id: Uint64::zero(),
+            native_funds: vec![],
+            cw_funds: vec![],
+            msgs: vec![],
         },
     );
 
-    let execute_msg = ExecuteMsg::Generic(GenericMsg {
+    let execute_msg = ExecuteMsg::WarpMsgs(WarpMsgs {
         msgs: vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
+            WarpMsg::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
                 msg: to_binary("test").unwrap(),
                 funds: vec![Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
                 }],
-            }),
-            CosmosMsg::Bank(BankMsg::Send {
+            })),
+            WarpMsg::Generic(CosmosMsg::Bank(BankMsg::Send {
                 to_address: "vlad2".to_string(),
                 amount: vec![Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
                 }],
-            }),
-            CosmosMsg::Gov(GovMsg::Vote {
+            })),
+            WarpMsg::Generic(CosmosMsg::Gov(GovMsg::Vote {
                 proposal_id: 0,
                 vote: VoteOption::Yes,
-            }),
-            CosmosMsg::Staking(StakingMsg::Delegate {
+            })),
+            WarpMsg::Generic(CosmosMsg::Staking(StakingMsg::Delegate {
                 validator: "vladidator".to_string(),
                 amount: Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
                 },
-            }),
-            CosmosMsg::Distribution(DistributionMsg::SetWithdrawAddress {
-                address: "vladdress".to_string(),
-            }),
-            CosmosMsg::Ibc(IbcMsg::Transfer {
+            })),
+            WarpMsg::Generic(CosmosMsg::Distribution(
+                DistributionMsg::SetWithdrawAddress {
+                    address: "vladdress".to_string(),
+                },
+            )),
+            WarpMsg::Generic(CosmosMsg::Ibc(IbcMsg::Transfer {
                 channel_id: "channel_vlad".to_string(),
                 to_address: "vlad3".to_string(),
                 amount: Coin {
@@ -187,12 +199,13 @@ fn test_execute_owner() {
                     revision: 0,
                     height: 0,
                 }),
-            }),
-            CosmosMsg::Stargate {
+            })),
+            WarpMsg::Generic(CosmosMsg::Stargate {
                 type_url: "utl".to_string(),
                 value: Default::default(),
-            },
+            }),
         ],
+        job_id: None,
     });
 
     let info2 = mock_info("vlad", &[]);
@@ -202,7 +215,7 @@ fn test_execute_owner() {
     assert_eq!(
         execute_res,
         Response::new()
-            .add_attribute("action", "generic")
+            .add_attribute("action", "warp_msgs")
             .add_messages(vec![
                 CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: "contract".to_string(),
@@ -265,42 +278,47 @@ fn test_execute_unauth() {
         info,
         InstantiateMsg {
             owner: "vlad".to_string(),
-            funds: None,
+            job_id: Uint64::zero(),
+            native_funds: vec![],
+            cw_funds: vec![],
+            msgs: vec![],
         },
     );
 
-    let execute_msg = ExecuteMsg::Generic(GenericMsg {
+    let execute_msg = ExecuteMsg::WarpMsgs(WarpMsgs {
         msgs: vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
+            WarpMsg::Generic(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "contract".to_string(),
                 msg: to_binary("test").unwrap(),
                 funds: vec![Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
                 }],
-            }),
-            CosmosMsg::Bank(BankMsg::Send {
+            })),
+            WarpMsg::Generic(CosmosMsg::Bank(BankMsg::Send {
                 to_address: "vlad2".to_string(),
                 amount: vec![Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
                 }],
-            }),
-            CosmosMsg::Gov(GovMsg::Vote {
+            })),
+            WarpMsg::Generic(CosmosMsg::Gov(GovMsg::Vote {
                 proposal_id: 0,
                 vote: VoteOption::Yes,
-            }),
-            CosmosMsg::Staking(StakingMsg::Delegate {
+            })),
+            WarpMsg::Generic(CosmosMsg::Staking(StakingMsg::Delegate {
                 validator: "vladidator".to_string(),
                 amount: Coin {
                     denom: "coin".to_string(),
                     amount: Uint128::new(100),
                 },
-            }),
-            CosmosMsg::Distribution(DistributionMsg::SetWithdrawAddress {
-                address: "vladdress".to_string(),
-            }),
-            CosmosMsg::Ibc(IbcMsg::Transfer {
+            })),
+            WarpMsg::Generic(CosmosMsg::Distribution(
+                DistributionMsg::SetWithdrawAddress {
+                    address: "vladdress".to_string(),
+                },
+            )),
+            WarpMsg::Generic(CosmosMsg::Ibc(IbcMsg::Transfer {
                 channel_id: "channel_vlad".to_string(),
                 to_address: "vlad3".to_string(),
                 amount: Coin {
@@ -311,12 +329,13 @@ fn test_execute_unauth() {
                     revision: 0,
                     height: 0,
                 }),
-            }),
-            CosmosMsg::Stargate {
+            })),
+            WarpMsg::Generic(CosmosMsg::Stargate {
                 type_url: "utl".to_string(),
                 value: Default::default(),
-            },
+            }),
         ],
+        job_id: None,
     });
 
     let info2 = mock_info("vlad2", &[]);

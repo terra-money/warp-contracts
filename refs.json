@@ -9,19 +9,23 @@
   },
   "testnet": {
     "warp-account": {
-      "codeId": "12863"
+      "codeId": "12858"
     },
     "warp-controller": {
-      "codeId": "12866",
-      "address": "terra1st4hsvusy8k3cfmvqwlxfx0cyxtn237qpfscg8q9yd8gl07mz5kqh7lste"
+      "codeId": "12861",
+      "address": "terra1mmsl3mxq9n8a6dgye05pn0qlup7r24e2vyjkqgpe32pv3ehjgnes0jz5nc"
     },
     "warp-resolver": {
-      "codeId": "12864",
-      "address": "terra1unp8qs827plupty8kef9w5duwr9prmtdtajqjrgkl3uxad7ped9qt97zcu"
+      "codeId": "12859",
+      "address": "terra1kjv3e7v7m03kk8lrjqr2j604vusxrpxadg6xjz89jucladh5m5gqqag8q7"
     },
     "warp-templates": {
-      "codeId": "12865",
-      "address": "terra1nc8xuc0yp0kmdx703slelmyd2p2yawr27ppjqanx4wh0upm4yhuqkyx0y5"
+      "codeId": "12860",
+      "address": "terra155wp5wwvquqzg30r6luu4e9d95p7pexe3xjszhflcsqe5gpayd6smz5w6k"
+    },
+    "warp-account-tracker": {
+      "codeId": "12862",
+      "address": "terra15yefd9r33wad527jrxphef8r0jr7n4chg4ehgq0lmrwsfsflaajq5ps2jz"
     }
   },
   "mainnet": {
