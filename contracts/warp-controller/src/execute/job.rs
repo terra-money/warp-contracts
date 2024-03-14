@@ -524,6 +524,9 @@ pub fn execute_job(
                 attrs.push(Attribute::new("job_condition_status", "invalid"));
                 attrs.push(Attribute::new("error", e.to_string()));
                 JobQueue::finalize(deps.storage, env, job.id.into(), JobStatus::Failed)?;
+
+                execution_matched = true;
+
                 break;
             }
         }
