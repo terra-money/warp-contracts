@@ -478,6 +478,8 @@ pub fn execute_job(
     let mut msgs = vec![];
     let mut submsgs = vec![];
 
+    let mut execution_matched = false;
+
     for Execution { condition, msgs } in job.executions {
         let resolution: StdResult<bool> = deps.querier.query_wasm_smart(
             config.resolver_address.clone(),
@@ -509,6 +511,9 @@ pub fn execute_job(
                     gas_limit: None,
                     reply_on: ReplyOn::Always,
                 });
+
+                execution_matched = true;
+
                 break;
             }
             Ok(false) => {
@@ -522,6 +527,15 @@ pub fn execute_job(
                 break;
             }
         }
+    }
+
+    if !execution_matched {
+        return Ok(Response::new()
+            .add_attribute("action", "execute_job")
+            .add_attribute("executor", info.sender)
+            .add_attribute("job_id", job.id)
+            .add_attribute("job_condition", "inactive")
+            .add_attributes(attrs));
     }
 
     // Controller sends reward to executor
