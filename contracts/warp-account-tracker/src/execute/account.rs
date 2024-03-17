@@ -76,9 +76,11 @@ pub fn free_job_account(deps: DepsMut, data: FreeJobAccountMsg) -> Result<Respon
     FREE_JOB_ACCOUNTS.update(
         deps.storage,
         (account_owner_ref, account_addr_ref),
-        |s| match s {
-            None => Ok(data.last_job_id),
-            Some(_) => Err(ContractError::AccountAlreadyFreeError {}),
+        |s| -> Result<Uint64, ContractError> {
+            match s {
+                None => Ok(data.last_job_id),
+                Some(last_job_id) => Ok(last_job_id), // idempotent use case, if already freed, do nothing
+            }
         },
     )?;
 
@@ -180,9 +182,11 @@ pub fn free_funding_account(
         FREE_FUNDING_ACCOUNTS.update(
             deps.storage,
             (account_owner_addr_ref, account_addr_ref),
-            |s| match s {
-                None => Ok(vec![data.job_id]),
-                Some(_) => Err(ContractError::AccountAlreadyFreeError {}),
+            |s| -> Result<Vec<Uint64>, ContractError> {
+                match s {
+                    None => Ok(vec![data.job_id]),
+                    Some(job_ids) => Ok(job_ids), // idempotent use case, if already freed, do nothing
+                }
             },
         )?;
     } else {

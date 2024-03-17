@@ -144,19 +144,16 @@ mod tests {
             &[],
         );
 
-        // Cannot free account twice
-        assert_err(
-            app.execute_contract(
-                Addr::unchecked(USER_1),
-                warp_account_tracker_contract_addr.clone(),
-                &ExecuteMsg::FreeJobAccount(FreeJobAccountMsg {
-                    account_owner_addr: USER_1.to_string(),
-                    account_addr: DUMMY_WARP_ACCOUNT_1_ADDR.to_string(),
-                    last_job_id: DUMMY_JOB_1_ID,
-                }),
-                &[],
-            ),
-            ContractError::AccountAlreadyFreeError {},
+        // free account idempotent
+        let _ = app.execute_contract(
+            Addr::unchecked(USER_1),
+            warp_account_tracker_contract_addr.clone(),
+            &ExecuteMsg::FreeJobAccount(FreeJobAccountMsg {
+                account_owner_addr: USER_1.to_string(),
+                account_addr: DUMMY_WARP_ACCOUNT_1_ADDR.to_string(),
+                last_job_id: DUMMY_JOB_1_ID,
+            }),
+            &[],
         );
 
         // Mark second account as free
