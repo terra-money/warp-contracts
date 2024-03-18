@@ -2,9 +2,10 @@ use crate::util::path::resolve_path;
 use crate::util::variable::get_var;
 use crate::ContractError;
 use cosmwasm_std::{
-    to_vec, ContractResult, Decimal256, Deps, Env, StdError, SystemResult, Uint256,
+    to_vec, ContractResult, Decimal256, Deps, Env, QueryRequest, StdError, SystemResult, Uint256,
 };
 use cw_storage_plus::KeyDeserialize;
+use injective_cosmwasm::InjectiveQueryWrapper;
 use json_codec_wasm::ast::Ref;
 use json_codec_wasm::Decoder;
 use resolver::condition::{
@@ -577,7 +578,22 @@ pub fn resolve_str_op(_deps: Deps, _env: Env, left: String, right: String, op: S
 }
 
 pub fn resolve_query_expr(deps: Deps, _env: Env, expr: QueryExpr) -> Result<String, ContractError> {
-    let raw = to_vec(&expr.query).map_err(|serialize_err| {
+    let injective_query: QueryRequest<InjectiveQueryWrapper> = match expr.query {
+        QueryRequest::Custom(str) => {
+            let injective_query_wrapper: InjectiveQueryWrapper = serde_json_wasm::from_str(&str)?;
+
+            QueryRequest::Custom(injective_query_wrapper)
+        }
+        QueryRequest::Bank(b) => QueryRequest::Bank(b),
+        QueryRequest::Staking(s) => QueryRequest::Staking(s),
+        QueryRequest::Distribution(_) => todo!(),
+        QueryRequest::Stargate { path, data } => QueryRequest::Stargate { path, data },
+        QueryRequest::Ibc(i) => QueryRequest::Ibc(i),
+        QueryRequest::Wasm(w) => QueryRequest::Wasm(w),
+        _ => panic!("Expected known QueryRequest type"),
+    };
+
+    let raw = to_vec(&injective_query).map_err(|serialize_err| {
         StdError::generic_err(format!("Serializing QueryRequest: {}", serialize_err))
     })?;
 

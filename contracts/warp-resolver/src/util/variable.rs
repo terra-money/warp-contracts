@@ -634,7 +634,12 @@ fn replace_references(mut expr: QueryExpr, vars: &[Variable]) -> Result<QueryExp
             *key = replace_in_binary(key, vars)?;
             *contract_addr = replace_in_string(contract_addr.to_string(), vars)?;
         }
-        _ => expr.query = replace_in_struct(&expr.query, vars)?,
+        QueryRequest::Custom(str) => {
+            *str = replace_in_struct_string(str.to_string(), vars)?;
+        }
+        _ => {
+            expr.query = replace_in_struct(&expr.query, vars)?;
+        }
     }
 
     Ok(expr)
@@ -663,9 +668,12 @@ fn replace_in_struct<T: Serialize + DeserializeOwned>(
             msg: "Failed to convert struct to JSON.".to_string(),
         })?;
     let updated_struct_as_json = replace_in_struct_string(struct_as_json, vars)?;
-    serde_json_wasm::from_str(&updated_struct_as_json).map_err(|_| ContractError::HydrationError {
+    
+    let replaced_value = serde_json_wasm::from_str(&updated_struct_as_json).map_err(|_| ContractError::HydrationError {
         msg: "Failed to convert JSON back to struct.".to_string(),
-    })
+    })?;
+
+    Ok(replaced_value)
 }
 
 fn replace_in_struct_string(value: String, vars: &[Variable]) -> Result<String, ContractError> {
