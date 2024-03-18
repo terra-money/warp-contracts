@@ -668,9 +668,11 @@ fn replace_in_struct<T: Serialize + DeserializeOwned>(
             msg: "Failed to convert struct to JSON.".to_string(),
         })?;
     let updated_struct_as_json = replace_in_struct_string(struct_as_json, vars)?;
-    
-    let replaced_value = serde_json_wasm::from_str(&updated_struct_as_json).map_err(|_| ContractError::HydrationError {
-        msg: "Failed to convert JSON back to struct.".to_string(),
+
+    let replaced_value = serde_json_wasm::from_str(&updated_struct_as_json).map_err(|_| {
+        ContractError::HydrationError {
+            msg: "Failed to convert JSON back to struct.".to_string(),
+        }
     })?;
 
     Ok(replaced_value)
