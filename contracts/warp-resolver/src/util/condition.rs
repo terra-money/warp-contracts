@@ -699,8 +699,62 @@ pub fn resolve_query_expr_string(
     let r = Ref::new(&value);
     let resolved = resolve_path(r, expr.selector)?;
 
-    Ok(resolved
-        .string()
-        .ok_or(ContractError::DecodeError {})?
-        .to_string())
+    let v = resolved.value().ok_or(ContractError::DecodeError {})?;
+
+    let json = Json { value: v.clone() };
+
+    Ok(json.to_string())
+}
+
+pub struct Json {
+    value: json_codec_wasm::Json,
+}
+
+impl Json {
+    fn to_json_string(&self, quote_strings: bool) -> String {
+        match &self.value {
+            json_codec_wasm::Json::Bool(b) => b.to_string(),
+            json_codec_wasm::Json::I128(i) => i.to_string(),
+            json_codec_wasm::Json::U128(u) => u.to_string(),
+            json_codec_wasm::Json::String(s) => {
+                if quote_strings {
+                    format!("\"{}\"", s)
+                } else {
+                    s.to_string()
+                }
+            }
+            json_codec_wasm::Json::Array(arr) => {
+                let items: Vec<String> = arr
+                    .iter()
+                    .map(|item| {
+                        Json {
+                            value: item.clone(),
+                        }
+                        .to_json_string(true)
+                    })
+                    .collect();
+                format!("[{}]", items.join(", "))
+            }
+            json_codec_wasm::Json::Object(obj) => {
+                let items: Vec<String> = obj
+                    .iter()
+                    .map(|(k, v)| {
+                        format!(
+                            "\"{}\":{}",
+                            k,
+                            Json { value: v.clone() }.to_json_string(true)
+                        )
+                    })
+                    .collect();
+                format!("{{{}}}", items.join(","))
+            }
+            json_codec_wasm::Json::Null => "null".to_string(),
+        }
+    }
+}
+
+impl ToString for Json {
+    fn to_string(&self) -> String {
+        self.to_json_string(false)
+    }
 }
