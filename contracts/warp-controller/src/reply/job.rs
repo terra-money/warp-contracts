@@ -84,11 +84,20 @@ pub fn execute_job(
                 "failed_invalid_job_status",
             ));
         } else {
+            let hydrated_vars: String = deps.querier.query_wasm_smart(
+                config.resolver_address.clone(),
+                &resolver::QueryMsg::QueryHydrateVars(resolver::QueryHydrateVarsMsg {
+                    vars: finished_job.vars,
+                    warp_account_addr: Some(finished_job.account.to_string()),
+                    external_inputs: None,
+                }),
+            )?;
+
             // vars are updated to next job iteration
             let new_vars: String = deps.querier.query_wasm_smart(
                 config.resolver_address.clone(),
                 &resolver::QueryMsg::QueryApplyVarFn(resolver::QueryApplyVarFnMsg {
-                    vars: finished_job.vars,
+                    vars: hydrated_vars,
                     status: finished_job.status.clone(),
                     warp_account_addr: Some(finished_job.account.to_string()),
                 }),
