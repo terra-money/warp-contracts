@@ -46,6 +46,8 @@ schemars = "0.8"
 thiserror = "1"
 serde-json-wasm = "0.4.1"
 json-codec-wasm = "0.1.0"
+injective-cosmwasm = "0.2.22"
+
 
 [dev-dependencies]
 cw-multi-test = "0.16.0"

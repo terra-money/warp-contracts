@@ -228,62 +228,98 @@ pub fn hydrate_vars(
             }
             Variable::Query(mut v) => {
                 if v.reinitialize || v.value.is_none() {
-                    v.init_fn = replace_references(v.init_fn, &hydrated_vars)?;
+                    let replaced_init_fn = replace_references(v.init_fn.clone(), &hydrated_vars)?;
 
                     match v.kind {
                         VariableKind::String => {
                             v.value = Some(
                                 // \"$warp.variable\" => \"VALUE"\
-                                resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
-                                    .to_string(),
+                                resolve_query_expr_string(
+                                    deps,
+                                    env.clone(),
+                                    replaced_init_fn.clone(),
+                                )?
+                                .to_string(),
                             )
                         }
                         VariableKind::Uint => {
                             v.value = Some(
-                                resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
-                                    .to_string(),
+                                resolve_query_expr_uint(
+                                    deps,
+                                    env.clone(),
+                                    replaced_init_fn.clone(),
+                                )?
+                                .to_string(),
                             )
                         }
                         VariableKind::Int => {
                             v.value = Some(
-                                resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
-                                    .to_string(),
+                                resolve_query_expr_int(
+                                    deps,
+                                    env.clone(),
+                                    replaced_init_fn.clone(),
+                                )?
+                                .to_string(),
                             )
                         }
                         VariableKind::Decimal => {
                             v.value = Some(
-                                resolve_query_expr_decimal(deps, env.clone(), v.init_fn.clone())?
-                                    .to_string(),
+                                resolve_query_expr_decimal(
+                                    deps,
+                                    env.clone(),
+                                    replaced_init_fn.clone(),
+                                )?
+                                .to_string(),
                             )
                         }
                         VariableKind::Timestamp => {
                             v.value = Some(
-                                resolve_query_expr_int(deps, env.clone(), v.init_fn.clone())?
-                                    .to_string(),
+                                resolve_query_expr_int(
+                                    deps,
+                                    env.clone(),
+                                    replaced_init_fn.clone(),
+                                )?
+                                .to_string(),
                             )
                         }
                         VariableKind::Bool => {
                             v.value = Some(
-                                resolve_query_expr_bool(deps, env.clone(), v.init_fn.clone())?
-                                    .to_string(),
+                                resolve_query_expr_bool(
+                                    deps,
+                                    env.clone(),
+                                    replaced_init_fn.clone(),
+                                )?
+                                .to_string(),
                             )
                         }
                         VariableKind::Amount => {
                             v.value = Some(
-                                resolve_query_expr_uint(deps, env.clone(), v.init_fn.clone())?
-                                    .to_string(),
+                                resolve_query_expr_uint(
+                                    deps,
+                                    env.clone(),
+                                    replaced_init_fn.clone(),
+                                )?
+                                .to_string(),
                             )
                         }
                         VariableKind::Asset => {
                             v.value = Some(
-                                resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
-                                    .to_string(),
+                                resolve_query_expr_string(
+                                    deps,
+                                    env.clone(),
+                                    replaced_init_fn.clone(),
+                                )?
+                                .to_string(),
                             )
                         }
                         VariableKind::Json => {
                             v.value = Some(
-                                resolve_query_expr_string(deps, env.clone(), v.init_fn.clone())?
-                                    .to_string(),
+                                resolve_query_expr_string(
+                                    deps,
+                                    env.clone(),
+                                    replaced_init_fn.clone(),
+                                )?
+                                .to_string(),
                             )
                         }
                     }
@@ -634,7 +670,12 @@ fn replace_references(mut expr: QueryExpr, vars: &[Variable]) -> Result<QueryExp
             *key = replace_in_binary(key, vars)?;
             *contract_addr = replace_in_string(contract_addr.to_string(), vars)?;
         }
-        _ => expr.query = replace_in_struct(&expr.query, vars)?,
+        QueryRequest::Custom(str) => {
+            *str = replace_in_struct_string(str.to_string(), vars)?;
+        }
+        _ => {
+            expr.query = replace_in_struct(&expr.query, vars)?;
+        }
     }
 
     Ok(expr)
@@ -663,9 +704,14 @@ fn replace_in_struct<T: Serialize + DeserializeOwned>(
             msg: "Failed to convert struct to JSON.".to_string(),
         })?;
     let updated_struct_as_json = replace_in_struct_string(struct_as_json, vars)?;
-    serde_json_wasm::from_str(&updated_struct_as_json).map_err(|_| ContractError::HydrationError {
-        msg: "Failed to convert JSON back to struct.".to_string(),
-    })
+
+    let replaced_value = serde_json_wasm::from_str(&updated_struct_as_json).map_err(|_| {
+        ContractError::HydrationError {
+            msg: "Failed to convert JSON back to struct.".to_string(),
+        }
+    })?;
+
+    Ok(replaced_value)
 }
 
 fn replace_in_struct_string(value: String, vars: &[Variable]) -> Result<String, ContractError> {

@@ -12,6 +12,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 cosmwasm-std = "1.1"
 cosmwasm-schema = "1.1"
 controller = { path = "../controller" }
+injective-cosmwasm = "0.2.22"
 
 [dev-dependencies]
 cw-multi-test = "0.16"
