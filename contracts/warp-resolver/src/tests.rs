@@ -101,22 +101,27 @@ impl WasmMockQuerier {
         request: &QueryRequest<Empty>,
     ) -> SystemResult<ContractResult<Binary>> {
         match &request {
-            QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr,
-                msg: _,
-            }) => {
-                // Mock logic for the Wasm::Smart case
-                // Here for simplicity, we return the contract_addr and msg as is.
-
-                // Mock logic for the Wasm::Smart case
-                // Here we return a JSON object with "address" and "msg" fields.
-                let response: String = json!({
-                    "address": contract_addr,
-                    "msg": "Mock message"
-                })
-                .to_string();
-
-                SystemResult::Ok(ContractResult::Ok(to_binary(&response).unwrap()))
+            QueryRequest::Wasm(WasmQuery::Smart { contract_addr, msg }) => {
+                // Check if the query is for the vault contract address to get subaccount_id
+                if contract_addr == "mock_vault_contract_addr" {
+                    // Simulate response with subaccount_id
+                    let response = json!({
+                        "config": {
+                            "base": {
+                                "subaccount_id": "0xecde8308ee5413d67288fae2abfc94dabeb16bd9000000000000000000000022"
+                            }
+                        }
+                    });
+                    SystemResult::Ok(ContractResult::Ok(to_binary(&response).unwrap()))
+                } else {
+                    // Default mock response for other smart contract queries
+                    let response = json!({
+                        "address": contract_addr,
+                        "msg": "Mock message"
+                    })
+                    .to_string();
+                    SystemResult::Ok(ContractResult::Ok(to_binary(&response).unwrap()))
+                }
             }
             QueryRequest::Bank(BankQuery::Balance {
                 address: contract_addr,
@@ -219,10 +224,8 @@ fn test_hydrate_vars_nested_variables_binary_json() {
             init_fn: QueryExpr {
                 selector: "$".to_string(),
                 query: QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: "contract_addr".to_string(),
-                    msg: Binary::from(
-                        r#"{"test":"eyJhZGRyZXNzIjoiY29udHJhY3RfYWRkciIsIm1zZyI6Ik1vY2sgbWVzc2FnZSJ9"}"#.as_bytes()
-                    ),
+                    contract_addr: "$warp.variable.var4".to_string(),
+                    msg: Binary::from(r#"{"test":"$warp.variable.var1"}"#.as_bytes()),
                 }),
             },
             value: Some(r#"{"address":"contract_addr","msg":"Mock message"}"#.to_string()),
@@ -277,8 +280,8 @@ fn test_hydrate_vars_nested_variables_binary() {
             init_fn: QueryExpr {
                 selector: "$".to_string(),
                 query: QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: "static_value".to_string(),
-                    msg: Binary::from(r#"{"test": "static_value"}"#.as_bytes()),
+                    contract_addr: "$warp.variable.var1".to_string(),
+                    msg: Binary::from(r#"{"test": "$warp.variable.var1"}"#.as_bytes()),
                 }),
             },
             value: Some(r#"{"address":"static_value","msg":"Mock message"}"#.to_string()),
@@ -332,7 +335,7 @@ fn test_hydrate_vars_nested_variables_non_binary() {
             init_fn: QueryExpr {
                 selector: "$".to_string(),
                 query: QueryRequest::Bank(BankQuery::Balance {
-                    address: "static_value".to_string(),
+                    address: "$warp.variable.var1".to_string(),
                     denom: "denom".to_string(),
                 }),
             },
@@ -587,4 +590,53 @@ fn test_hydrate_static_env_vars_and_hydrate_msgs() {
             funds: vec![]
         }))
     )
+}
+
+#[test]
+fn test_hydrate_static_and_custom_query_vars() {
+    let deps = mock_dependencies();
+    let env = mock_env();
+
+    // Assuming 'vault_contract_addr' and 'vault_strategy_denom' are known and used for the query
+    let vault_contract_addr = "mock_vault_contract_addr".to_string();
+
+    // Static variable initialization similar to the SDK code for 'subaccount_id'
+    let subaccount_id = Variable::Query(QueryVariable {
+        kind: VariableKind::String,
+        name: "subaccount_id".to_string(),
+        encode: false,
+        value: None,
+        init_fn: QueryExpr {
+            selector: "$.config.base.subaccount_id".to_string(),
+            query: QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: vault_contract_addr.clone(),
+                msg: to_binary(&json!({"base": {"config": {}}})).unwrap(),
+            }),
+        },
+        reinitialize: true,
+        update_fn: None,
+    });
+
+    let next_config = Variable::Query(QueryVariable {
+        name: "next_config".to_string(),
+        kind: VariableKind::Json,
+        init_fn: QueryExpr {
+            selector: "$.config".to_string(),
+            query: QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: vault_contract_addr.clone(),
+                msg: to_binary(&json!({ "base": { "config": {} } })).unwrap(),
+            }),
+        },
+        value: None,
+        reinitialize: true,
+        update_fn: None,
+        encode: false,
+    });
+
+    // Hydrate variables
+    let vars = vec![subaccount_id, next_config];
+    // let vars = vec![next_config];
+    let hydrated_vars = hydrate_vars(deps.as_ref(), env, vars, None, None).unwrap();
+
+    println!("{:?}", hydrated_vars);
 }
