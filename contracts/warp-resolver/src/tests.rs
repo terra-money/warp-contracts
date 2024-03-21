@@ -224,10 +224,8 @@ fn test_hydrate_vars_nested_variables_binary_json() {
             init_fn: QueryExpr {
                 selector: "$".to_string(),
                 query: QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: "contract_addr".to_string(),
-                    msg: Binary::from(
-                        r#"{"test":"eyJhZGRyZXNzIjoiY29udHJhY3RfYWRkciIsIm1zZyI6Ik1vY2sgbWVzc2FnZSJ9"}"#.as_bytes()
-                    ),
+                    contract_addr: "$warp.variable.var4".to_string(),
+                    msg: Binary::from(r#"{"test":"$warp.variable.var1"}"#.as_bytes()),
                 }),
             },
             value: Some(r#"{"address":"contract_addr","msg":"Mock message"}"#.to_string()),
@@ -282,8 +280,8 @@ fn test_hydrate_vars_nested_variables_binary() {
             init_fn: QueryExpr {
                 selector: "$".to_string(),
                 query: QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: "static_value".to_string(),
-                    msg: Binary::from(r#"{"test": "static_value"}"#.as_bytes()),
+                    contract_addr: "$warp.variable.var1".to_string(),
+                    msg: Binary::from(r#"{"test": "$warp.variable.var1"}"#.as_bytes()),
                 }),
             },
             value: Some(r#"{"address":"static_value","msg":"Mock message"}"#.to_string()),
@@ -337,7 +335,7 @@ fn test_hydrate_vars_nested_variables_non_binary() {
             init_fn: QueryExpr {
                 selector: "$".to_string(),
                 query: QueryRequest::Bank(BankQuery::Balance {
-                    address: "static_value".to_string(),
+                    address: "$warp.variable.var1".to_string(),
                     denom: "denom".to_string(),
                 }),
             },
