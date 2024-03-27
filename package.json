@@ -12,6 +12,10 @@
   "scripts": {
     "deploy:warp": "TERRARIUMS_ARCH_ARM64=true yarn terrariums run tasks/deploy_warp.ts --network testnet --signer pisco",
     "migrate:warp": "TERRARIUMS_ARCH_ARM64=true yarn terrariums run tasks/migrate_warp.ts --network testnet --signer pisco",
+    "deploy:archway": "yarn build:warp && yarn deploy:arch",
+    "deploy:arch": "./tasks/archway/deploy.sh",
+    "migrate:archway": "yarn build:warp && yarn migrate:arch",
+    "migrate:arch": "./tasks/archway/migrate.sh",
     "postinstall": "husky install"
   },
   "dependencies": {
