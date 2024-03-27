@@ -1,0 +1,14 @@
+#!/bin/bash
+
+signer_key_acc_address="<YOU_SIGNER-ADDRESS-HERE>"
+contracts_dir="$(pwd)/artifacts"
+wallet_password="<YOUR-WALLET-PASSWORD-HERE>"
+chain_id="osmosis-1"
+node="https://rpc.osmosis.zone:443"
+gas_price="0.025uosmo"
+contract_name="warp_account_tracker" 
+contract_address="osmo1g02vtmy60p9w9r9q96m8jf996c4shxzc0q7qqna6ectkamr7zzfszqqkqd"
+migrate_msg='{}'
+
+# Call the migration script with parameters
+bash ./tasks/osmosis/migrate_warp.sh "$chain_id" "$node" "$gas_price" "$signer_key_acc_address" "$migrate_msg" "$contract_address" "$contract_name" "$contracts_dir" "$wallet_password"

@@ -12,6 +12,8 @@
   "scripts": {
     "deploy:warp": "TERRARIUMS_ARCH_ARM64=true yarn terrariums run tasks/deploy_warp.ts --network testnet --signer pisco",
     "migrate:warp": "TERRARIUMS_ARCH_ARM64=true yarn terrariums run tasks/migrate_warp.ts --network testnet --signer pisco",
+    "migrate:osmo": "./tasks/osmosis/migrate.sh",
+    "build:osmo": "./tasks/osmosis/build_warp.sh",
     "postinstall": "husky install"
   },
   "dependencies": {
