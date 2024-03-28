@@ -28,14 +28,14 @@ store_contract() {
     TXHASH=$(echo "$STORE_OUTPUT" | jq -r '.txhash')
     echo >&2 "Transaction Hash: $TXHASH"
 
-    sleep 10
+    sleep 15
 
     # Query transaction by txhash to get detailed info, including possibly the code ID
     QUERY_OUTPUT=$(archwayd query tx --type=hash "$TXHASH" --node="$node" --chain-id="$chain_id" --output json)
     # echo >&2 "QUERY_OUTPUT = $QUERY_OUTPUT"
 
     # Attempt to extract code ID from QUERY_OUTPUT
-    CODE_ID=$(echo "$QUERY_OUTPUT" | jq -r '.logs[0].events[] | select(.type == "cosmwasm.wasm.v1.EventCodeStored").attributes[] | select(.key == "code_id").value | gsub("\"";"")')
+    CODE_ID=$(echo "$QUERY_OUTPUT" | jq -r '.logs[0].events[] | select(.type == "store_code").attributes[] | select(.key == "code_id").value')
 
     echo >&2 "CODE_ID = $CODE_ID"
 
@@ -64,7 +64,7 @@ instantiate_contract() {
     TXHASH=$(echo "$INSTANTIATE_OUTPUT" | jq -r '.txhash')
     echo >&2 "Instantiate Transaction Hash: $TXHASH"
 
-    sleep 10 # Wait for the transaction to be processed
+    sleep 15 # Wait for the transaction to be processed
 
     # Query transaction by txhash to get detailed info, including the contract address
     QUERY_OUTPUT=$(archwayd query tx --type=hash "$TXHASH" --node="$node" --chain-id="$chain_id" --output json)
