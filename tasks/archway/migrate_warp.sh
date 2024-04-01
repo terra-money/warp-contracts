@@ -31,7 +31,7 @@ store_contract() {
 
     # Query transaction by txhash to get detailed info, including possibly the code ID
     QUERY_OUTPUT=$(archwayd query tx --type=hash "$TXHASH" --node="$node" --chain-id="$chain_id" --output json)
-    CODE_ID=$(echo "$QUERY_OUTPUT" | jq -r '.logs[0].events[] | select(.type == "cosmwasm.wasm.v1.EventCodeStored").attributes[] | select(.key == "code_id").value | gsub("\"";"")')
+    CODE_ID=$(echo "$QUERY_OUTPUT" | jq -r '.logs[0].events[] | select(.type == "store_code").attributes[] | select(.key == "code_id").value')
 
     echo >&2 "CODE_ID = $CODE_ID"
     echo >&2 "Stored $contract_name with code ID: $CODE_ID"
