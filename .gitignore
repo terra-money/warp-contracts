@@ -16,6 +16,7 @@ coverage/
 .vscode
 *.profraw
 .vscode
+.oraid
 
 # npm/yarn
 .yarn/*
